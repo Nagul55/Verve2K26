@@ -88,7 +88,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, message: 'Check-in successful! Ticket is valid.' }, { status: 200 });
-    
+
   } catch (error: unknown) {
     const err = error as Error;
     console.error('Scan API Error:', err);

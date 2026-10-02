@@ -10,6 +10,7 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
+  --font-anton: var(--font-anton);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,17 +47,39 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-eventrix-purple: var(--eventrix-purple);
+  --color-eventrix-lavender: var(--eventrix-lavender);
+  --color-eventrix-light-lavender: var(--eventrix-light-lavender);
+  --color-eventrix-black: var(--eventrix-black);
+  --color-eventrix-white: var(--eventrix-white);
+  --color-eventrix-bg: var(--eventrix-bg);
+  --color-eventrix-muted: var(--eventrix-muted);
+  --animate-scan: scan 2s ease-in-out infinite;
+
+  @keyframes scan {
+    0%, 100% { top: 0%; }
+    50% { top: 100%; }
+  }
 }
 
 :root {
+  /* Eventrix Design System */
+  --eventrix-purple: #24134F;
+  --eventrix-lavender: #A98BFF;
+  --eventrix-light-lavender: #E7DFFF;
+  --eventrix-black: #080B18;
+  --eventrix-white: #FFFFFF;
+  --eventrix-bg: #F8F8FA;
+  --eventrix-muted: #596078;
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.75 0.18 85); /* Warm Gold */
-  --primary-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -84,14 +107,14 @@
 }
 
 .dark {
-  --background: oklch(0.15 0 0); /* Deep Charcoal */
+  --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.18 0 0); /* Slightly lighter charcoal for cards */
+  --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.18 0 0);
+  --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.75 0.18 85); /* Warm Gold */
-  --primary-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -121,10 +144,18 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .editorial-label {
+    letter-spacing: 0.22em;
   }
 }

@@ -2,8 +2,8 @@ import { createClient } from '@/lib/supabase/client';
 import { Event, RegistrationPayload } from '../types';
 
 export const getOpenEvents = async (): Promise<Event[]> => {
-  const supabase = createClient();
-  
+  const supabase = await createClient();
+
   const { data, error } = await supabase
     .from('events')
     .select('*')
@@ -14,7 +14,7 @@ export const getOpenEvents = async (): Promise<Event[]> => {
     console.error('Error fetching events:', error);
     throw new Error('Failed to load events. Please try again.');
   }
-  
+
   return data as Event[];
 };
 

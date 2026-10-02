@@ -69,9 +69,9 @@ export function RegistrationForm() {
     const nonTechCount = selectedEvents.filter(e => e.category === 'Non-Technical').length;
 
     if (techCount !== 1 || nonTechCount !== 1) {
-      setError('selectedEventIds', { 
-        type: 'manual', 
-        message: 'Invalid selection. You must pick exactly 1 Technical and 1 Non-Technical event.' 
+      setError('selectedEventIds', {
+        type: 'manual',
+        message: 'Invalid selection. You must pick exactly 1 Technical and 1 Non-Technical event.'
       });
       return;
     }
@@ -106,15 +106,15 @@ export function RegistrationForm() {
       <CardHeader className="text-center">
         <div className="flex justify-center mb-6">
           <div className="bg-white/95 p-3 rounded-xl shadow-lg border border-border">
-            <Image 
-              src="/images/sona-logo.png" 
-              alt="Sona College Logo" 
-              width={0} 
-              height={100} 
+            <Image
+              src="/images/sona-logo.png"
+              alt="Sona College Logo"
+              width={0}
+              height={100}
               sizes="100vw"
               style={{ width: 'auto', height: '100px' }}
               className="object-contain"
-              priority 
+              priority
             />
           </div>
         </div>
@@ -178,17 +178,17 @@ export function RegistrationForm() {
                 </p>
               )}
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
               {/* Technical Column */}
               <div className="space-y-4">
                 <h4 className="font-bold text-primary pb-2 flex items-center justify-between">
-                  Technical Events 
+                  Technical Events
                   <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">Pick 1</span>
                 </h4>
                 {techEvents.map((evt) => (
-                  <div 
-                    key={evt.event_id} 
+                  <div
+                    key={evt.event_id}
                     onClick={() => toggleEvent(evt.event_id)}
                     className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${watchedSelectedIds.includes(evt.event_id) ? 'border-primary bg-primary/10 shadow-sm shadow-primary/20' : 'border-border hover:border-primary/50 hover:bg-muted'}`}
                   >
@@ -204,12 +204,12 @@ export function RegistrationForm() {
               {/* Non-Technical Column */}
               <div className="space-y-4">
                 <h4 className="font-bold text-primary pb-2 flex items-center justify-between">
-                  Non-Technical Events 
+                  Non-Technical Events
                   <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">Pick 1</span>
                 </h4>
                 {nonTechEvents.map((evt) => (
-                  <div 
-                    key={evt.event_id} 
+                  <div
+                    key={evt.event_id}
                     onClick={() => toggleEvent(evt.event_id)}
                     className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${watchedSelectedIds.includes(evt.event_id) ? 'border-primary bg-primary/10 shadow-sm shadow-primary/20' : 'border-border hover:border-primary/50 hover:bg-muted'}`}
                   >
