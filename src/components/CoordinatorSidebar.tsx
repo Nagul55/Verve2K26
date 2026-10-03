@@ -13,7 +13,6 @@ export function CoordinatorSidebar() {
   const navItems = [
     { name: "Dashboard", href: "/coordinator", icon: Home },
     { name: "Manage Events", href: "/coordinator/events", icon: Calendar },
-    { name: "Add Sub-Event", href: "/coordinator/events/new", icon: PlusCircle },
     { name: "Ticket Scanner", href: "/coordinator/scanner", icon: QrCode },
     { name: "Participants", href: "/coordinator/participants", icon: Users },
     { name: "Attendance Log", href: "/coordinator/attendance", icon: CheckCircle2 },

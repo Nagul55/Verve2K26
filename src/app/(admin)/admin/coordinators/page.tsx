@@ -401,7 +401,7 @@ export default function CoordinatorsPage() {
                 <UserPlus className="w-6 h-6 text-eventrix-lavender" /> Create New Coordinator Account
               </h2>
               <p className="text-xs text-eventrix-muted font-medium mt-1">
-                Register an event coordinator and grant them initial event access permissions.
+                Register a new event coordinator account.
               </p>
             </div>
 
@@ -452,25 +452,6 @@ export default function CoordinatorsPage() {
                     className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
                   />
                 </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
-                    Permitted Event Assignment
-                  </label>
-                  <select 
-                    name="subEventId" 
-                    value={formData.subEventId} 
-                    onChange={(e) => setFormData(prev => ({...prev, subEventId: e.target.value}))} 
-                    className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium"
-                  >
-                    <option value="">Select Event to Permit Access...</option>
-                    {subEvents.map(ev => (
-                      <option key={ev.id} value={ev.id}>
-                        {ev.title} ({ev.category} - {ev.location})
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
 
               <div className="pt-4 border-t border-[#D9D9DF] flex flex-col sm:flex-row gap-4 items-center justify-between">
@@ -487,7 +468,7 @@ export default function CoordinatorsPage() {
                   disabled={isPending}
                   className="bg-eventrix-black text-eventrix-white px-8 py-4 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-eventrix-lavender hover:text-eventrix-black transition-colors disabled:opacity-50 shadow-[4px_4px_0px_0px_#A78BFA] flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
                 >
-                  {isPending ? "Creating Account..." : <><UserPlus className="w-4 h-4" /> Create & Grant Access</>}
+                  {isPending ? "Creating Account..." : <><UserPlus className="w-4 h-4" /> Create Account</>}
                 </button>
               </div>
             </form>
