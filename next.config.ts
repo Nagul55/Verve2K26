@@ -4,11 +4,26 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [],
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000', '*.ngrok-free.dev', 'branchlike-eli-legginged.ngrok-free.dev']
+      allowedOrigins: [
+        'localhost:3000', 
+        '127.0.0.1:3000',
+        '*.ngrok-free.app', 
+        '*.ngrok-free.dev', 
+        '*.ngrok.io',
+        '*.ngrok.app',
+        'branchlike-eli-legginged.ngrok-free.dev'
+      ]
     }
   },
-  // Added to fix JS not loading in Next.js 14 when using ngrok
-  allowedDevOrigins: ['branchlike-eli-legginged.ngrok-free.dev']
+  allowedDevOrigins: [
+    'localhost:3000', 
+    '127.0.0.1:3000',
+    '*.ngrok-free.app', 
+    '*.ngrok-free.dev', 
+    '*.ngrok.io', 
+    '*.ngrok.app',
+    'branchlike-eli-legginged.ngrok-free.dev'
+  ]
 };
 
 export default nextConfig;
