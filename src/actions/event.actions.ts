@@ -20,7 +20,7 @@ export async function getFests() {
   return data;
 }
 
-export async function createFest(name: string, description: string, minTech: number, minNonTech: number) {
+export async function createFest(name: string, description: string, minTech: number = 0, minNonTech: number = 0) {
   const adminClient = getAdminClient();
   const { data, error } = await adminClient.from('fests').insert({
     name, description, min_technical: minTech, min_non_technical: minNonTech
@@ -47,8 +47,70 @@ export async function getSubEvents(festId?: string) {
 
 export async function createSubEvent(subEventData: any) {
   const adminClient = getAdminClient();
-  const { error } = await adminClient.from('sub_events').insert(subEventData);
+  
+  // Format candidate/team requirements into description if present
+  let formattedDesc = subEventData.description || '';
+  if (subEventData.participation_type === 'Team' && (subEventData.min_candidates || subEventData.max_candidates)) {
+    const minC = subEventData.min_candidates || 1;
+    const maxC = subEventData.max_candidates || 1;
+    formattedDesc = `[Team Size: ${minC} to ${maxC} Members]\n\n` + formattedDesc;
+  }
+
+  // Only pass columns that exist in the Supabase sub_events table schema
+  const cleanPayload: any = {
+    fest_id: subEventData.fest_id || '00000000-0000-0000-0000-000000000001',
+    title: subEventData.title,
+    description: formattedDesc,
+    category: subEventData.category || 'Technical',
+    participation_type: subEventData.participation_type || 'Individual',
+    date: subEventData.date || 'TBD',
+    time: subEventData.time || 'TBD',
+    location: subEventData.location,
+    capacity: typeof subEventData.capacity === 'number' ? subEventData.capacity : parseInt(subEventData.capacity || '100')
+  };
+
+  const { error } = await adminClient.from('sub_events').insert(cleanPayload);
   return { success: !error, error: error?.message };
+}
+
+export async function approveSubEvent(subEventId: string) {
+  const adminClient = getAdminClient();
+  const { error } = await adminClient
+    .from('sub_events')
+    .update({ status: 'Approved' })
+    .eq('id', subEventId);
+
+  revalidatePath('/admin/sub-events');
+  revalidatePath('/admin/coordinators');
+  revalidatePath('/coordinator/events');
+  revalidatePath('/events');
+  return { success: !error, error: error?.message };
+}
+
+export async function approveAndPermitSubEvent(subEventId: string, coordinatorId?: string) {
+  const adminClient = getAdminClient();
+  
+  // 1. Update sub_event status to Approved
+  const { error } = await adminClient
+    .from('sub_events')
+    .update({ status: 'Approved' })
+    .eq('id', subEventId);
+
+  if (error) return { success: false, error: error.message };
+
+  // 2. If coordinatorId is specified, grant permission to that coordinator
+  if (coordinatorId && coordinatorId.trim() !== '') {
+    const { error: userError } = await adminClient.auth.admin.updateUserById(coordinatorId, {
+      app_metadata: { role: 'coordinator', coordinating_event_id: subEventId }
+    });
+    if (userError) return { success: false, error: userError.message };
+  }
+
+  revalidatePath('/admin/coordinators');
+  revalidatePath('/admin/sub-events');
+  revalidatePath('/coordinator/events');
+  revalidatePath('/events');
+  return { success: true };
 }
 
 export async function deleteSubEvent(subEventId: string) {
@@ -287,3 +349,46 @@ export async function getParticipantRegistrations() {
 
   return registeredEvents;
 }
+
+export async function getAdminParticipants() {
+  const adminClient = getAdminClient();
+  const { data, error } = await adminClient
+    .from('participants')
+    .select(`
+      *,
+      registrations (
+        id,
+        fest_id,
+        created_at,
+        registration_sub_events (
+          sub_events (
+            id,
+            title,
+            category,
+            date,
+            location,
+            time
+          )
+        )
+      )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("Error fetching admin participants with relations:", error);
+    // Fallback: fetch participants directly if join encounters issues
+    const { data: rawData, error: rawError } = await adminClient
+      .from('participants')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (rawError) {
+      console.error("Error fetching raw participants:", rawError);
+      return [];
+    }
+    return rawData || [];
+  }
+
+  return data || [];
+}
+

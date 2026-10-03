@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { signup } from "@/actions/auth.actions";
 import { Eye, EyeOff, User, Mail, AlertCircle, UserPlus } from 'lucide-react';
+import { GoogleLoginButton } from "@/components/GoogleLoginButton";
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('');
@@ -159,6 +160,21 @@ export default function SignupPage() {
             </button>
 
           </form>
+
+          {/* Divider */}
+          <div className="relative my-6 text-center">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <span className="relative bg-white/95 lg:bg-white px-4 text-[11px] font-black text-gray-800 uppercase tracking-widest">
+              Or continue with
+            </span>
+          </div>
+
+          {/* Social OAuth SSO Buttons */}
+          <div className="space-y-3">
+            <GoogleLoginButton mode="sign-up" />
+          </div>
 
           <div className="mt-6 text-center text-xs font-extrabold text-gray-500">
             Already have an account?{' '}

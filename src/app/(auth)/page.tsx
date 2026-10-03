@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from "next/navigation";
 import { login } from "@/actions/auth.actions";
 import { Eye, EyeOff, Mail, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { GoogleLoginButton } from "@/components/GoogleLoginButton";
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -151,6 +152,21 @@ function LoginForm() {
             </button>
 
           </form>
+
+          {/* Divider */}
+          <div className="relative my-6 text-center">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <span className="relative bg-white/95 lg:bg-white px-4 text-[11px] font-black text-gray-800 uppercase tracking-widest">
+              Or continue with
+            </span>
+          </div>
+
+          {/* Social OAuth SSO Buttons */}
+          <div className="space-y-3">
+            <GoogleLoginButton mode="sign-in" />
+          </div>
 
           <div className="mt-6 text-center text-xs font-extrabold text-gray-500">
             Don't have an account?{' '}

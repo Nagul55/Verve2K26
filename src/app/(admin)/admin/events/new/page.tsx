@@ -13,9 +13,7 @@ export default function CreateFestPage() {
 
   const [formData, setFormData] = useState({
     name: "",
-    description: "",
-    min_technical: "1",
-    min_non_technical: "1"
+    description: ""
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -29,9 +27,7 @@ export default function CreateFestPage() {
     startTransition(async () => {
       const { success, error } = await createFest(
         formData.name,
-        formData.description,
-        parseInt(formData.min_technical),
-        parseInt(formData.min_non_technical)
+        formData.description
       );
 
       if (error) {
@@ -58,7 +54,7 @@ export default function CreateFestPage() {
             Create Main Event (Fest)
           </h1>
           <p className="text-eventrix-muted font-medium text-sm">
-            Create the parent event (e.g. Verve26) and define the global registration rules.
+            Create the parent event (e.g. Verve26) for sub-events and activities.
           </p>
         </div>
       </div>
@@ -75,20 +71,6 @@ export default function CreateFestPage() {
             <div className="space-y-2 md:col-span-2">
               <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Description</label>
               <textarea name="description" value={formData.description} onChange={handleChange} required rows={3} placeholder="The Ultimate Tech and Cultural Fest" className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium resize-none" />
-            </div>
-          </div>
-
-          <div className="pt-6 border-t border-[#D9D9DF]">
-            <h3 className="font-bold text-eventrix-black uppercase tracking-widest mb-4 text-sm">Registration Rules</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Min. Technical Events Required</label>
-                <input type="number" min="0" name="min_technical" value={formData.min_technical} onChange={handleChange} required className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Min. Non-Technical Events Required</label>
-                <input type="number" min="0" name="min_non_technical" value={formData.min_non_technical} onChange={handleChange} required className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" />
-              </div>
             </div>
           </div>
 

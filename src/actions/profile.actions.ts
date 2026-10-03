@@ -10,12 +10,16 @@ const getAdminClient = () => {
 };
 
 export async function updateProfile(userId: string, data: any) {
+  if (!userId || typeof userId !== 'string' || userId.trim().length < 10) {
+    return { error: "Invalid user session. Please sign in." };
+  }
+
   const adminClient = getAdminClient();
   
   // Get the user's email securely from auth
-  const { data: authData } = await adminClient.auth.admin.getUserById(userId);
-  if (!authData.user) {
-    return { error: "User not found" };
+  const { data: authData, error: authErr } = await adminClient.auth.admin.getUserById(userId);
+  if (authErr || !authData?.user) {
+    return { error: authErr?.message || "User account not found." };
   }
   
   // We use upsert in case the participant stub wasn't properly created during signup

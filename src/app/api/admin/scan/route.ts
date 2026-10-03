@@ -18,8 +18,8 @@ export async function POST(req: Request) {
 
     // --- STRICT RBAC SECURITY CHECK ---
     const authResult = await verifyAdminAccess(req, event_id);
-    if (!authResult.authorized) {
-      return NextResponse.json({ error: authResult.error }, { status: 401 });
+    if (!authResult.authorized || !authResult.user) {
+      return NextResponse.json({ error: authResult.error || 'Unauthorized access' }, { status: 401 });
     }
     // Override any client-provided admin ID with the securely verified token ID
     const secureAdminId = authResult.user.id;

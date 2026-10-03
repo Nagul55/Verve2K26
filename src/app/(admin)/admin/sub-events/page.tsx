@@ -1,11 +1,13 @@
 import React from "react";
 import { getSubEvents, deleteSubEvent } from "@/actions/event.actions";
 import { DeleteButton } from "@/components/DeleteButton";
+import { ApproveButton } from "@/components/ApproveButton";
 import { Calendar, Plus, MapPin, Clock, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-export default async function AdminSubEventsPage({ searchParams }: { searchParams: { fest_id: string } }) {
-  const festId = searchParams.fest_id || '00000000-0000-0000-0000-000000000001';
+export default async function AdminSubEventsPage({ searchParams }: { searchParams: Promise<{ fest_id?: string }> }) {
+  const resolvedSearchParams = await searchParams;
+  const festId = resolvedSearchParams?.fest_id || '00000000-0000-0000-0000-000000000001';
   const subEvents = await getSubEvents(festId);
 
   return (
@@ -39,39 +41,47 @@ export default async function AdminSubEventsPage({ searchParams }: { searchParam
               <th className="px-6 py-4">Type</th>
               <th className="px-6 py-4">Date & Time</th>
               <th className="px-6 py-4">Venue</th>
+              <th className="px-6 py-4">Approval Status</th>
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#D9D9DF]">
-            {(subEvents || []).map((event) => (
-              <tr key={event.id} className="hover:bg-[#F8F8FC] transition-colors">
-                <td className="px-6 py-4 font-bold text-eventrix-black">{event.title}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded-sm text-[10px] font-bold uppercase tracking-widest ${event.category === 'Technical' ? 'bg-eventrix-lavender/20 text-eventrix-lavender' : 'bg-gray-200 text-gray-600'}`}>
-                    {event.category}
-                  </span>
-                </td>
-                <td className="px-6 py-4 font-medium text-eventrix-muted">
-                  {event.participation_type}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2 text-eventrix-muted font-medium text-xs">
-                    <Calendar className="w-3.5 h-3.5" /> {event.date}
-                  </div>
-                  <div className="flex items-center gap-2 text-eventrix-muted font-medium text-xs mt-1">
-                    <Clock className="w-3.5 h-3.5" /> {event.time}
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-eventrix-muted text-xs">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5" /> {event.location}
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <DeleteButton id={event.id} onDelete={deleteSubEvent} itemType="Sub-Event" />
-                </td>
-              </tr>
-            ))}
+            {(subEvents || []).map((event) => {
+              const isApproved = event.status === 'Approved' || !event.status;
+
+              return (
+                <tr key={event.id} className="hover:bg-[#F8F8FC] transition-colors">
+                  <td className="px-6 py-4 font-bold text-eventrix-black">{event.title}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 rounded-sm text-[10px] font-bold uppercase tracking-widest ${event.category === 'Technical' ? 'bg-eventrix-lavender/20 text-eventrix-lavender' : 'bg-gray-200 text-gray-600'}`}>
+                      {event.category}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 font-medium text-eventrix-muted">
+                    {event.participation_type}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-eventrix-muted font-medium text-xs">
+                      <Calendar className="w-3.5 h-3.5" /> {event.date}
+                    </div>
+                    <div className="flex items-center gap-2 text-eventrix-muted font-medium text-xs mt-1">
+                      <Clock className="w-3.5 h-3.5" /> {event.time}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-eventrix-muted text-xs">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-3.5 h-3.5" /> {event.location}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <ApproveButton id={event.id} isApproved={isApproved} />
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <DeleteButton id={event.id} onDelete={deleteSubEvent} itemType="Sub-Event" />
+                  </td>
+                </tr>
+              );
+            })}
 
             {(!subEvents || subEvents.length === 0) && (
               <tr>

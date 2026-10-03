@@ -32,7 +32,7 @@ export async function login(formData: FormData) {
   if (role === 'admin') {
     redirect('/admin');
   } else if (role === 'coordinator') {
-    redirect('/admin/scanner');
+    redirect('/coordinator');
   } else {
     redirect('/dashboard');
   }
@@ -125,4 +125,18 @@ export async function createCoordinator(formData: FormData) {
   }
   
   return { success: true };
+}
+
+export async function updateCoordinatorAssignment(coordinatorId: string, subEventId: string) {
+  const adminClient = getAdminClient();
+  const { error } = await adminClient.auth.admin.updateUserById(coordinatorId, {
+    app_metadata: { role: 'coordinator', coordinating_event_id: subEventId }
+  });
+  return { success: !error, error: error?.message };
+}
+
+export async function deleteCoordinator(coordinatorId: string) {
+  const adminClient = getAdminClient();
+  const { error } = await adminClient.auth.admin.deleteUser(coordinatorId);
+  return { success: !error, error: error?.message };
 }
