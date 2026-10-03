@@ -20,7 +20,13 @@ const activityData = [
   { name: 'Workshops', value: 30 },
 ];
 
-export function DashboardCharts() {
+export function DashboardCharts({ 
+  trendsData = data, 
+  popularityData = activityData 
+}: { 
+  trendsData?: { name: string; registrations: number }[];
+  popularityData?: { name: string; value: number }[];
+}) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -45,7 +51,7 @@ export function DashboardCharts() {
         
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <AreaChart data={trendsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorReg" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#A78BFA" stopOpacity={0.3}/>
@@ -72,7 +78,7 @@ export function DashboardCharts() {
         
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={activityData} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+            <BarChart data={popularityData} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
               <XAxis type="number" hide />
               <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} width={80} />

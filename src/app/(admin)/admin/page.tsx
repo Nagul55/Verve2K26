@@ -24,6 +24,66 @@ export default async function AdminDashboard() {
     .order('created_at', { ascending: false })
     .limit(5);
 
+  // FETCH REAL DATA FOR CHARTS
+  const today = new Date();
+  const last7DaysData = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (6 - i));
+    return {
+      dateStr: d.toISOString().split('T')[0],
+      name: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      registrations: 0,
+    };
+  });
+
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(today.getDate() - 7);
+
+  const { data: recentRegs } = await supabase
+    .from('registrations')
+    .select('created_at')
+    .gte('created_at', sevenDaysAgo.toISOString());
+    
+  if (recentRegs) {
+    recentRegs.forEach(reg => {
+      const regDate = new Date(reg.created_at).toISOString().split('T')[0];
+      const dayData = last7DaysData.find(d => d.dateStr === regDate);
+      if (dayData) {
+        dayData.registrations++;
+      }
+    });
+  }
+  
+  const trendsData = last7DaysData.map(d => ({ name: d.name, registrations: d.registrations }));
+
+  const { data: subEventRegs } = await supabase
+    .from('registration_sub_events')
+    .select(`
+      sub_events (
+        category
+      )
+    `);
+
+  const categoryCounts: Record<string, number> = {
+    'Technical': 0,
+    'Non-Technical': 0,
+    'Workshops': 0,
+  };
+
+  if (subEventRegs) {
+    subEventRegs.forEach(reg => {
+      // @ts-ignore
+      const category = reg.sub_events?.category;
+      if (category) {
+        categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+      }
+    });
+  }
+
+  const popularityData = Object.entries(categoryCounts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+
   const stats = [
     { label: "TOTAL PARTICIPANTS", value: participantsCount || 0, icon: Users },
     { label: "TOTAL REGISTRATIONS", value: registrationsCount || 0, icon: Ticket },
@@ -69,7 +129,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Charts Section */}
-      <DashboardCharts />
+      <DashboardCharts trendsData={trendsData} popularityData={popularityData} />
 
       {/* Tables Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
