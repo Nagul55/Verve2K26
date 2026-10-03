@@ -11,7 +11,8 @@ const nextConfig: NextConfig = {
         '*.ngrok-free.dev', 
         '*.ngrok.io',
         '*.ngrok.app',
-        'branchlike-eli-legginged.ngrok-free.dev'
+        'branchlike-eli-legginged.ngrok-free.dev',
+        'subgroup-unscathed-reggae.ngrok-free.dev'
       ]
     }
   },
@@ -22,7 +23,8 @@ const nextConfig: NextConfig = {
     '*.ngrok-free.dev', 
     '*.ngrok.io', 
     '*.ngrok.app',
-    'branchlike-eli-legginged.ngrok-free.dev'
+    'branchlike-eli-legginged.ngrok-free.dev',
+    'subgroup-unscathed-reggae.ngrok-free.dev'
   ]
 };
 

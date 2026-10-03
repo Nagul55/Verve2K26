@@ -15,8 +15,16 @@ const anton = Anton({
 });
 
 export const metadata: Metadata = {
-  title: "EVENTRIX | Verve26",
+  title: {
+    default: "Eventrix",
+    template: "%s | Eventrix"
+  },
   description: "Campus Events, Reimagined.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
