@@ -128,6 +128,7 @@ export async function GET(req: Request) {
         'Year': 'N/A',
         'Section': 'N/A',
         'Registered Events': 'None',
+        'Attendance Status': 'Pending',
         'Registration Date': new Date().toLocaleString()
       });
     }

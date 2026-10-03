@@ -94,7 +94,7 @@ export default async function AdminDashboard() {
                       <p className="text-xs text-eventrix-muted mt-1">{event.category} • {event.participation_type}</p>
                     </div>
                     <div className="flex gap-2">
-                       <ApproveButton subEventId={event.id} />
+                       <ApproveButton id={event.id} isApproved={event.status === 'Approved'} />
                     </div>
                   </div>
                 ))}
