@@ -10,7 +10,7 @@ export function UpcomingEvents({ events }: { events: any[] }) {
     <section className="bg-eventrix-white p-8 shadow-[0_0_0_1px_#D9D9DF]">
        <div className="flex justify-between items-center mb-8 border-b border-[#D9D9DF] pb-4">
         <h3 className="font-bold text-eventrix-black tracking-tight text-lg">Upcoming Events</h3>
-        <a href="#" className="text-[9px] font-bold uppercase text-eventrix-lavender hover:text-eventrix-black transition-colors editorial-label flex items-center gap-1">View Calendar <ArrowRight className="w-3 h-3" /></a>
+        <Link href="#" className="text-[9px] font-bold uppercase text-eventrix-lavender hover:text-eventrix-black transition-colors editorial-label flex items-center gap-1">View Calendar <ArrowRight className="w-3 h-3" /></Link>
       </div>
 
       <div className="space-y-6 relative before:absolute before:inset-0 before:ml-12 before:-translate-x-px before:h-full before:w-[1px] before:bg-[#D9D9DF]">

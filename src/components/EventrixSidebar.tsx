@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, Users, Ticket, FileText, LogOut, Settings } from "lucide-react";
+import { Home, Calendar, Users, Ticket, FileText, LogOut, Settings, BellRing } from "lucide-react";
 import { signout } from "@/actions/auth.actions";
 import { EventrixLogo } from "@/components/EventrixLogo";
 
@@ -14,7 +14,7 @@ export function EventrixSidebar() {
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "Events", href: "/events", icon: Calendar },
     { name: "Registrations", href: "/registrations", icon: Users },
-    { name: "Teams", href: "/teams", icon: Users },
+    { name: "Invitations", href: "/invitations", icon: BellRing },
     { name: "Tickets", href: "/tickets", icon: Ticket },
     { name: "Certificates", href: "/certificates", icon: FileText },
     { name: "Settings", href: "/settings", icon: Settings },

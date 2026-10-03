@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS public.sub_events (
   location text NOT NULL,
   capacity integer DEFAULT 50,
   image_type text,
+  status text DEFAULT 'Pending',
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

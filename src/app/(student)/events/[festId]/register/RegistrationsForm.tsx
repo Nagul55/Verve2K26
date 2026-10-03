@@ -116,7 +116,7 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
                         <label className="text-xs font-bold text-eventrix-black uppercase tracking-widest">Team Members</label>
                         <span className="text-[10px] font-bold bg-[#A78BFA]/10 text-eventrix-lavender px-2 py-1 rounded-sm">Max Size: 4</span>
                       </div>
-                      <p className="text-[11px] text-eventrix-muted mb-3">You are automatically the Team Leader. Enter up to 3 additional registered emails for your teammates.</p>
+                      <p className="text-[11px] text-eventrix-muted mb-3">You are automatically the Team Leader. Enter up to 3 additional registered emails. They will receive an invitation to accept and join your team.</p>
                       
                       <div className="space-y-3">
                         {[0, 1, 2].map(index => (
@@ -250,7 +250,7 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
             </div>
 
             {/* Rules Check */}
-            {!canRegister && !statusMsg && (
+            {(!meetsTechRule || !meetsNonTechRule) && !statusMsg && (
               <div className="mb-6 p-3 bg-red-50 border border-red-100 rounded-sm flex gap-3 text-red-600 text-xs font-medium">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <div className="space-y-1">

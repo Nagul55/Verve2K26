@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { Save, AlertTriangle, CheckCircle } from "lucide-react";
+import { Save, AlertTriangle, CheckCircle, Edit2, X } from "lucide-react";
 import { updateProfile } from "@/actions/profile.actions";
 import { useRouter } from "next/navigation";
 
-export function SettingsProfileForm({ initialData, userId }: { initialData: any, userId: string }) {
+export function SettingsProfileForm({ initialData, userId, showAcademic = true }: { initialData: any, userId: string, showAcademic?: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [statusMsg, setStatusMsg] = useState({ text: "", type: "" });
@@ -42,88 +42,113 @@ export function SettingsProfileForm({ initialData, userId }: { initialData: any,
   };
 
   const inputClass = isEditing 
-    ? "w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
-    : "w-full border-b border-[#D9D9DF] px-1 py-2 bg-transparent focus:outline-none text-sm font-bold text-eventrix-black disabled:opacity-80";
+    ? "w-full border-2 border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-black focus:bg-white text-sm font-medium transition-all" 
+    : "w-full border-b-2 border-transparent px-1 py-2 bg-transparent focus:outline-none text-sm font-bold text-eventrix-black disabled:opacity-90";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 relative">
-      {!isEditing && (
-        <button 
-          type="button" 
-          onClick={() => setIsEditing(true)}
-          className="absolute -top-12 right-0 text-eventrix-lavender font-bold text-xs uppercase hover:text-eventrix-black transition-colors editorial-label"
-        >
-          Edit Details
-        </button>
-      )}
+    <form onSubmit={handleSubmit} className="max-w-4xl space-y-8 pb-10">
+      
+      {/* Header with Actions */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <p className="text-eventrix-muted font-medium">Manage your personal information and preferences.</p>
+        
+        {!isEditing ? (
+          <button 
+            type="button" 
+            onClick={() => setIsEditing(true)}
+            className="border-2 border-eventrix-black bg-eventrix-lavender text-eventrix-black px-6 py-2.5 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-eventrix-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-1 hover:translate-x-1 flex items-center gap-2"
+          >
+            <Edit2 className="w-4 h-4" /> Edit Details
+          </button>
+        ) : (
+          <div className="flex gap-3">
+            <button 
+              type="button" 
+              onClick={() => {
+                setIsEditing(false);
+                setFormData({
+                  full_name: initialData?.full_name || "",
+                  email: initialData?.email || "",
+                  mobile: initialData?.mobile || "",
+                  college: initialData?.college || "",
+                  register_number: initialData?.register_number || "",
+                  department: initialData?.department || "",
+                  year_of_study: initialData?.year_of_study || "",
+                });
+                setStatusMsg({ text: "", type: "" });
+              }}
+              className="border-2 border-eventrix-black bg-white text-eventrix-black px-6 py-2.5 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-gray-50 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-1 hover:translate-x-1"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              disabled={isPending}
+              className="border-2 border-eventrix-black bg-eventrix-black text-white px-6 py-2.5 rounded-md font-bold text-sm tracking-wide uppercase transition-colors shadow-[4px_4px_0px_0px_rgba(167,139,250,1)] disabled:opacity-50 flex items-center gap-2"
+            >
+              {isPending ? "Saving..." : <><Save className="w-4 h-4" /> Save</>}
+            </button>
+          </div>
+        )}
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Full Name</label>
-          <input name="full_name" value={formData.full_name} onChange={handleChange} required disabled={!isEditing} className={inputClass} />
+      <div className="space-y-8">
+        {/* Section 1: Personal Info */}
+        <div className="bg-white border-2 border-[#D9D9DF] rounded-xl overflow-hidden transition-colors focus-within:border-eventrix-black shadow-sm">
+          <div className="bg-gray-50 px-8 py-5 border-b-2 border-[#D9D9DF]">
+            <h3 className="font-anton text-2xl uppercase tracking-wide text-eventrix-black">Personal Information</h3>
+          </div>
+          <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Full Name</label>
+              <input name="full_name" value={formData.full_name} onChange={handleChange} required disabled={!isEditing} className={inputClass} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Email Address</label>
+              <input name="email" value={formData.email} onChange={handleChange} required type="email" disabled={!isEditing} className={inputClass} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Mobile Number</label>
+              <input name="mobile" value={formData.mobile} onChange={handleChange} disabled={!isEditing} className={inputClass} placeholder={isEditing ? "+91 9876543210" : "-"} />
+            </div>
+          </div>
         </div>
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Email Address</label>
-          <input name="email" value={formData.email} onChange={handleChange} required type="email" disabled={!isEditing} className={inputClass} />
-        </div>
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Mobile Number</label>
-          <input name="mobile" value={formData.mobile} onChange={handleChange} disabled={!isEditing} className={inputClass} />
-        </div>
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">College Name</label>
-          <input name="college" value={formData.college} onChange={handleChange} disabled={!isEditing} className={inputClass} />
-        </div>
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Register Number</label>
-          <input name="register_number" value={formData.register_number} onChange={handleChange} disabled={!isEditing} className={inputClass} />
-        </div>
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Department</label>
-          <input name="department" value={formData.department} onChange={handleChange} placeholder="e.g. B.Tech IT" disabled={!isEditing} className={inputClass} />
-        </div>
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Year of Study</label>
-          <input name="year_of_study" value={formData.year_of_study} onChange={handleChange} placeholder="e.g. III Year" disabled={!isEditing} className={inputClass} />
-        </div>
+
+        {/* Section 2: Academic Info */}
+        {showAcademic && (
+          <div className="bg-white border-2 border-[#D9D9DF] rounded-xl overflow-hidden transition-colors focus-within:border-eventrix-black shadow-sm">
+            <div className="bg-gray-50 px-8 py-5 border-b-2 border-[#D9D9DF]">
+              <h3 className="font-anton text-2xl uppercase tracking-wide text-eventrix-black">Academic Details</h3>
+            </div>
+            <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">College Name</label>
+                <input name="college" value={formData.college} onChange={handleChange} disabled={!isEditing} className={inputClass} placeholder={isEditing ? "e.g. Your College Name" : "-"} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Register Number</label>
+                <input name="register_number" value={formData.register_number} onChange={handleChange} disabled={!isEditing} className={inputClass} placeholder={isEditing ? "e.g. 717822P..." : "-"} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Department</label>
+                <input name="department" value={formData.department} onChange={handleChange} placeholder={isEditing ? "e.g. B.Tech IT" : "-"} disabled={!isEditing} className={inputClass} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Year of Study</label>
+                <input name="year_of_study" value={formData.year_of_study} onChange={handleChange} placeholder={isEditing ? "e.g. III Year" : "-"} disabled={!isEditing} className={inputClass} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {statusMsg.text && (
-        <div className={`p-4 rounded-md text-sm font-bold flex gap-3 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
-          {statusMsg.type === 'error' ? <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" /> : <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+        <div className={`p-4 rounded-md border-2 font-bold flex gap-3 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
+          {statusMsg.type === 'error' ? <AlertTriangle className="w-5 h-5 shrink-0" /> : <CheckCircle className="w-5 h-5 shrink-0" />}
           <p>{statusMsg.text}</p>
-        </div>
-      )}
-
-      {isEditing && (
-        <div className="pt-6 flex gap-4">
-          <button 
-            type="submit" 
-            disabled={isPending}
-            className="bg-eventrix-black text-eventrix-white px-8 py-4 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-eventrix-lavender hover:text-eventrix-black transition-colors disabled:opacity-50 shadow-[4px_4px_0px_0px_rgba(167,139,250,1)] disabled:shadow-none flex items-center gap-2 justify-center"
-          >
-            {isPending ? "Saving..." : <><Save className="w-4 h-4" /> Save Profile</>}
-          </button>
-          <button 
-            type="button" 
-            onClick={() => {
-              setIsEditing(false);
-              setFormData({
-                full_name: initialData?.full_name || "",
-                email: initialData?.email || "",
-                mobile: initialData?.mobile || "",
-                college: initialData?.college || "",
-                register_number: initialData?.register_number || "",
-                department: initialData?.department || "",
-                year_of_study: initialData?.year_of_study || "",
-              });
-            }}
-            className="border-2 border-eventrix-black text-eventrix-black px-8 py-4 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-gray-100 transition-colors flex items-center justify-center"
-          >
-            Cancel
-          </button>
         </div>
       )}
     </form>
   );
 }
+

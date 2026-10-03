@@ -83,3 +83,195 @@ export async function createTeam(teamName: string, eventId: string, leaderEmail:
 
   return { success: true };
 }
+
+// ---------------------------------------------
+// TEAM INVITATION & MANAGEMENT
+// ---------------------------------------------
+
+export async function getPendingInvitations() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+  const adminClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: teamMembers, error } = await adminClient
+    .from('team_members')
+    .select('team_id, status, teams(team_name, event_id, leader_participant_id)')
+    .eq('participant_id', user.id)
+    .eq('status', 'Pending');
+
+  if (error) {
+    console.error('getPendingInvitations error:', error);
+    return [];
+  }
+  if (!teamMembers || teamMembers.length === 0) return [];
+
+  const eventIds = teamMembers.map(tm => tm.teams?.event_id).filter(Boolean);
+  
+  const { data: subEvents, error: subErr } = await adminClient
+    .from('sub_events')
+    .select('id, title, fest_id')
+    .in('id', eventIds);
+
+  if (subErr) {
+    console.error('subEvents fetch error:', subErr);
+  }
+
+  const subEventsMap = new Map((subEvents || []).map(se => [se.id, se]));
+
+  return teamMembers.map(tm => {
+    const eventId = tm.teams?.event_id;
+    const subEvent = subEventsMap.get(eventId);
+    return {
+      ...tm,
+      teams: {
+        ...(tm.teams || {}),
+        sub_events: subEvent || null
+      }
+    };
+  });
+}
+
+export async function acceptTeamInvitation(teamId: string, eventId: string, festId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
+  // 1. Update status to Accepted
+  
+  // Admin client needed for registering and email
+  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+  const adminClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { error: updateError } = await adminClient
+    .from('team_members')
+    .update({ status: 'Accepted' })
+    .eq('team_id', teamId)
+    .eq('participant_id', user.id);
+
+  if (updateError) return { success: false, error: updateError.message };
+
+  // 2. Ensure registered for Fest
+  let memberFestRegId;
+  const { data: existingReg } = await adminClient
+    .from('registrations')
+    .select('id')
+    .eq('participant_id', user.id)
+    .eq('fest_id', festId)
+    .single();
+
+  if (existingReg) {
+    memberFestRegId = existingReg.id;
+  } else {
+    const { data: newReg } = await adminClient
+      .from('registrations')
+      .insert({ participant_id: user.id, fest_id: festId })
+      .select('id')
+      .single();
+    if (newReg) memberFestRegId = newReg.id;
+  }
+
+  // 3. Register for Sub-Event
+  if (memberFestRegId) {
+    const { data: existingSub } = await adminClient
+      .from('registration_sub_events')
+      .select('id')
+      .eq('registration_id', memberFestRegId)
+      .eq('sub_event_id', eventId)
+      .single();
+
+    if (!existingSub) {
+      await adminClient.from('registration_sub_events').insert({
+        registration_id: memberFestRegId,
+        sub_event_id: eventId
+      });
+      
+      // 4. Send Ticket Email
+      const { sendTicketEmail } = await import('./email.actions');
+      const { data: memberPart } = await adminClient.from('participants').select('*').eq('participant_id', user.id).single();
+      const { data: eventData } = await adminClient.from('sub_events').select('*').eq('id', eventId).single();
+      
+      if (memberPart && eventData) {
+        await sendTicketEmail(memberPart.email, memberPart.full_name, [eventData]);
+      }
+    }
+  }
+
+  return { success: true };
+}
+
+export async function rejectTeamInvitation(teamId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
+  
+  // Admin client needed for registering and email
+  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+  const adminClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { error } = await adminClient
+    .from('team_members')
+    .delete()
+    .eq('team_id', teamId)
+    .eq('participant_id', user.id)
+    .eq('status', 'Pending'); // Only allow deleting if still pending
+
+  return { success: !error, error: error?.message };
+}
+
+export async function removeTeamMember(teamId: string, memberParticipantId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
+  // Verify caller is leader and team is not locked
+  const { data: team } = await supabase.from('teams').select('leader_participant_id, is_locked').eq('team_id', teamId).single();
+  
+  if (!team || team.leader_participant_id !== user.id) {
+    return { success: false, error: "Only the team leader can remove members" };
+  }
+  if (team.is_locked) {
+    return { success: false, error: "Team is locked. You cannot remove members anymore." };
+  }
+
+  const { error } = await supabase
+    .from('team_members')
+    .delete()
+    .eq('team_id', teamId)
+    .eq('participant_id', memberParticipantId);
+
+  return { success: !error, error: error?.message };
+}
+
+export async function lockTeam(teamId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not authenticated" };
+
+  // Verify caller is leader
+  const { data: team } = await supabase.from('teams').select('leader_participant_id').eq('team_id', teamId).single();
+  
+  if (!team || team.leader_participant_id !== user.id) {
+    return { success: false, error: "Only the team leader can lock the team" };
+  }
+
+  const { error } = await supabase
+    .from('teams')
+    .update({ is_locked: true })
+    .eq('team_id', teamId);
+
+  return { success: !error, error: error?.message };
+}
+

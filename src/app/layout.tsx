@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${anton.variable} h-full antialiased`}
+      className={`${inter.variable} ${anton.variable} h-full antialiased scroll-smooth`}
     >
       <body className="h-screen overflow-hidden flex font-sans bg-eventrix-bg text-eventrix-black">
         {children}

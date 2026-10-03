@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 import { HeroBanner } from "@/components/HeroBanner";
 import { FeaturedEventCard } from "@/components/FeaturedEventCard";
@@ -27,14 +28,13 @@ export default async function Dashboard() {
   const events = activeFest ? await getSubEvents(activeFest.id) : [];
   const registeredEvents = await getParticipantRegistrations();
 
-  // Try fetching images in parallel for the first 3 events
-  const featuredEvents = (events || []).slice(0, 3);
-  const featuredWithImages = await Promise.all(
-    featuredEvents.map(async (event, index) => {
-      // Use the event name as the query. Add some context to get better results
-      const query = event.category === 'Technical' ? `technology ${event.title}` : `campus college ${event.title}`;
+  // Try fetching images in parallel for the first 3 fests
+  const featuredFests = (fests || []).slice(0, 3);
+  const festsWithImages = await Promise.all(
+    featuredFests.map(async (fest, index) => {
+      const query = `campus college festival ${fest.name}`;
       const imageUrl = await getUnsplashImage(query);
-      return { ...event, imageUrl, number: `0${index + 1}` };
+      return { ...fest, imageUrl, number: `0${index + 1}` };
     })
   );
   return (
@@ -46,24 +46,24 @@ export default async function Dashboard() {
         {/* Left Main Column */}
         <div className="flex-1 min-w-0 space-y-12">
 
-          {/* Featured Events */}
+          {/* Featured Fests */}
           <section>
             <div className="flex justify-between items-end mb-6">
-              <h2 className="text-[22px] font-bold text-eventrix-black tracking-tight">Featured Events <span className="font-normal text-eventrix-black">→</span></h2>
-              <a href="/events" className="text-[10px] text-eventrix-lavender font-bold uppercase hover:text-eventrix-black transition-colors editorial-label whitespace-nowrap">View All Events →</a>
+              <h2 className="text-[22px] font-bold text-eventrix-black tracking-tight">Featured Fests <span className="font-normal text-eventrix-black">→</span></h2>
+              <Link href="/events" className="text-[10px] text-eventrix-lavender font-bold uppercase hover:text-eventrix-black transition-colors editorial-label whitespace-nowrap">View All Events →</Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {featuredWithImages.map((event) => (
+              {festsWithImages.map((fest) => (
                 <FeaturedEventCard
-                  key={event.id}
-                  number={event.number}
-                  category={event.category}
-                  title={event.title === 'CODE CLASH' ? <>{'CODE'}<br />{'CLASH'}</> : event.title === 'TREASURE HUNT' ? <>{'TREASURE'}<br />{'HUNT'}</> : event.title}
-                  description={event.description}
-                  date={event.date}
-                  location={event.location}
-                  imageVisual={renderDynamicVisual(event.imageUrl)}
+                  key={fest.id}
+                  number={fest.number}
+                  category="FESTIVAL"
+                  title={fest.name.length > 10 ? <>{fest.name.substring(0, 5)}<br />{fest.name.substring(5)}</> : fest.name}
+                  description={fest.description || fest.theme || "Join us for our biggest annual campus festival!"}
+                  date={new Date(fest.start_date || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  location={fest.location || "Campus Grounds"}
+                  imageVisual={renderDynamicVisual(fest.imageUrl)}
                 />
               ))}
             </div>
@@ -73,15 +73,15 @@ export default async function Dashboard() {
           <section>
             <div className="flex justify-between items-end mb-6 mt-12">
               <h2 className="text-[22px] font-bold text-eventrix-black tracking-tight">My Registrations <span className="font-normal text-eventrix-black">→</span></h2>
-              <a href="/registrations" className="text-[10px] text-eventrix-lavender font-bold uppercase hover:text-eventrix-black transition-colors editorial-label whitespace-nowrap">View All →</a>
+              <Link href="/registrations" className="text-[10px] text-eventrix-lavender font-bold uppercase hover:text-eventrix-black transition-colors editorial-label whitespace-nowrap">View All →</Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {registeredEvents.length > 0 ? (
-                registeredEvents.map((reg) => (
+                registeredEvents.map((reg, index) => (
                   <RegistrationTicket
                     key={reg.id}
-                    number={reg.ticketNumber}
+                    number={String(index + 1).padStart(2, '0')}
                     category={reg.category}
                     title={reg.title}
                     date={reg.date}
@@ -91,9 +91,9 @@ export default async function Dashboard() {
               ) : (
                 <div className="col-span-3 p-10 text-center border border-dashed border-[#D9D9DF] rounded-md">
                   <p className="text-eventrix-muted font-bold mb-4">You haven't registered for any events yet!</p>
-                  <a href="/events" className="bg-eventrix-black text-white px-6 py-3 rounded-md text-xs uppercase font-bold tracking-widest hover:bg-eventrix-lavender hover:text-black transition-colors">
+                  <Link href="/events" className="bg-eventrix-black text-white px-6 py-3 rounded-md text-xs uppercase font-bold tracking-widest hover:bg-eventrix-lavender hover:text-black transition-colors inline-block">
                     Register Now
-                  </a>
+                  </Link>
                 </div>
               )}
             </div>

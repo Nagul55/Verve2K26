@@ -48,19 +48,14 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <div>
         <h1 className="font-anton text-[40px] text-eventrix-black leading-none uppercase tracking-wide mb-2">
           Profile Settings
         </h1>
-        <p className="text-eventrix-muted font-medium max-w-2xl text-sm">
-          Update your personal information and college details. This information will be printed on your tickets and certificates.
-        </p>
       </div>
 
-      <div className="bg-white border border-[#D9D9DF] p-8 rounded-md max-w-3xl shadow-sm">
-        <SettingsProfileForm initialData={initialData} userId={user.id} />
-      </div>
+      <SettingsProfileForm initialData={initialData} userId={user.id} showAcademic={true} />
     </div>
   );
 }

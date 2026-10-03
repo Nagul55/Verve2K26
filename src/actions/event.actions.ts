@@ -225,78 +225,43 @@ export async function registerForEvents(
           .select('team_id')
           .single();
 
-        if (!teamError && newTeam) {
+        if (teamError || !newTeam) {
+          console.error("CRITICAL ERROR: Failed to create team in database:", teamError);
+          return { success: false, error: "Database error: Could not create team. " + (teamError?.message || '') };
+        }
+
+        if (newTeam) {
           // Add leader to team
-          await adminClient
+          const { error: tmError1 } = await adminClient
             .from('team_members')
             .insert({
               team_id: newTeam.team_id,
               participant_id: participant.participant_id,
-              membership_status: 'Active'
+              status: 'Accepted'
             });
+          
+          if (tmError1) {
+            console.error("CRITICAL ERROR: Failed to add leader to team_members:", tmError1);
+          }
 
-          // Process extra team members
+          // Process extra team members as PENDING invitations
           const validParts = validMemberParticipants[subEventId] || [];
 
           for (const memberPart of validParts) {
-            // 1. Add them to the team
+            // 1. Add them to the team as Pending
             await adminClient.from('team_members').insert({
               team_id: newTeam.team_id,
               participant_id: memberPart.participant_id,
-              membership_status: 'Active'
+              status: 'Pending'
             });
-
-              // 2. Ensure they are registered for the Fest
-              let memberFestRegId;
-              const { data: existingReg } = await adminClient
-                .from('registrations')
-                .select('id')
-                .eq('participant_id', memberPart.participant_id)
-                .eq('fest_id', festId)
-                .single();
-
-              if (existingReg) {
-                memberFestRegId = existingReg.id;
-              } else {
-                const { data: newReg } = await adminClient
-                  .from('registrations')
-                  .insert({
-                    participant_id: memberPart.participant_id,
-                    fest_id: festId
-                  })
-                  .select('id')
-                  .single();
-                if (newReg) memberFestRegId = newReg.id;
-              }
-
-              // 3. Register them for the Sub-Event to generate their ticket
-              if (memberFestRegId) {
-                // Ignore if already registered for this sub-event
-                const { data: existingSub } = await adminClient
-                  .from('registration_sub_events')
-                  .select('id')
-                  .eq('registration_id', memberFestRegId)
-                  .eq('sub_event_id', subEventId)
-                  .single();
-
-                if (!existingSub) {
-                  await adminClient.from('registration_sub_events').insert({
-                    registration_id: memberFestRegId,
-                    sub_event_id: subEventId
-                  });
-
-                  // 4. Send them a ticket email for this event!
-                  const { data: eventData } = await adminClient.from('sub_events').select('*').eq('id', subEventId).single();
-                  if (eventData) {
-                    await sendTicketEmail(memberPart.email, memberPart.full_name, [eventData]);
-                  }
-                }
-              }
-            }
+            // 2. We do NOT register them for the Fest or SubEvent yet, 
+            // and we do NOT send them a ticket yet.
+            // They will receive this when they ACCEPT the invitation.
           }
         }
       }
     }
+  }
 
   // 4. Send Email
   const { data: bookedEvents } = await adminClient.from('sub_events').select('*').in('id', subEventIds);
@@ -314,11 +279,17 @@ export async function getParticipantRegistrations() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  // Query registrations for this participant, join with registration_sub_events, and then sub_events
-  const { data, error } = await supabase
+  const adminClient = getAdminClient();
+
+  // Query registrations for this participant, join with registration_sub_events, sub_events, and fests
+  const { data, error } = await adminClient
     .from('registrations')
     .select(`
       id,
+      fests (
+        id,
+        name
+      ),
       registration_sub_events (
         sub_events (
           id,
@@ -326,13 +297,64 @@ export async function getParticipantRegistrations() {
           category,
           date,
           location,
-          time
+          time,
+          participation_type
         )
       )
     `)
     .eq('participant_id', user.id);
 
   if (error || !data) return [];
+
+  // Fetch teams for this participant to show team details for team events
+  const { data: teamsData, error: teamsError } = await adminClient
+    .from('team_members')
+    .select(`
+      team_id,
+      teams (
+        team_id,
+        team_name,
+        event_id,
+
+        leader_participant_id,
+        is_locked,
+        team_members (
+          participant_id,
+          status,
+          participants (
+            full_name
+          )
+        )
+      )
+    `)
+    .eq('participant_id', user.id);
+
+  if (teamsError) {
+    console.error("Error fetching teamsData in getParticipantRegistrations:", teamsError);
+  }
+
+  const userTeams: Record<string, any> = {};
+  if (teamsData) {
+    teamsData.forEach((tm: any) => {
+       if (tm.teams) {
+         // Handle both possible column names in case schema varied
+         const eventId = tm.teams.sub_event_id || tm.teams.event_id;
+         if (eventId) {
+           userTeams[eventId] = {
+             teamId: tm.teams.team_id,
+             teamName: tm.teams.team_name,
+             isLeader: tm.teams.leader_participant_id === user.id,
+             isLocked: tm.teams.is_locked,
+             members: tm.teams.team_members?.map((m: any) => ({
+               participantId: m.participant_id,
+               name: m.participants?.full_name,
+               status: m.status || 'Accepted'
+             })).filter((m: any) => m.name) || []
+           };
+         }
+       }
+    });
+  }
 
   // Flatten the result
   const registeredEvents: any[] = [];
@@ -341,6 +363,8 @@ export async function getParticipantRegistrations() {
       if (rse.sub_events) {
         registeredEvents.push({
           ...rse.sub_events,
+          festName: reg.fests?.name || 'Fest',
+          teamDetails: userTeams[rse.sub_events.id] || null,
           ticketNumber: `TKT-${reg.id.split('-')[0].toUpperCase()}-${rse.sub_events.id.split('-')[0].toUpperCase()}`
         });
       }

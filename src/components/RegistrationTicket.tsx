@@ -1,5 +1,6 @@
 import React from "react";
-import { Calendar, MapPin, QrCode, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, QrCode, ArrowRight, Code, Lightbulb, Map, Mic, Zap } from "lucide-react";
+import Link from "next/link";
 
 interface RegistrationTicketProps {
   number: string;
@@ -10,36 +11,58 @@ interface RegistrationTicketProps {
 }
 
 export function RegistrationTicket({ number, category, title, date, location }: RegistrationTicketProps) {
+  // Determine event-specific icon based on title
+  const getEventIcon = () => {
+    const t = title.toLowerCase();
+    if (t.includes('code') || t.includes('hack')) return <Code className="w-12 h-12 text-white/20 absolute -right-2 -bottom-2" />;
+    if (t.includes('innovate') || t.includes('quiz')) return <Lightbulb className="w-12 h-12 text-white/20 absolute -right-2 -bottom-2" />;
+    if (t.includes('treasure') || t.includes('hunt')) return <Map className="w-12 h-12 text-white/20 absolute -right-2 -bottom-2" />;
+    if (t.includes('mic') || t.includes('sing')) return <Mic className="w-12 h-12 text-white/20 absolute -right-2 -bottom-2" />;
+    return <Zap className="w-12 h-12 text-white/20 absolute -right-2 -bottom-2" />;
+  };
+
   return (
-    <div className="bg-eventrix-white flex group relative shadow-[0_0_0_1px_#D9D9DE] h-[105px] w-full overflow-hidden rounded-sm">
-      {/* Lavender vertical edge */}
-      <div className="w-1 bg-eventrix-lavender shrink-0 h-full"></div>
-      
-      {/* Left Info Section */}
-      <div className="p-3 pl-4 flex-1 relative z-10 flex flex-col justify-center bg-eventrix-white min-w-0">
-        <span className="text-[9px] font-bold text-eventrix-lavender uppercase mb-1 block editorial-label tracking-widest">{category}</span>
-        <h4 className="font-semibold text-base text-eventrix-black truncate">{title}</h4>
-        <div className="space-y-1 mt-1.5 text-[11px] text-eventrix-muted whitespace-nowrap">
-          <div className="flex items-center gap-1.5"><Calendar className="w-3 h-3 text-eventrix-black stroke-[2]" /> {date}</div>
-          <div className="flex items-center gap-1.5"><MapPin className="w-3 h-3 text-eventrix-black stroke-[2]" /> {location}</div>
+    <div className="relative w-full min-h-[150px] bg-white border border-[#D9D9DE] rounded-[2px] overflow-hidden hover:shadow-md transition-shadow group flex flex-col md:flex-row">
+      {/* Left Accent Strip */}
+      <div className="absolute top-0 bottom-0 left-0 w-[5px] bg-[#A98BFF] z-10"></div>
+
+      {/* 1. Event Information Area */}
+      <div className="flex-1 pl-6 py-5 pr-4 flex flex-col justify-center">
+        <span className="font-['Inter'] text-[9px] font-bold tracking-[0.18em] uppercase text-[#A98BFF] mb-1">
+          {category}
+        </span>
+        <h4 className="font-['Roboto_Condensed','Anton',sans-serif] font-[800] text-[26px] leading-[0.95] tracking-[-0.02em] uppercase text-[#080A12] mb-3 truncate">
+          {title}
+        </h4>
+        <div className="font-['Inter'] text-[12px] text-[#596078] space-y-1">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-3.5 h-3.5" /> 
+            <span className="truncate">{date}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MapPin className="w-3.5 h-3.5" /> 
+            <span className="truncate">{location}</span>
+          </div>
         </div>
       </div>
 
-      {/* Center Black Cutout Shape (Diagonal Left) */}
-      <div className="w-12 relative overflow-hidden shrink-0 bg-eventrix-white z-20 flex items-center justify-center -ml-2">
+      {/* 2. Geometric Identity Area */}
+      <div className="relative overflow-hidden w-full md:w-[150px] shrink-0 h-[100px] md:h-auto">
+        {/* Lavender shape */}
         <div 
-          className="absolute inset-0 bg-eventrix-black"
-          style={{ clipPath: "polygon(30% 0, 100% 0, 100% 100%, 0% 100%)" }}
+          className="absolute inset-0 bg-[#A98BFF]"
+          style={{ clipPath: "polygon(0 0, 100% 0, 72% 50%, 100% 100%, 0 100%)" }}
         ></div>
-        <span className="font-bold text-[14px] text-eventrix-white relative z-10 opacity-90 translate-x-1">{number}</span>
-      </div>
-
-      {/* Right QR Section */}
-      <div className="w-[85px] p-2 flex flex-col items-center justify-center relative bg-eventrix-white shrink-0 z-10 border-l border-dashed border-[#D9D9DE] before:absolute before:top-[-4px] before:left-[-4px] before:w-2 before:h-2 before:bg-eventrix-bg before:rounded-full before:shadow-[inset_0_-1px_0_0_#D9D9DE] after:absolute after:bottom-[-4px] after:left-[-4px] after:w-2 after:h-2 after:bg-eventrix-bg after:rounded-full after:shadow-[inset_0_1px_0_0_#D9D9DE]">
-        <QrCode className="w-[44px] h-[44px] text-eventrix-black mb-1.5" strokeWidth={1} />
-        <span className="text-[10px] font-medium text-eventrix-black flex items-center gap-1 group-hover:text-eventrix-lavender transition-colors whitespace-nowrap">
-          View Ticket <ArrowRight className="w-2.5 h-2.5 stroke-[2]" />
-        </span>
+        {/* Black shape */}
+        <div 
+          className="absolute inset-0 bg-[#080A12] flex items-center justify-center overflow-hidden"
+          style={{ clipPath: "polygon(22% 0, 100% 0, 100% 100%, 22% 100%, 55% 50%)" }}
+        >
+          {getEventIcon()}
+          <span className="absolute z-10 text-white font-['Roboto_Condensed','Anton',sans-serif] text-[22px] font-[800]">
+            {number}
+          </span>
+        </div>
       </div>
     </div>
   );

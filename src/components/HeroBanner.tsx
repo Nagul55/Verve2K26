@@ -4,11 +4,11 @@ export function HeroBanner() {
   return (
     <section className="bg-eventrix-white relative overflow-hidden flex flex-col lg:flex-row h-auto lg:h-[340px] border-b border-[#D9D9DF]">
       {/* Left Content */}
-      <div className="w-[55%] shrink-0 p-10 relative z-10 flex flex-col justify-center bg-eventrix-white">
-        <div className="w-full max-w-[380px] mb-4">
+      <div className="w-full lg:w-[55%] shrink-0 p-6 sm:p-10 relative z-10 flex flex-col justify-center bg-eventrix-white">
+        <div className="w-full max-w-[280px] sm:max-w-[380px] mb-6 sm:mb-4">
           <EventrixLogo fill="currentColor" className="w-full h-auto object-contain" />
         </div>
-        <p className="text-lg xl:text-xl text-eventrix-black uppercase font-bold editorial-label mb-3">Campus Events, Reimagined</p>
+        <p className="text-xl sm:text-lg xl:text-xl text-eventrix-black uppercase font-bold editorial-label mb-3">Campus Events, Reimagined</p>
         <p className="text-[11px] text-eventrix-black uppercase editorial-label relative inline-block w-fit">
           Discover. Participate. Create Memories.
           <span className="absolute -bottom-2 left-0 w-16 h-[2px] bg-eventrix-black"></span>
