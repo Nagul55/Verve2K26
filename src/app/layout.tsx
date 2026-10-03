@@ -21,9 +21,13 @@ export const metadata: Metadata = {
   },
   description: "Campus Events, Reimagined.",
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/favicon.ico",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+      { url: "/favicon.ico", sizes: "any" }
+    ],
+    shortcut: "/icon.png",
+    apple: "/icon.png",
   }
 };
 
