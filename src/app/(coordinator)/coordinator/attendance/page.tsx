@@ -1,15 +1,60 @@
-"use client";
+import React from "react";
+import { CheckCircle2, Clock, ShieldCheck, Download, Search, RefreshCw, XCircle } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-import React, { useState } from "react";
-import { CheckCircle2, Clock, ShieldCheck, Download, Search, RefreshCw } from "lucide-react";
+const getAdminClient = () => {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
 
-export default function CoordinatorAttendancePage() {
-  const [logs] = useState([
-    { id: "LOG-101", participant: "Imran Khan", registerNo: "21CS001", time: "10:14 AM", date: "Oct 15, 2026", event: "Code Clash", source: "QR Scanner", scanner: "Coordinator Admin" },
-    { id: "LOG-102", participant: "Venkatesh S", registerNo: "21IT044", time: "10:18 AM", date: "Oct 15, 2026", event: "Code Clash", source: "QR Scanner", scanner: "Coordinator Admin" },
-    { id: "LOG-103", participant: "Priya R", registerNo: "21EC089", time: "10:25 AM", date: "Oct 15, 2026", event: "Code Clash", source: "Manual Lookup", scanner: "Coordinator Admin" },
-    { id: "LOG-104", participant: "Anish K", registerNo: "21ME012", time: "10:31 AM", date: "Oct 15, 2026", event: "Code Clash", source: "QR Scanner", scanner: "Coordinator Admin" },
-  ]);
+export default async function CoordinatorAttendancePage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Retrieve assigned event for coordinator from user metadata
+  const assignedEventId = user?.app_metadata?.coordinating_event_id;
+  const adminClient = getAdminClient();
+
+  let logs: any[] = [];
+  
+  if (assignedEventId) {
+    const { data } = await adminClient
+      .from('attendance')
+      .select(`
+        attendance_id,
+        scanned_at,
+        source,
+        status,
+        participants (
+          full_name,
+          register_number
+        )
+      `)
+      .eq('event_id', assignedEventId)
+      .order('scanned_at', { ascending: false });
+      
+    logs = data || [];
+  } else {
+    // If not assigned to a specific event (e.g. general coordinator/admin)
+    const { data } = await adminClient
+      .from('attendance')
+      .select(`
+        attendance_id,
+        scanned_at,
+        source,
+        status,
+        participants (
+          full_name,
+          register_number
+        )
+      `)
+      .order('scanned_at', { ascending: false });
+      
+    logs = data || [];
+  }
 
   return (
     <div className="space-y-8 pb-12">
@@ -23,14 +68,17 @@ export default function CoordinatorAttendancePage() {
           </p>
         </div>
 
-        <button className="bg-eventrix-black text-eventrix-white px-6 py-3 rounded-md font-bold text-sm tracking-wide uppercase transition-all hover:bg-eventrix-lavender hover:text-eventrix-black shadow-[4px_4px_0px_0px_#A78BFA] flex items-center gap-2">
+        <a 
+          href={assignedEventId ? `/api/admin/export?sub_event_id=${assignedEventId}` : `/api/admin/export`}
+          download
+          className="bg-eventrix-black text-eventrix-white px-6 py-3 rounded-md font-bold text-sm tracking-wide uppercase transition-all hover:bg-eventrix-lavender hover:text-eventrix-black shadow-[4px_4px_0px_0px_#A78BFA] flex items-center gap-2">
           <Download className="w-4 h-4" /> Export Attendance CSV
-        </button>
+        </a>
       </div>
 
       {/* Audit Log Table */}
-      <div className="bg-white border border-[#D9D9DF] rounded-md overflow-hidden shadow-sm">
-        <table className="w-full text-left text-sm">
+      <div className="bg-white border border-[#D9D9DF] rounded-md overflow-x-auto shadow-sm">
+        <table className="w-full text-left text-sm min-w-[700px]">
           <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold text-xs uppercase tracking-widest">
             <tr>
               <th className="px-6 py-4">Log ID</th>
@@ -42,26 +90,45 @@ export default function CoordinatorAttendancePage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#D9D9DF]">
-            {logs.map((log) => (
-              <tr key={log.id} className="hover:bg-[#F8F8FC] transition-colors">
-                <td className="px-6 py-4 font-mono font-bold text-xs text-eventrix-lavender">{log.id}</td>
-                <td className="px-6 py-4 font-bold text-eventrix-black">{log.participant}</td>
-                <td className="px-6 py-4 font-mono font-bold text-xs text-eventrix-muted">{log.registerNo}</td>
-                <td className="px-6 py-4 text-xs font-medium text-eventrix-black">
-                  {log.time} <span className="text-eventrix-muted">({log.date})</span>
-                </td>
-                <td className="px-6 py-4 text-xs">
-                  <span className="bg-[#F8F8FC] border border-[#D9D9DF] px-2.5 py-1 rounded font-medium">
-                    {log.source}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Verified Present
-                  </span>
+            {logs.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-16 text-center text-eventrix-muted font-bold">
+                  No attendance records found yet.
                 </td>
               </tr>
-            ))}
+            ) : (
+              logs.map((log) => {
+                const logDate = new Date(log.scanned_at);
+                const shortId = `LOG-${log.attendance_id.split('-')[0].toUpperCase()}`;
+                
+                return (
+                  <tr key={log.attendance_id} className="hover:bg-[#F8F8FC] transition-colors">
+                    <td className="px-6 py-4 font-mono font-bold text-xs text-eventrix-lavender">{shortId}</td>
+                    <td className="px-6 py-4 font-bold text-eventrix-black">{log.participants?.full_name || 'Unknown'}</td>
+                    <td className="px-6 py-4 font-mono font-bold text-xs text-eventrix-muted">{log.participants?.register_number || 'N/A'}</td>
+                    <td className="px-6 py-4 text-xs font-medium text-eventrix-black">
+                      {logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} <span className="text-eventrix-muted">({logDate.toLocaleDateString()})</span>
+                    </td>
+                    <td className="px-6 py-4 text-xs">
+                      <span className="bg-[#F8F8FC] border border-[#D9D9DF] px-2.5 py-1 rounded font-medium">
+                        {log.source === 'QR_Scanner' ? 'QR Scanner' : log.source}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {log.status === 'Present' ? (
+                        <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> Verified Present
+                        </span>
+                      ) : (
+                        <span className="bg-red-100 text-red-800 border border-red-300 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1">
+                          <XCircle className="w-3 h-3" /> {log.status}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

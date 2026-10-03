@@ -35,10 +35,13 @@ export async function deleteFest(festId: string) {
 }
 
 // SUB-EVENTS
-export async function getSubEvents(festId?: string) {
+export async function getSubEvents(festId?: string, includePending: boolean = false) {
   const adminClient = getAdminClient();
   let query = adminClient.from('sub_events').select('*');
   if (festId) query = query.eq('fest_id', festId);
+  if (!includePending) {
+    query = query.eq('status', 'Approved');
+  }
   
   const { data, error } = await query;
   if (error) return [];
@@ -430,3 +433,65 @@ export async function getAdminParticipants() {
   return data || [];
 }
 
+export async function getCoordinatorParticipants() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const assignedEventId = user.app_metadata?.coordinating_event_id;
+  if (!assignedEventId) {
+     return getAdminParticipants(); // Fallback if admin
+  }
+
+  const adminClient = getAdminClient();
+  
+  const { data, error } = await adminClient
+    .from('registration_sub_events')
+    .select(`
+      sub_event_id,
+      registrations (
+        id,
+        participant_id,
+        participants (
+          participant_id,
+          full_name,
+          email,
+          register_number,
+          mobile,
+          college,
+          department,
+          year_of_study
+        )
+      )
+    `)
+    .eq('sub_event_id', assignedEventId);
+
+  if (error || !data) {
+    console.error("Error fetching coordinator participants:", error);
+    return [];
+  }
+
+  // Fetch attendance for this event
+  const { data: attendanceData } = await adminClient
+    .from('attendance')
+    .select('participant_id')
+    .eq('event_id', assignedEventId)
+    .eq('status', 'Present');
+    
+  const presentParticipantIds = new Set(
+    (attendanceData || []).map(a => a.participant_id)
+  );
+
+  const participantsMap = new Map<string, any>();
+  data.forEach((row: any) => {
+    const p = row.registrations?.participants;
+    if (p && p.participant_id && !participantsMap.has(p.participant_id)) {
+       // We normalize the ID field so it matches what the frontend expects
+       p.id = p.participant_id;
+       p.isPresent = presentParticipantIds.has(p.participant_id);
+       participantsMap.set(p.participant_id, p);
+    }
+  });
+
+  return Array.from(participantsMap.values());
+}

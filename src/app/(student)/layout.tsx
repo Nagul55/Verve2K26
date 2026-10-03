@@ -1,8 +1,20 @@
 import React from "react";
 import { EventrixSidebar } from "@/components/EventrixSidebar";
 import { TopNavbar } from "@/components/TopNavbar";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
-export default function StudentLayout({ children }: { children: React.ReactNode }) {
+export default async function StudentLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/');
+  }
+
+  // Allow admins and coordinators to view the student dashboard if they want,
+  // but guarantee that unauthenticated users are kicked out.
+  
   return (
     <>
       <EventrixSidebar />

@@ -30,11 +30,11 @@ export async function login(formData: FormData) {
   const role = data.user.app_metadata?.role || 'student';
 
   if (role === 'admin') {
-    redirect('/admin');
+    return { success: true, redirectTo: '/admin' };
   } else if (role === 'coordinator') {
-    redirect('/coordinator');
+    return { success: true, redirectTo: '/coordinator' };
   } else {
-    redirect('/dashboard');
+    return { success: true, redirectTo: '/dashboard' };
   }
 }
 
@@ -80,7 +80,7 @@ export async function signup(formData: FormData) {
     }
   }
 
-  redirect('/?registered=true');
+  return { success: true, redirectTo: '/?registered=true' };
 }
 
 export async function signout() {

@@ -2,13 +2,13 @@ import React from "react";
 import { getSubEvents, deleteSubEvent } from "@/actions/event.actions";
 import { DeleteButton } from "@/components/DeleteButton";
 import { ApproveButton } from "@/components/ApproveButton";
-import { Calendar, Plus, MapPin, Clock, ArrowLeft } from "lucide-react";
+import { Calendar, Plus, MapPin, Clock, ArrowLeft, Download } from "lucide-react";
 import Link from "next/link";
 
 export default async function AdminSubEventsPage({ searchParams }: { searchParams: Promise<{ fest_id?: string }> }) {
   const resolvedSearchParams = await searchParams;
   const festId = resolvedSearchParams?.fest_id || '00000000-0000-0000-0000-000000000001';
-  const subEvents = await getSubEvents(festId);
+  const subEvents = await getSubEvents(festId, true);
 
   return (
     <div className="space-y-10">
@@ -77,7 +77,17 @@ export default async function AdminSubEventsPage({ searchParams }: { searchParam
                     <ApproveButton id={event.id} isApproved={isApproved} />
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <DeleteButton id={event.id} onDelete={deleteSubEvent} itemType="Sub-Event" />
+                    <div className="flex items-center justify-end gap-3">
+                      <a 
+                        href={`/api/admin/export?sub_event_id=${event.id}`}
+                        download
+                        title="Download Participants CSV"
+                        className="text-eventrix-muted hover:text-eventrix-black transition-colors"
+                      >
+                        <Download className="w-4 h-4" />
+                      </a>
+                      <DeleteButton id={event.id} onDelete={deleteSubEvent} itemType="Sub-Event" />
+                    </div>
                   </td>
                 </tr>
               );

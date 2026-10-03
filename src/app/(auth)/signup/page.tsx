@@ -14,26 +14,30 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const clientAction = async (formData: FormData) => {
     setErrorMsg('');
+    const fullNameStr = formData.get('fullName') as string;
+    const emailStr = formData.get('email') as string;
+    const passwordStr = formData.get('password') as string;
 
-    if (!fullName.trim() || !email.trim() || !password.trim()) {
+    if (!fullNameStr?.trim() || !emailStr?.trim() || !passwordStr?.trim()) {
       setErrorMsg('Please fill out all fields.');
       return;
     }
 
     setIsLoading(true);
 
-    const formData = new FormData();
-    formData.append('fullName', fullName);
-    formData.append('email', email);
-    formData.append('password', password);
-
-    const res = await signup(formData);
-    
-    if (res?.error) {
-      setErrorMsg(res.error);
+    try {
+      const res = await signup(formData);
+      
+      if (res?.error) {
+        setErrorMsg(res.error);
+        setIsLoading(false);
+      } else if (res?.success && res?.redirectTo) {
+        window.location.href = res.redirectTo;
+      }
+    } catch (err: any) {
+      setErrorMsg("An unexpected error occurred during sign up.");
       setIsLoading(false);
     }
   };
@@ -87,7 +91,7 @@ export default function SignupPage() {
           )}
 
           {/* Form Inputs */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form action={clientAction} className="space-y-4">
             
             {/* Full Name Input */}
             <div className="space-y-1.5">
@@ -97,6 +101,7 @@ export default function SignupPage() {
               <div className="relative">
                 <input
                   type="text"
+                  name="fullName"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Mohamed Imran"
@@ -114,6 +119,7 @@ export default function SignupPage() {
               <div className="relative">
                 <input
                   type="email"
+                  name="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="imran110585@gmail.com"
@@ -131,6 +137,7 @@ export default function SignupPage() {
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  name="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"

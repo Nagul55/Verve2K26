@@ -17,12 +17,14 @@ import {
   CheckCircle2,
   AlertCircle
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createSubEvent } from "@/actions/event.actions";
 
 function CoordinatorSubEventForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const festId = searchParams.get('fest_id');
   const [isPending, startTransition] = useTransition();
   const [statusMsg, setStatusMsg] = useState({ text: "", type: "" });
 
@@ -68,6 +70,11 @@ function CoordinatorSubEventForm() {
       return;
     }
 
+    if (!festId) {
+      setStatusMsg({ text: "Error: No Fest ID found in URL.", type: "error" });
+      return;
+    }
+
     startTransition(async () => {
       // Append rules and contact info to description if not in dedicated schema columns
       let fullDescription = formData.description;
@@ -82,7 +89,7 @@ function CoordinatorSubEventForm() {
       }
 
       const { success, error } = await createSubEvent({
-        fest_id: '00000000-0000-0000-0000-000000000001',
+        fest_id: festId,
         title: formData.title,
         description: fullDescription,
         category: formData.category,

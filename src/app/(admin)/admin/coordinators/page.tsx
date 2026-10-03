@@ -50,7 +50,7 @@ export default function CoordinatorsPage() {
   const loadData = async () => {
     const coordsData = await getCoordinators();
     setCoordinators(coordsData);
-    const eventsData = await getSubEvents();
+    const eventsData = await getSubEvents(undefined, true);
     setSubEvents(eventsData);
   };
 

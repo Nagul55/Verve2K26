@@ -59,6 +59,7 @@ export default function AdminParticipantsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDept, setSelectedDept] = useState("ALL");
   const [selectedCollege, setSelectedCollege] = useState("ALL");
+  const [selectedFilterEvent, setSelectedFilterEvent] = useState("ALL");
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
 
   useEffect(() => {
@@ -122,15 +123,33 @@ export default function AdminParticipantsPage() {
 
       const matchesDept = selectedDept === "ALL" || p.department === selectedDept;
       const matchesCollege = selectedCollege === "ALL" || p.college === selectedCollege;
+      
+      const matchesEvent = selectedFilterEvent === "ALL" || 
+        getParticipantEvents(p).some(ev => ev.id === selectedFilterEvent);
 
-      return matchesSearch && matchesDept && matchesCollege;
+      return matchesSearch && matchesDept && matchesCollege && matchesEvent;
     });
-  }, [participants, searchQuery, selectedDept, selectedCollege]);
+  }, [participants, searchQuery, selectedDept, selectedCollege, selectedFilterEvent]);
 
   // Compute metric stats
   const totalRegistrations = useMemo(() => {
     return participants.reduce((acc, p) => acc + getParticipantEvents(p).length, 0);
   }, [participants]);
+
+  // Extract all unique sub-events that have participants
+  const allSubEvents = useMemo(() => {
+    const eventMap = new Map<string, string>();
+    participants.forEach(p => {
+      getParticipantEvents(p).forEach(ev => {
+        if (!eventMap.has(ev.id)) {
+          eventMap.set(ev.id, ev.title);
+        }
+      });
+    });
+    return Array.from(eventMap.entries()).map(([id, title]) => ({ id, title })).sort((a, b) => a.title.localeCompare(b.title));
+  }, [participants]);
+
+  const [exportEventId, setExportEventId] = useState<string>("ALL");
 
   return (
     <div className="space-y-8 pb-12">
@@ -145,23 +164,37 @@ export default function AdminParticipantsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={loadParticipants}
-            disabled={loading}
-            className="p-3 bg-white border border-[#D9D9DF] rounded-md text-eventrix-black hover:bg-[#F8F8FC] transition-colors disabled:opacity-50"
-            title="Refresh Data"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-          
-          <a
-            href="/api/admin/export"
-            download
-            className="bg-eventrix-black text-eventrix-white px-6 py-3 rounded-md font-bold text-sm tracking-wide uppercase transition-all hover:bg-eventrix-lavender hover:text-eventrix-black shadow-[4px_4px_0px_0px_#A78BFA] flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" /> Export CSV
-          </a>
+        <div className="flex flex-col items-end gap-3">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={loadParticipants}
+              disabled={loading}
+              className="p-3 bg-white border border-[#D9D9DF] rounded-md text-eventrix-black hover:bg-[#F8F8FC] transition-colors disabled:opacity-50"
+              title="Refresh Data"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+            
+            <div className="flex items-center bg-eventrix-black rounded-md shadow-[4px_4px_0px_0px_#A78BFA] hover:bg-eventrix-lavender group transition-colors">
+              <select 
+                value={exportEventId}
+                onChange={(e) => setExportEventId(e.target.value)}
+                className="bg-transparent text-white font-bold text-xs px-4 py-3 outline-none border-r border-white/20 uppercase tracking-wider group-hover:text-black cursor-pointer appearance-none max-w-[200px]"
+              >
+                <option value="ALL" className="bg-white text-black">Master Report (All)</option>
+                {allSubEvents.map(ev => (
+                  <option key={ev.id} value={ev.id} className="bg-white text-black">{ev.title}</option>
+                ))}
+              </select>
+              <a
+                href={exportEventId === "ALL" ? "/api/admin/export" : `/api/admin/export?sub_event_id=${exportEventId}`}
+                download
+                className="text-white px-4 py-3 font-bold text-sm tracking-wide uppercase group-hover:text-black flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" /> Export CSV
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -254,9 +287,23 @@ export default function AdminParticipantsPage() {
             </select>
           </div>
 
-          {(searchQuery || selectedDept !== "ALL" || selectedCollege !== "ALL") && (
+          <div className="flex items-center gap-2 bg-[#F8F8FC] border border-[#D9D9DF] px-3 py-2 rounded-md">
+            <Ticket className="w-4 h-4 text-eventrix-muted" />
+            <select
+              value={selectedFilterEvent}
+              onChange={(e) => setSelectedFilterEvent(e.target.value)}
+              className="bg-transparent text-xs font-bold text-eventrix-black focus:outline-none uppercase tracking-wide max-w-[150px]"
+            >
+              <option value="ALL">All Events</option>
+              {allSubEvents.map(ev => (
+                <option key={ev.id} value={ev.id}>{ev.title}</option>
+              ))}
+            </select>
+          </div>
+
+          {(searchQuery || selectedDept !== "ALL" || selectedCollege !== "ALL" || selectedFilterEvent !== "ALL") && (
             <button
-              onClick={() => { setSearchQuery(""); setSelectedDept("ALL"); setSelectedCollege("ALL"); }}
+              onClick={() => { setSearchQuery(""); setSelectedDept("ALL"); setSelectedCollege("ALL"); setSelectedFilterEvent("ALL"); }}
               className="text-xs font-bold text-red-500 hover:text-red-700 px-2 py-1 uppercase tracking-wider"
             >
               Reset Filters

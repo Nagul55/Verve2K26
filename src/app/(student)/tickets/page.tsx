@@ -129,7 +129,7 @@ function TicketCard({ reg, participant }: { reg: any, participant: any }) {
             {/* QR Code Block */}
             <div className="bg-white p-4 rounded-2xl shadow-xl w-full flex flex-col items-center mb-10">
                <div className="w-full aspect-square bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center p-2">
-                 <QRCodeSVG value={reg.ticketNumber} className="w-full h-full" level="H" />
+                 <QRCodeSVG value={JSON.stringify({ pid: participant?.participant_id || '', event_id: reg.sub_event_id })} className="w-full h-full" level="H" />
                </div>
                <div className="mt-4 bg-purple-100 text-[#3A1C71] px-4 py-2 rounded-full font-bold text-xs tracking-widest text-center w-full truncate">
                  {reg.ticketNumber}

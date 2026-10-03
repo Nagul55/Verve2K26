@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Home, Calendar, Users, Ticket, FileText, Settings, Menu, X, BellRing } from "lucide-react";
 import { EventrixLogo } from "./EventrixLogo";
 
-export function MobileNav() {
+export function MobileNav({ role = 'student' }: { role?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -20,15 +20,36 @@ export function MobileNav() {
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
 
-  const navItems = [
-    { name: "Dashboard", href: "/dashboard", icon: Home },
-    { name: "Events", href: "/events", icon: Calendar },
-    { name: "Registrations", href: "/registrations", icon: Users },
-    { name: "Invitations", href: "/invitations", icon: BellRing },
-    { name: "Tickets", href: "/tickets", icon: Ticket },
-    { name: "Certificates", href: "/certificates", icon: FileText },
-    { name: "Settings", href: "/settings", icon: Settings },
-  ];
+  let navItems = [];
+  
+  if (role === 'admin' || role === 'Super Admin') {
+    navItems = [
+      { name: "Dashboard", href: "/admin", icon: Home },
+      { name: "Manage Events", href: "/admin/events", icon: Calendar },
+      { name: "Coordinators", href: "/admin/coordinators", icon: Users },
+      { name: "Participants", href: "/admin/participants", icon: Users },
+      { name: "Settings", href: "/admin/settings", icon: Settings },
+    ];
+  } else if (role === 'coordinator') {
+    navItems = [
+      { name: "Dashboard", href: "/coordinator", icon: Home },
+      { name: "Manage Events", href: "/coordinator/events", icon: Calendar },
+      { name: "Ticket Scanner", href: "/coordinator/scanner", icon: Ticket },
+      { name: "Participants", href: "/coordinator/participants", icon: Users },
+      { name: "Attendance Log", href: "/coordinator/attendance", icon: FileText },
+      { name: "Settings", href: "/coordinator/settings", icon: Settings },
+    ];
+  } else {
+    navItems = [
+      { name: "Dashboard", href: "/dashboard", icon: Home },
+      { name: "Events", href: "/events", icon: Calendar },
+      { name: "Registrations", href: "/registrations", icon: Users },
+      { name: "Invitations", href: "/invitations", icon: BellRing },
+      { name: "Tickets", href: "/tickets", icon: Ticket },
+      { name: "Certificates", href: "/certificates", icon: FileText },
+      { name: "Settings", href: "/settings", icon: Settings },
+    ];
+  }
 
   return (
     <div className="md:hidden flex items-center">

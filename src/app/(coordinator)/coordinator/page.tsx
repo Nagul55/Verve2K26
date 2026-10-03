@@ -2,6 +2,14 @@ import React from "react";
 import { Users, Calendar, Ticket, ShieldCheck, QrCode, CheckCircle2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+
+const getAdminClient = () => {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+};
 
 export default async function CoordinatorDashboard() {
   const supabase = await createClient();
@@ -9,31 +17,32 @@ export default async function CoordinatorDashboard() {
 
   // Retrieve assigned event for coordinator from user metadata
   const assignedEventId = user?.app_metadata?.coordinating_event_id;
+  const adminClient = getAdminClient();
 
   let assignedEvent: any = null;
   let eventRegistrationsCount = 0;
   let attendanceCount = 0;
 
   if (assignedEventId) {
-    const { data: event } = await supabase.from('sub_events').select('*').eq('id', assignedEventId).single();
+    const { data: event } = await adminClient.from('sub_events').select('*').eq('id', assignedEventId).single();
     assignedEvent = event;
 
-    const { count: regCount } = await supabase
+    const { count: regCount } = await adminClient
       .from('registration_sub_events')
       .select('*', { count: 'exact', head: true })
       .eq('sub_event_id', assignedEventId);
     eventRegistrationsCount = regCount || 0;
 
-    const { count: attCount } = await supabase
+    const { count: attCount } = await adminClient
       .from('attendance')
       .select('*', { count: 'exact', head: true })
       .eq('event_id', assignedEventId);
     attendanceCount = attCount || 0;
   } else {
     // If unassigned to specific event, fetch total overall sub-event count
-    const { count: regCount } = await supabase.from('registration_sub_events').select('*', { count: 'exact', head: true });
+    const { count: regCount } = await adminClient.from('registration_sub_events').select('*', { count: 'exact', head: true });
     eventRegistrationsCount = regCount || 0;
-    const { count: attCount } = await supabase.from('attendance').select('*', { count: 'exact', head: true });
+    const { count: attCount } = await adminClient.from('attendance').select('*', { count: 'exact', head: true });
     attendanceCount = attCount || 0;
   }
 
@@ -71,19 +80,19 @@ export default async function CoordinatorDashboard() {
   return (
     <>
       {/* Coordinator Hero Banner */}
-      <div className="relative w-full h-[250px] bg-eventrix-black text-eventrix-white overflow-hidden rounded-md flex flex-col justify-end p-10 group">
+      <div className="relative w-full h-[200px] md:h-[250px] bg-eventrix-black text-eventrix-white overflow-hidden rounded-md flex flex-col justify-end p-6 md:p-10 group">
         <div className="absolute top-0 right-0 w-[50%] h-full pointer-events-none opacity-20">
           <div className="absolute top-0 right-0 w-full h-full bg-eventrix-lavender" style={{ clipPath: "polygon(20% 0, 100% 0, 100% 100%, 0% 100%)" }}></div>
         </div>
         
         <div className="relative z-10">
-          <span className="text-xs font-bold text-eventrix-lavender uppercase tracking-widest mb-2 block">
+          <span className="text-[10px] md:text-xs font-bold text-eventrix-lavender uppercase tracking-widest mb-1 md:mb-2 block">
             Welcome back, {user?.user_metadata?.full_name || 'Coordinator'}
           </span>
-          <h1 className="font-anton text-5xl md:text-[70px] leading-[0.85] tracking-wide mb-2 uppercase text-eventrix-lavender">
+          <h1 className="font-anton text-4xl sm:text-5xl md:text-[70px] leading-[0.85] tracking-wide mb-1 md:mb-2 uppercase text-eventrix-lavender">
             COORDINATOR PORTAL
           </h1>
-          <p className="text-eventrix-white/70 font-medium max-w-xl text-sm md:text-base">
+          <p className="text-eventrix-white/70 font-medium max-w-xl text-xs md:text-base">
             Live attendance tracking, QR ticket scanning, and roster management for event coordinators.
           </p>
         </div>

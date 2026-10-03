@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Users, Search, CheckCircle2, Clock, Filter, UserCheck, RefreshCw, Mail, Phone, Building2 } from "lucide-react";
-import { getAdminParticipants } from "@/actions/event.actions";
+import { getCoordinatorParticipants } from "@/actions/event.actions";
 
 export default function CoordinatorParticipantsPage() {
   const [participants, setParticipants] = useState<any[]>([]);
@@ -18,8 +18,16 @@ export default function CoordinatorParticipantsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await getAdminParticipants();
+      const data = await getCoordinatorParticipants();
       setParticipants(data || []);
+      
+      const initialAttendanceState: Record<string, boolean> = {};
+      (data || []).forEach((p: any) => {
+        if (p.isPresent) {
+          initialAttendanceState[p.id || p.participant_id] = true;
+        }
+      });
+      setAttendanceState(initialAttendanceState);
     } catch (err) {
       console.error(err);
     } finally {
@@ -123,7 +131,7 @@ export default function CoordinatorParticipantsPage() {
       {/* Roster Table */}
       <div className="bg-white border border-[#D9D9DF] rounded-md overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm min-w-[800px]">
             <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold text-xs uppercase tracking-widest">
               <tr>
                 <th className="px-6 py-4">Participant</th>

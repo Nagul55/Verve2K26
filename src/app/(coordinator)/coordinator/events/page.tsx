@@ -1,7 +1,7 @@
 import React from "react";
 import { getFests, getSubEvents, deleteSubEvent } from "@/actions/event.actions";
 import { DeleteButton } from "@/components/DeleteButton";
-import { Calendar, Plus, MapPin, Clock, Users, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
+import { Calendar, Plus, MapPin, Clock, Users, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Download } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
@@ -65,7 +65,7 @@ export default async function CoordinatorEventsPage({ searchParams }: { searchPa
 
   // View 2: Sub-Events inside selected Fest
   const selectedFest = fests.find(f => f.id === festId);
-  const subEvents = await getSubEvents(festId);
+  const subEvents = await getSubEvents(festId, true);
 
   // Get coordinator assigned sub-event ID & role
   const userRole = user?.app_metadata?.role || 'coordinator';
@@ -188,6 +188,14 @@ export default async function CoordinatorEventsPage({ searchParams }: { searchPa
                       >
                         Roster <ArrowRight className="w-3 h-3" />
                       </Link>
+                      <a 
+                        href={`/api/admin/export?sub_event_id=${event.id}`}
+                        download
+                        title="Download Participants CSV"
+                        className="text-eventrix-muted hover:text-eventrix-black transition-colors mr-2"
+                      >
+                        <Download className="w-4 h-4" />
+                      </a>
                       <DeleteButton id={event.id} onDelete={deleteSubEvent} itemType="Sub-Event" />
                     </div>
                   </td>

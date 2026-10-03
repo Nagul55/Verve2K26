@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { verifyAdminAccess } from '@/lib/auth';
+import { createClient as createServerClient } from '@/lib/supabase/server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 // Strongly configuring the backend: We use the SERVICE ROLE key to securely bypass RLS 
 // exclusively inside this secure server-side API route.
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(req: Request) {
   try {
@@ -17,77 +17,80 @@ export async function POST(req: Request) {
     }
 
     // --- STRICT RBAC SECURITY CHECK ---
-    const authResult = await verifyAdminAccess(req, event_id);
-    if (!authResult.authorized || !authResult.user) {
-      return NextResponse.json({ error: authResult.error || 'Unauthorized access' }, { status: 401 });
-    }
-    // Override any client-provided admin ID with the securely verified token ID
-    const secureAdminId = authResult.user.id;
+    const supabase = await createServerClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    // 1. Verify that the participant actually registered for this specific event
-    const { data: regData, error: regError } = await supabase
-      .from('event_registrations')
-      .select('registration_id, status')
-      .eq('participant_id', pid)
-      .eq('event_id', event_id)
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized access' }, { status: 401 });
+    }
+    
+    // Check if user is an admin or coordinator
+    const role = user.app_metadata?.role;
+    if (role !== 'admin' && role !== 'Super Admin' && role !== 'coordinator') {
+      return NextResponse.json({ error: 'Access Denied: You do not have scanner privileges.' }, { status: 403 });
+    }
+
+    const secureAdminId = user.id;
+
+    // 1. Verify that the participant actually registered for this specific sub_event
+    const { data: regData, error: regError } = await supabaseAdmin
+      .from('registration_sub_events')
+      .select(`
+        registrations!inner (
+          id,
+          participant_id,
+          participants (full_name, register_number)
+        )
+      `)
+      .eq('sub_event_id', event_id)
+      .eq('registrations.participant_id', pid)
       .single();
+
+
 
     if (regError || !regData) {
       return NextResponse.json({ error: 'Access Denied: Participant is not registered for this specific event.' }, { status: 404 });
     }
 
-    if (regData.status === 'Cancelled') {
-      return NextResponse.json({ error: 'Access Denied: This registration was previously cancelled.' }, { status: 400 });
-    }
+    const participantInfo = (regData.registrations as any).participants;
+    const registrationId = (regData.registrations as any).id;
 
-    // 2. Check the Ticket Status in the Database
-    const { data: ticketData, error: ticketError } = await supabase
-      .from('qr_tickets')
-      .select('ticket_id, status')
-      .eq('registration_id', regData.registration_id)
+    // 2. Check if already checked in (using attendance table)
+    const { data: existingAttendance } = await supabaseAdmin
+      .from('attendance')
+      .select('attendance_id')
+      .eq('participant_id', pid)
+      .eq('event_id', event_id)
       .single();
 
-    if (ticketError || !ticketData) {
-      return NextResponse.json({ error: 'Ticket records not found for this registration.' }, { status: 404 });
-    }
-
-    if (ticketData.status === 'Used') {
+    if (existingAttendance) {
       return NextResponse.json({ error: 'Warning: This ticket has already been USED. Participant is already checked in.' }, { status: 400 });
     }
 
-    if (ticketData.status === 'Revoked') {
-      return NextResponse.json({ error: 'Access Denied: This ticket has been REVOKED.' }, { status: 400 });
-    }
-
-    // 3. Update the Ticket to 'Used'
-    const { error: updateError } = await supabase
-      .from('qr_tickets')
-      .update({ status: 'Used' })
-      .eq('ticket_id', ticketData.ticket_id);
-
-    if (updateError) {
-      throw new Error('Failed to update ticket status in database.');
-    }
-
-    // 4. Insert into the Attendance Tracker
-    const { error: attendanceError } = await supabase
+    // 3. Record Attendance
+    const { error: attendanceError } = await supabaseAdmin
       .from('attendance')
       .insert([{
         participant_id: pid,
         event_id: event_id,
-        registration_id: regData.registration_id,
+        // Since qr_tickets is not used for sub_events, we just log the registration id
+        registration_id: registrationId,
         status: 'Present',
-        scanner_admin_id: secureAdminId, // Securely logged from the JWT token
+        scanner_admin_id: secureAdminId,
         source: 'QR_Scanner'
       }]);
 
     if (attendanceError) {
-      // Revert the ticket status back to Active if the attendance insert fails
-      await supabase.from('qr_tickets').update({ status: 'Active' }).eq('ticket_id', ticketData.ticket_id);
+      console.error('Attendance Check-in Error:', attendanceError);
       throw new Error('Failed to record attendance accurately.');
     }
 
-    return NextResponse.json({ success: true, message: 'Check-in successful! Ticket is valid.' }, { status: 200 });
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Check-in successful! Ticket is valid.',
+      participantName: participantInfo?.full_name || 'Verified Participant',
+      registerNo: participantInfo?.register_number || pid.substring(0, 8)
+    }, { status: 200 });
 
   } catch (error: unknown) {
     const err = error as Error;

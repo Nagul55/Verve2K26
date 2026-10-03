@@ -16,25 +16,29 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get('registered') === 'true';
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const clientAction = async (formData: FormData) => {
     setErrorMsg('');
+    const emailStr = formData.get('email') as string;
+    const passwordStr = formData.get('password') as string;
 
-    if (!email.trim() || !password.trim()) {
+    if (!emailStr?.trim() || !passwordStr?.trim()) {
       setErrorMsg('Please enter both email and password.');
       return;
     }
 
     setIsLoading(true);
 
-    const formData = new FormData();
-    formData.append('email', email);
-    formData.append('password', password);
-
-    const res = await login(formData);
-    
-    if (res?.error) {
-      setErrorMsg(res.error);
+    try {
+      const res = await login(formData);
+      
+      if (res?.error) {
+        setErrorMsg(res.error);
+        setIsLoading(false);
+      } else if (res?.success && res?.redirectTo) {
+        window.location.href = res.redirectTo;
+      }
+    } catch (err: any) {
+      setErrorMsg("An unexpected error occurred during sign in.");
       setIsLoading(false);
     }
   };
@@ -96,7 +100,7 @@ function LoginForm() {
           )}
 
           {/* Form Inputs */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form action={clientAction} className="space-y-5">
             
             {/* Username Input */}
             <div className="space-y-1.5">
@@ -106,6 +110,7 @@ function LoginForm() {
               <div className="relative">
                 <input
                   type="email"
+                  name="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="imran110585@gmail.com"
@@ -123,6 +128,7 @@ function LoginForm() {
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  name="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
