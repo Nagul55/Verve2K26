@@ -26,7 +26,7 @@ export default async function AdminSubEventsPage({ searchParams }: { searchParam
               Manage all technical and non-technical activities under this Fest.
             </p>
           </div>
-          <Link href={`/admin/sub-events/new?fest_id=${festId}`} className="bg-eventrix-black text-eventrix-white px-6 py-3 rounded-md font-bold text-sm tracking-wide uppercase transition-all hover:bg-eventrix-lavender hover:text-eventrix-black shadow-[4px_4px_0px_0px_#A78BFA] flex items-center gap-2">
+          <Link href={`/admin/sub-events/new?fest_id=${festId}`} className="bg-eventrix-black text-eventrix-white px-6 py-3.5 rounded-md font-bold text-sm tracking-wide uppercase transition-all duration-200 shadow-[4px_4px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[4px_4px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2 cursor-pointer">
             <Plus className="w-4 h-4" /> Add Sub-Event
           </Link>
         </div>

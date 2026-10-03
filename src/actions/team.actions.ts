@@ -111,7 +111,7 @@ export async function getPendingInvitations() {
   }
   if (!teamMembers || teamMembers.length === 0) return [];
 
-  const eventIds = teamMembers.map(tm => tm.teams?.event_id).filter(Boolean);
+  const eventIds = (teamMembers || []).map((tm: any) => tm.teams?.event_id).filter(Boolean);
   
   const { data: subEvents, error: subErr } = await adminClient
     .from('sub_events')
@@ -124,7 +124,7 @@ export async function getPendingInvitations() {
 
   const subEventsMap = new Map((subEvents || []).map(se => [se.id, se]));
 
-  return teamMembers.map(tm => {
+  return (teamMembers || []).map((tm: any) => {
     const eventId = tm.teams?.event_id;
     const subEvent = subEventsMap.get(eventId);
     return {

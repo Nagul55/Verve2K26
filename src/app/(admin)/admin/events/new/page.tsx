@@ -13,7 +13,9 @@ export default function CreateFestPage() {
 
   const [formData, setFormData] = useState({
     name: "",
-    description: ""
+    description: "",
+    min_technical: "1",
+    min_non_technical: "1"
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -27,7 +29,9 @@ export default function CreateFestPage() {
     startTransition(async () => {
       const { success, error } = await createFest(
         formData.name,
-        formData.description
+        formData.description,
+        parseInt(formData.min_technical) || 0,
+        parseInt(formData.min_non_technical) || 0
       );
 
       if (error) {
@@ -54,7 +58,7 @@ export default function CreateFestPage() {
             Create Main Event (Fest)
           </h1>
           <p className="text-eventrix-muted font-medium text-sm">
-            Create the parent event (e.g. Verve26) for sub-events and activities.
+            Create the parent event (e.g. Verve26) and define the global registration rules.
           </p>
         </div>
       </div>
@@ -74,6 +78,20 @@ export default function CreateFestPage() {
             </div>
           </div>
 
+          <div className="pt-6 border-t border-[#D9D9DF]">
+            <h3 className="font-bold text-eventrix-black uppercase tracking-widest mb-4 text-sm">Registration Rules</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Min. Technical Events Required</label>
+                <input type="number" min="0" name="min_technical" value={formData.min_technical} onChange={handleChange} required className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Min. Non-Technical Events Required</label>
+                <input type="number" min="0" name="min_non_technical" value={formData.min_non_technical} onChange={handleChange} required className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" />
+              </div>
+            </div>
+          </div>
+
           {statusMsg.text && (
             <div className={`p-4 rounded-md text-sm font-bold flex gap-3 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
               {statusMsg.text}
@@ -84,7 +102,7 @@ export default function CreateFestPage() {
             <button 
               type="submit" 
               disabled={isPending}
-              className="bg-eventrix-black text-eventrix-white px-8 py-4 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-eventrix-lavender hover:text-eventrix-black transition-colors disabled:opacity-50 shadow-[4px_4px_0px_0px_rgba(167,139,250,1)] disabled:shadow-none flex items-center gap-2 w-full justify-center"
+              className="bg-eventrix-black text-eventrix-white px-8 py-4 rounded-md font-bold text-sm tracking-wide uppercase transition-all duration-200 shadow-[4px_4px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[4px_4px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-50 flex items-center gap-2 w-full justify-center cursor-pointer"
             >
               {isPending ? "Saving..." : <><Save className="w-4 h-4" /> Create Main Event</>}
             </button>

@@ -277,8 +277,8 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
             <button
               type="submit"
               disabled={!canRegister}
-              className={`w-full py-3 md:py-3.5 rounded-sm font-bold text-xs md:text-sm tracking-wide uppercase transition-all duration-200 ${canRegister
-                  ? 'bg-eventrix-black text-eventrix-white hover:bg-eventrix-lavender hover:text-eventrix-black shadow-[4px_4px_0px_0px_#A78BFA]'
+              className={`w-full py-3.5 rounded-md font-bold text-xs md:text-sm tracking-wide uppercase transition-all duration-200 ${canRegister
+                  ? 'bg-eventrix-black text-eventrix-white shadow-[4px_4px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[4px_4px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none cursor-pointer'
                   : 'bg-[#D9D9DF] text-[#85858F] cursor-not-allowed'
                 }`}
             >

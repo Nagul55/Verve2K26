@@ -466,7 +466,7 @@ export default function CoordinatorsPage() {
                 <button 
                   type="submit" 
                   disabled={isPending}
-                  className="bg-eventrix-black text-eventrix-white px-8 py-4 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-eventrix-lavender hover:text-eventrix-black transition-colors disabled:opacity-50 shadow-[4px_4px_0px_0px_#A78BFA] flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
+                  className="bg-eventrix-black text-eventrix-white px-8 py-4 rounded-md font-bold text-sm tracking-wide uppercase transition-all duration-200 shadow-[4px_4px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[4px_4px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
                 >
                   {isPending ? "Creating Account..." : <><UserPlus className="w-4 h-4" /> Create Account</>}
                 </button>

@@ -53,7 +53,19 @@ export async function createSubEvent(subEventData: any) {
   if (subEventData.participation_type === 'Team' && (subEventData.min_candidates || subEventData.max_candidates)) {
     const minC = subEventData.min_candidates || 1;
     const maxC = subEventData.max_candidates || 1;
-    formattedDesc = `[Team Size: ${minC} to ${maxC} Members]\n\n` + formattedDesc;
+    if (!formattedDesc.includes('[Team Size:')) {
+      formattedDesc = `[Team Size: ${minC} to ${maxC} Members]\n\n` + formattedDesc;
+    }
+  }
+
+  if (subEventData.rules && subEventData.rules.trim() && !formattedDesc.includes('RULES & GUIDELINES:')) {
+    formattedDesc += `\n\nRULES & GUIDELINES:\n${subEventData.rules.trim()}`;
+  }
+  if (subEventData.prize_pool && subEventData.prize_pool.trim() && !formattedDesc.includes('PRIZES:')) {
+    formattedDesc += `\n\nPRIZES:\n${subEventData.prize_pool.trim()}`;
+  }
+  if (subEventData.contact_info && subEventData.contact_info.trim() && !formattedDesc.includes('CONTACT:')) {
+    formattedDesc += `\n\nCONTACT: ${subEventData.contact_info.trim()}`;
   }
 
   // Only pass columns that exist in the Supabase sub_events table schema
@@ -63,6 +75,8 @@ export async function createSubEvent(subEventData: any) {
     description: formattedDesc,
     category: subEventData.category || 'Technical',
     participation_type: subEventData.participation_type || 'Individual',
+    min_candidates: subEventData.min_candidates ? parseInt(subEventData.min_candidates) : 1,
+    max_candidates: subEventData.max_candidates ? parseInt(subEventData.max_candidates) : 1,
     date: subEventData.date || 'TBD',
     time: subEventData.time || 'TBD',
     location: subEventData.location,

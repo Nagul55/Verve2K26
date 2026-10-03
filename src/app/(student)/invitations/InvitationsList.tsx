@@ -71,7 +71,7 @@ export function InvitationsList({ invitations }: { invitations: any[] }) {
             <button
               onClick={() => handleAccept(inv)}
               disabled={loadingId !== null}
-              className="flex-1 bg-[#080A12] text-white py-2.5 rounded-[2px] text-[11px] font-bold tracking-widest uppercase hover:bg-[#A98BFF] hover:text-[#080A12] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex-1 bg-eventrix-black text-white py-2.5 rounded-md text-[11px] font-bold tracking-widest uppercase transition-all duration-200 shadow-[3px_3px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[3px_3px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               <Check className="w-4 h-4" /> 
               {loadingId === inv.team_id ? "Processing..." : "Accept"}

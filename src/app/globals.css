@@ -158,4 +158,17 @@
   .editorial-label {
     letter-spacing: 0.22em;
   }
+
+  /* Dual-tone layered neo-brutalist button utilities */
+  .btn-dualtone {
+    @apply bg-eventrix-black text-eventrix-white font-bold uppercase tracking-wider transition-all duration-200 shadow-[4px_4px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[4px_4px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none cursor-pointer;
+  }
+
+  .btn-dualtone-sm {
+    @apply bg-eventrix-black text-eventrix-white font-bold uppercase tracking-wider transition-all duration-200 text-xs px-4 py-2 rounded-md shadow-[3px_3px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[3px_3px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none cursor-pointer;
+  }
+
+  .btn-dualtone-lg {
+    @apply bg-eventrix-black text-eventrix-white font-bold uppercase tracking-wider transition-all duration-200 text-sm px-8 py-4 rounded-md shadow-[4px_4px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[4px_4px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none cursor-pointer;
+  }
 }

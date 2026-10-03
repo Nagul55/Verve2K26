@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS public.sub_events (
   fest_id uuid REFERENCES public.fests(id) ON DELETE CASCADE NOT NULL,
   category text NOT NULL, -- 'Technical' | 'Non-Technical'
   participation_type text DEFAULT 'Individual', -- 'Individual' | 'Team'
+  min_candidates integer DEFAULT 1 NOT NULL,
+  max_candidates integer DEFAULT 1 NOT NULL,
   title text NOT NULL,
   description text NOT NULL,
   date text NOT NULL,

@@ -56,7 +56,7 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
           <button 
             type="button" 
             onClick={() => setIsEditing(true)}
-            className="border-2 border-eventrix-black bg-eventrix-lavender text-eventrix-black px-6 py-2.5 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-eventrix-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-1 hover:translate-x-1 flex items-center gap-2"
+            className="bg-eventrix-black text-white px-6 py-2.5 rounded-md font-bold text-sm tracking-wide uppercase transition-all duration-200 shadow-[4px_4px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[4px_4px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center gap-2 cursor-pointer"
           >
             <Edit2 className="w-4 h-4" /> Edit Details
           </button>
@@ -77,14 +77,14 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
                 });
                 setStatusMsg({ text: "", type: "" });
               }}
-              className="border-2 border-eventrix-black bg-white text-eventrix-black px-6 py-2.5 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-gray-50 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-1 hover:translate-x-1"
+              className="border border-[#D9D9DF] bg-white text-eventrix-black px-6 py-2.5 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-gray-100 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button 
               type="submit" 
               disabled={isPending}
-              className="border-2 border-eventrix-black bg-eventrix-black text-white px-6 py-2.5 rounded-md font-bold text-sm tracking-wide uppercase transition-colors shadow-[4px_4px_0px_0px_rgba(167,139,250,1)] disabled:opacity-50 flex items-center gap-2"
+              className="bg-eventrix-black text-white px-6 py-2.5 rounded-md font-bold text-sm tracking-wide uppercase transition-all duration-200 shadow-[4px_4px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[4px_4px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-50 flex items-center gap-2 cursor-pointer"
             >
               {isPending ? "Saving..." : <><Save className="w-4 h-4" /> Save</>}
             </button>

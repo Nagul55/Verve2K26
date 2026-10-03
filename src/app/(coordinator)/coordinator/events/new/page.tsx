@@ -382,7 +382,7 @@ function CoordinatorSubEventForm() {
             <button 
               type="submit" 
               disabled={isPending}
-              className="bg-eventrix-black text-eventrix-white px-8 py-4 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-eventrix-lavender hover:text-eventrix-black transition-colors disabled:opacity-50 shadow-[4px_4px_0px_0px_#A78BFA] disabled:shadow-none flex items-center gap-2 w-full justify-center cursor-pointer"
+              className="bg-eventrix-black text-eventrix-white px-8 py-4 rounded-md font-bold text-sm tracking-wide uppercase transition-all duration-200 shadow-[4px_4px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[4px_4px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-50 flex items-center gap-2 w-full justify-center cursor-pointer"
             >
               {isPending ? "Creating Sub-Event..." : <><Save className="w-4 h-4" /> Publish Sub-Event</>}
             </button>
