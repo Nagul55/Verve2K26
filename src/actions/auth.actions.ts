@@ -113,6 +113,7 @@ export async function signup(formData: FormData) {
   const college = (formData.get('college') as string) || '';
   const department = (formData.get('department') as string) || '';
   const yearOfStudy = (formData.get('yearOfStudy') as string) || '';
+  const gender = ((formData.get('gender') as string) || '').trim().toUpperCase();
 
   if (
     !email.trim() ||
@@ -125,6 +126,10 @@ export async function signup(formData: FormData) {
     !yearOfStudy.trim()
   ) {
     return { error: 'All fields are required. Please fill in all details.' };
+  }
+
+  if (!gender || (gender !== 'MALE' && gender !== 'FEMALE')) {
+    return { error: 'Please select your gender.' };
   }
 
   if (!/^\d{10}$/.test(mobile.trim())) {
@@ -143,14 +148,12 @@ export async function signup(formData: FormData) {
     password,
     email_confirm: true, // Forces the account to be instantly active!
     app_metadata: { role: 'student' },
-    user_metadata: { full_name: fullName }
+    user_metadata: { full_name: fullName, gender: gender }
   });
 
   if (authError) {
     return { error: authError.message };
   }
-
-  // Instead of auto-login, we redirect them to the login page as requested.
 
   // 3. Create the participant stub
   if (authData.user) {
@@ -164,6 +167,7 @@ export async function signup(formData: FormData) {
         department: department,
         year_of_study: yearOfStudy,
         college: college,
+        gender: gender,
         register_number: ''
       });
       
@@ -206,6 +210,7 @@ export async function createCoordinator(formData: FormData) {
   const department = (formData.get('department') as string) || '';
   const yearOfStudy = (formData.get('yearOfStudy') as string) || '';
   const subEventId = (formData.get('subEventId') as string) || '';
+  const gender = ((formData.get('gender') as string) || '').trim().toUpperCase();
   
   if (
     !email.trim() ||
@@ -217,7 +222,11 @@ export async function createCoordinator(formData: FormData) {
     !department.trim() ||
     !yearOfStudy.trim()
   ) {
-    return { error: 'All fields (Full Name, Phone Number, Email, College, Department, Year of Study, Password, Confirm Password) are required.' };
+    return { error: 'All fields (Full Name, Phone Number, Email, Gender, College, Department, Year of Study, Password, Confirm Password) are required.' };
+  }
+
+  if (!gender || (gender !== 'MALE' && gender !== 'FEMALE')) {
+    return { error: 'Please select your gender.' };
   }
 
   if (!/^\d{10}$/.test(mobile.trim())) {
@@ -235,7 +244,7 @@ export async function createCoordinator(formData: FormData) {
     password,
     email_confirm: true,
     app_metadata: { role: 'coordinator', coordinating_event_id: subEventId || null },
-    user_metadata: { full_name: fullName }
+    user_metadata: { full_name: fullName, gender: gender }
   });
   
   if (error) {
@@ -253,6 +262,7 @@ export async function createCoordinator(formData: FormData) {
         department: department,
         year_of_study: yearOfStudy,
         college: college,
+        gender: gender,
         register_number: ''
       }, { onConflict: 'participant_id' });
 
@@ -330,6 +340,7 @@ export async function getAllUsersAdmin() {
         id: u.id,
         email: u.email || '',
         role: role,
+        gender: profile.gender || u.user_metadata?.gender || 'MALE',
         fullName: u.user_metadata?.full_name || profile.full_name || 'User',
         college: profile.college || 'N/A',
         department: profile.department || 'N/A',

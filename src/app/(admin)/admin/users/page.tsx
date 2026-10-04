@@ -20,11 +20,13 @@ import {
 } from "lucide-react";
 import { getAllUsersAdmin, deleteUserAccount } from "@/actions/auth.actions";
 import { toast } from "sonner";
+import { UserAvatar } from "@/components/UserAvatar";
 
 interface SystemUser {
   id: string;
   email: string;
   role: string;
+  gender?: string;
   fullName: string;
   college: string;
   department: string;
@@ -236,9 +238,11 @@ export default function AdminUsersPage() {
                   <tr key={u.id} className="hover:bg-[#F8F8FC] transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-eventrix-lavender/20 flex items-center justify-center text-eventrix-black font-anton text-lg">
-                          {(u.fullName || u.email || "?").charAt(0).toUpperCase()}
-                        </div>
+                        <UserAvatar
+                          user={u}
+                          alt={u.fullName}
+                          className="w-9 h-9 rounded-full object-cover shrink-0 border border-[#D9D9DF]"
+                        />
                         <div>
                           <p className="font-bold text-eventrix-black">{u.fullName || "Unnamed User"}</p>
                           <p className="text-[11px] text-eventrix-muted font-mono">{u.email}</p>

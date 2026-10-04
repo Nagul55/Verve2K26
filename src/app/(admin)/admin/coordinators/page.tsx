@@ -29,6 +29,7 @@ import {
 import { getSubEvents, approveAndPermitSubEvent } from "@/actions/event.actions";
 import { toast } from "sonner";
 import { useFormDraft } from "@/hooks/useFormDraft";
+import { UserAvatar } from "@/components/UserAvatar";
 
 export default function CoordinatorsPage() {
   const [activeTab, setActiveTab] = useState<"manage" | "add">("manage");
@@ -43,6 +44,7 @@ export default function CoordinatorsPage() {
       fullName: "",
       mobile: "",
       email: "",
+      gender: "",
       college: "",
       department: "",
       yearOfStudy: "1st Year",
@@ -85,6 +87,11 @@ export default function CoordinatorsPage() {
       !formData.confirmPassword.trim()
     ) {
       toast.error("All fields are required. Please complete all fields to create a coordinator.");
+      return;
+    }
+
+    if (!formData.gender.trim()) {
+      toast.error("Please select your gender.");
       return;
     }
 
@@ -368,9 +375,11 @@ export default function CoordinatorsPage() {
                   {coordinators.map((coord) => (
                     <tr key={coord.id} className="hover:bg-[#F8F8FC] transition-colors">
                       <td className="px-6 py-4 font-bold text-eventrix-black flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-eventrix-lavender/20 flex items-center justify-center text-eventrix-lavender font-anton text-lg">
-                          {coord.fullName.charAt(0)}
-                        </div>
+                        <UserAvatar
+                          user={coord}
+                          alt={coord.fullName}
+                          className="w-9 h-9 rounded-full object-cover shrink-0 border border-[#D9D9DF]"
+                        />
                         <div>
                           <p className="text-base leading-tight">{coord.fullName}</p>
                           <span className="text-[10px] text-eventrix-muted font-semibold uppercase">ID: {coord.id.slice(0, 8)}</span>
@@ -487,7 +496,7 @@ export default function CoordinatorsPage() {
                 </div>
 
                 {/* Email Address */}
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2">
                   <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
                     Email Address <span className="text-red-500">*</span>
                   </label>
@@ -500,6 +509,24 @@ export default function CoordinatorsPage() {
                     placeholder="john.doe@example.com" 
                     className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
                   />
+                </div>
+
+                {/* Gender */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
+                    Gender <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    required
+                    className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium cursor-pointer"
+                  >
+                    <option value="" disabled>Select Gender</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                  </select>
                 </div>
 
                 {/* College / Institution Name */}

@@ -13,6 +13,7 @@ export default function SignupPage() {
     initialValues: {
       fullName: '',
       email: '',
+      gender: '',
       mobile: '',
       college: '',
       department: '',
@@ -31,6 +32,7 @@ export default function SignupPage() {
     const fullNameStr = (fData.get('fullName') as string) || '';
     const mobileStr = (fData.get('mobile') as string) || '';
     const emailStr = (fData.get('email') as string) || '';
+    const genderStr = (fData.get('gender') as string) || '';
     const collegeStr = (fData.get('college') as string) || '';
     const departmentStr = (fData.get('department') as string) || '';
     const yearOfStudyStr = (fData.get('yearOfStudy') as string) || '';
@@ -48,6 +50,11 @@ export default function SignupPage() {
       !confirmPasswordStr.trim()
     ) {
       toast.error('All fields are required. Please fill in all fields to create your account.');
+      return;
+    }
+
+    if (!genderStr.trim()) {
+      toast.error('Please select your gender.');
       return;
     }
 
@@ -186,6 +193,26 @@ export default function SignupPage() {
                   className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
                 />
                 <Mail className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Gender Select */}
+            <div className="space-y-1">
+              <label className="text-xs font-extrabold text-gray-900 block">
+                Gender <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  name="gender"
+                  required
+                  value={formData.gender}
+                  onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
+                  className="w-full bg-white/90 text-gray-950 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm cursor-pointer"
+                >
+                  <option value="" disabled>Select Gender</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                </select>
               </div>
             </div>
 

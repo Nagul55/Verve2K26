@@ -7,6 +7,8 @@ import { LogoutButton } from "./LogoutButton";
 
 import { getProfileForUser } from "@/actions/profile.actions";
 
+import { UserAvatar } from "./UserAvatar";
+
 export async function TopNavbar() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -14,7 +16,8 @@ export async function TopNavbar() {
   let profile = {
     full_name: "STUDENT",
     department: "",
-    year_of_study: ""
+    year_of_study: "",
+    gender: ""
   };
 
   if (user) {
@@ -23,6 +26,7 @@ export async function TopNavbar() {
       profile = dbProfile;
     } else {
       profile.full_name = user.user_metadata?.full_name || "STUDENT";
+      profile.gender = user.user_metadata?.gender || "";
     }
   }
 
@@ -52,8 +56,8 @@ export async function TopNavbar() {
         </div>
         
         <div className="flex items-center gap-2 border-l border-[#D9D9DF] pl-3 sm:pl-4 h-9 sm:h-10">
-          <img
-            src="/images/user-avatar.png"
+          <UserAvatar
+            user={{ role, gender: profile.gender || user?.user_metadata?.gender }}
             alt="User Profile"
             className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover shrink-0 border border-[#D9D9DF]"
           />

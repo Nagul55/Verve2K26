@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useFormDraft } from "@/hooks/useFormDraft";
 
+import { UserAvatar } from "@/components/UserAvatar";
+
 interface AdminProfileFormProps {
   initialData: {
     full_name: string;
@@ -76,8 +78,8 @@ export function AdminProfileForm({ initialData, userId }: AdminProfileFormProps)
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
       <div className="bg-white border-2 border-[#D9D9DF] rounded-xl overflow-hidden shadow-sm">
         <div className="bg-gray-50 px-8 py-5 border-b-2 border-[#D9D9DF] flex items-center gap-4">
-          <img
-            src="/images/user-avatar.png"
+          <UserAvatar
+            user={{ role: 'admin' }}
             alt="Admin Profile Avatar"
             className="w-12 h-12 rounded-full object-cover border-2 border-eventrix-lavender shadow-sm shrink-0"
           />

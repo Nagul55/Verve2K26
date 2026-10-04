@@ -19,6 +19,7 @@ import {
   Ticket
 } from "lucide-react";
 import { getAdminParticipants } from "@/actions/event.actions";
+import { UserAvatar } from "@/components/UserAvatar";
 
 interface SubEventInfo {
   id: string;
@@ -42,6 +43,7 @@ interface Participant {
   id: string;
   participant_id: string;
   full_name: string;
+  gender?: string;
   register_number: string;
   email: string;
   mobile: string;
@@ -351,9 +353,11 @@ export default function AdminParticipantsPage() {
                     <tr key={p.id || p.participant_id || p.email} className="hover:bg-[#F8F8FC] transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-eventrix-lavender/20 flex items-center justify-center text-eventrix-black font-anton text-lg">
-                            {(p.full_name || p.email || "?").charAt(0).toUpperCase()}
-                          </div>
+                          <UserAvatar
+                            user={{ role: 'student', gender: p.gender }}
+                            alt={p.full_name || "Participant Avatar"}
+                            className="w-9 h-9 rounded-full object-cover shrink-0 border border-[#D9D9DF]"
+                          />
                           <div>
                             <p className="font-bold text-eventrix-black">{p.full_name || "Unnamed Participant"}</p>
                             <p className="text-[11px] text-eventrix-muted font-mono">

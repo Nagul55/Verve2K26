@@ -5,8 +5,8 @@ import { Save, Edit2 } from "lucide-react";
 import { updateProfile } from "@/actions/profile.actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-
 import { useFormDraft } from "@/hooks/useFormDraft";
+import { UserAvatar } from "@/components/UserAvatar";
 
 export function SettingsProfileForm({ initialData, userId, showAcademic = true }: { initialData: any, userId: string, showAcademic?: boolean }) {
   const router = useRouter();
@@ -102,8 +102,8 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
         {/* Section 1: Personal Info */}
         <div className="bg-white border-2 border-[#D9D9DF] rounded-xl overflow-hidden transition-colors focus-within:border-eventrix-black shadow-sm">
           <div className="bg-gray-50 px-8 py-5 border-b-2 border-[#D9D9DF] flex items-center gap-4">
-            <img
-              src="/images/user-avatar.png"
+            <UserAvatar
+              user={initialData}
               alt="User Avatar"
               className="w-12 h-12 rounded-full object-cover border-2 border-eventrix-lavender shadow-sm shrink-0"
             />
