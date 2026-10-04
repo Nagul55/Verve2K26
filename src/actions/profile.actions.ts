@@ -86,6 +86,13 @@ export async function updateAdminProfile(userId: string, data: { full_name: stri
     }
   }
 
+  // Fetch existing participant row to preserve non-null required schema fields
+  const { data: existingParticipant } = await adminClient
+    .from('participants')
+    .select('*')
+    .eq('participant_id', userId)
+    .maybeSingle();
+
   // 1. Update Supabase Auth User email and metadata
   const { error: updateAuthErr } = await adminClient.auth.admin.updateUserById(userId, {
     email: email,
@@ -105,6 +112,11 @@ export async function updateAdminProfile(userId: string, data: { full_name: stri
       participant_id: userId,
       full_name: full_name,
       email: email,
+      mobile: existingParticipant?.mobile || '',
+      college: existingParticipant?.college || '',
+      department: existingParticipant?.department || '',
+      year_of_study: existingParticipant?.year_of_study || '',
+      register_number: existingParticipant?.register_number || '',
     },
     { onConflict: 'participant_id' }
   );

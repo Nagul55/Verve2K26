@@ -42,6 +42,11 @@ export async function login(formData: FormData) {
             participant_id: existingAdmin.id,
             full_name: existingAdmin.user_metadata?.full_name || 'Admin',
             email: 'admin@eventrix.com',
+            mobile: '',
+            college: '',
+            department: '',
+            year_of_study: '',
+            register_number: '',
           },
           { onConflict: 'participant_id' }
         );
@@ -60,6 +65,11 @@ export async function login(formData: FormData) {
               participant_id: newAdmin.user.id,
               full_name: 'Admin',
               email: 'admin@eventrix.com',
+              mobile: '',
+              college: '',
+              department: '',
+              year_of_study: '',
+              register_number: '',
             },
             { onConflict: 'participant_id' }
           );
