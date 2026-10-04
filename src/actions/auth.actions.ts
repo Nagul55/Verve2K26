@@ -209,14 +209,25 @@ export async function getCoordinators() {
   const { data, error } = await adminClient.auth.admin.listUsers();
   
   if (error) return [];
+
+  const { data: partData } = await adminClient.from('participants').select('*');
+  const partMap = new Map<string, any>();
+  if (partData) {
+    partData.forEach(p => partMap.set(p.participant_id, p));
+  }
   
   // Filter users who have role = coordinator
-  return data.users.filter(u => u.app_metadata?.role === 'coordinator').map(u => ({
-    id: u.id,
-    email: u.email,
-    fullName: u.user_metadata?.full_name || 'Coordinator',
-    subEventId: u.app_metadata?.coordinating_event_id || null
-  }));
+  return data.users.filter(u => u.app_metadata?.role === 'coordinator').map(u => {
+    const profile = partMap.get(u.id) || {};
+    return {
+      id: u.id,
+      email: u.email,
+      role: 'coordinator',
+      gender: profile.gender || u.user_metadata?.gender || 'MALE',
+      fullName: u.user_metadata?.full_name || profile.full_name || 'Coordinator',
+      subEventId: u.app_metadata?.coordinating_event_id || null
+    };
+  });
 }
 
 export async function createCoordinator(formData: FormData) {
