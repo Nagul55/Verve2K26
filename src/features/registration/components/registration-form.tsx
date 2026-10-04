@@ -151,7 +151,7 @@ export function RegistrationForm() {
             </div>
             <div className="space-y-2">
               <Label>Department</Label>
-              <Input placeholder="Computer Science" {...register('department')} />
+              <Input placeholder="Information Technology" {...register('department')} />
               {errors.department && <span className="text-xs text-destructive">{errors.department.message}</span>}
             </div>
             <div className="space-y-2">

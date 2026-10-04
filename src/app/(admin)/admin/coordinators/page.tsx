@@ -521,7 +521,7 @@ export default function CoordinatorsPage() {
                     value={formData.department} 
                     onChange={handleChange} 
                     required 
-                    placeholder="e.g. B.Tech IT / CSE" 
+                    placeholder="Information Technology" 
                     className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
                   />
                 </div>

@@ -131,7 +131,7 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Department</label>
-                <input name="department" value={formData.department} onChange={handleChange} placeholder={isEditing ? "e.g. B.Tech IT / CSE" : "-"} disabled={!isEditing} className={inputClass} />
+                <input name="department" value={formData.department} onChange={handleChange} placeholder={isEditing ? "Information Technology" : "-"} disabled={!isEditing} className={inputClass} />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Year of Study</label>
