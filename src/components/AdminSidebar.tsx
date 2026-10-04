@@ -3,9 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, Users, Settings, ShieldCheck, LogOut } from "lucide-react";
-import { signout } from "@/actions/auth.actions";
+import { Home, Calendar, Users, Settings, ShieldCheck } from "lucide-react";
 import { EventrixLogo } from "@/components/EventrixLogo";
+import { LogoutButton } from "@/components/LogoutButton";
 
 export function AdminSidebar() {
   const pathname = usePathname();
@@ -21,12 +21,10 @@ export function AdminSidebar() {
   return (
     <aside className="w-[230px] h-full bg-eventrix-black text-eventrix-white flex flex-col justify-between hidden md:flex shrink-0 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       <div className="flex-1">
-        <div className="p-8 pb-4">
-          <Link href="/admin">
-            {/* Using a slightly different logo presentation for Admin (maybe purple instead of white?) */}
-            <EventrixLogo fill="#A78BFA" className="w-[140px] h-auto" />
-            <span className="text-[10px] font-bold tracking-widest text-eventrix-white/50 uppercase mt-2 block">Admin Portal</span>
-          </Link>
+        <div className="p-8 pb-4 cursor-default">
+          {/* Using a slightly different logo presentation for Admin (maybe purple instead of white?) */}
+          <EventrixLogo fill="#A78BFA" className="w-[140px] h-auto" />
+          <span className="text-[10px] font-bold tracking-widest text-eventrix-white/50 uppercase mt-2 block">Admin Portal</span>
         </div>
         
         <nav className="mt-6 px-4 space-y-1.5">
@@ -49,15 +47,9 @@ export function AdminSidebar() {
           })}
           </nav>
         
-          <form action={signout} className="px-4 mt-8">
-            <button
-              type="submit"
-              className="flex items-center gap-4 px-4 py-3 w-full rounded-lg font-medium transition-colors text-sm text-eventrix-white hover:bg-white/5 text-left"
-            >
-              <LogOut className="w-5 h-5 stroke-[1.5] text-eventrix-lavender" />
-              <span>Logout</span>
-            </button>
-          </form>
+          <div className="px-4 mt-8">
+            <LogoutButton variant="sidebar" />
+          </div>
         </div>
 
       <div className="p-8 mb-4">

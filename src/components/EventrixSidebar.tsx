@@ -3,9 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, Users, Ticket, FileText, LogOut, Settings, BellRing } from "lucide-react";
-import { signout } from "@/actions/auth.actions";
+import { Home, Calendar, Users, Ticket, FileText, Settings, BellRing } from "lucide-react";
 import { EventrixLogo } from "@/components/EventrixLogo";
+import { LogoutButton } from "@/components/LogoutButton";
 
 export function EventrixSidebar() {
   const pathname = usePathname();
@@ -23,10 +23,8 @@ export function EventrixSidebar() {
   return (
     <aside className="w-[230px] h-full bg-eventrix-purple text-eventrix-white flex flex-col justify-between hidden md:flex shrink-0 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       <div className="flex-1">
-        <div className="p-8 pb-4">
-          <Link href="/">
-            <EventrixLogo fill="currentColor" className="w-[140px] h-auto text-eventrix-white" />
-          </Link>
+        <div className="p-8 pb-4 cursor-default">
+          <EventrixLogo fill="currentColor" className="w-[140px] h-auto text-eventrix-white" />
         </div>
         
         <nav className="mt-6 px-4 space-y-1.5">
@@ -49,15 +47,9 @@ export function EventrixSidebar() {
           })}
           </nav>
         
-          <form action={signout} className="px-4 mt-8">
-            <button
-              type="submit"
-              className="flex items-center gap-4 px-4 py-3 w-full rounded-lg font-medium transition-colors text-sm text-eventrix-white hover:bg-white/5 text-left"
-            >
-              <LogOut className="w-5 h-5 stroke-[1.5] text-eventrix-lavender" />
-              <span>Logout</span>
-            </button>
-          </form>
+          <div className="px-4 mt-8">
+            <LogoutButton variant="sidebar" />
+          </div>
         </div>
 
       <div className="p-8 mb-4">

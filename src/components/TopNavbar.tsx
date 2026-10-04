@@ -1,9 +1,9 @@
 import React from "react";
-import { Search, Bell, LogOut, Settings } from "lucide-react";
+import { Search, Bell, Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { signout } from "@/actions/auth.actions";
 import Link from "next/link";
 import { MobileNav } from "./MobileNav";
+import { LogoutButton } from "./LogoutButton";
 
 export async function TopNavbar() {
   const supabase = await createClient();
@@ -61,11 +61,7 @@ export async function TopNavbar() {
             <Settings className="w-4 h-4" />
           </Link>
           
-          <form action={signout}>
-            <button type="submit" title="Logout" className="text-eventrix-muted hover:text-red-500 transition-colors ml-1">
-              <LogOut className="w-4 h-4 md:w-5 md:h-5" />
-            </button>
-          </form>
+          <LogoutButton variant="icon" />
         </div>
       </div>
     </header>

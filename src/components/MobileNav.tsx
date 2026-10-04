@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Calendar, Users, Ticket, FileText, Settings, Menu, X, BellRing } from "lucide-react";
 import { EventrixLogo } from "./EventrixLogo";
+import { LogoutButton } from "./LogoutButton";
 
 export function MobileNav({ role = 'student' }: { role?: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -76,9 +77,9 @@ export function MobileNav({ role = 'student' }: { role?: string }) {
         } flex flex-col shadow-2xl`}
       >
         <div className="flex items-center justify-between p-6">
-          <Link href="/" onClick={() => setIsOpen(false)}>
+          <div className="cursor-default">
             <EventrixLogo fill="currentColor" className="w-[120px] h-auto text-eventrix-white" />
-          </Link>
+          </div>
           <button 
             onClick={() => setIsOpen(false)} 
             className="p-1 hover:bg-white/10 rounded-md transition-colors text-eventrix-white"
@@ -106,6 +107,10 @@ export function MobileNav({ role = 'student' }: { role?: string }) {
               </Link>
             );
           })}
+
+          <div className="pt-4 border-t border-white/10 mt-4">
+            <LogoutButton variant="sidebar" />
+          </div>
         </div>
       </div>
     </div>
