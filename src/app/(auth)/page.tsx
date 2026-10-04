@@ -49,7 +49,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-dvh w-full bg-white flex flex-col lg:flex-row overflow-x-hidden font-sans select-none relative">
+    <div className="h-dvh h-screen w-full bg-white flex flex-col lg:flex-row overflow-hidden font-sans select-none relative">
       
       {/* MOBILE & TABLET BACKGROUND AVATAR IMAGE */}
       <div className="lg:hidden fixed inset-0 z-0">
@@ -62,10 +62,10 @@ function LoginForm() {
       </div>
 
       {/* LEFT SECTION - Form (55% Width on Desktop) */}
-      <div className="w-full lg:w-[55%] min-h-dvh lg:min-h-screen py-10 sm:py-12 px-4 sm:px-8 lg:p-12 xl:p-16 flex flex-col justify-center z-10 relative">
+      <div className="w-full lg:w-[55%] h-full p-4 sm:p-8 lg:p-12 xl:p-16 flex flex-col justify-center items-center z-10 relative">
         
         {/* Glassmorphic Card Container */}
-        <div className="max-w-xl lg:max-w-lg w-full mx-auto bg-white/95 lg:bg-transparent backdrop-blur-2xl lg:backdrop-blur-none p-6 sm:p-10 md:p-12 lg:p-0 rounded-3xl lg:rounded-none shadow-2xl lg:shadow-none border border-white/70 lg:border-none transition-all">
+        <div className="max-w-xl lg:max-w-lg w-full mx-auto bg-white/95 lg:bg-transparent backdrop-blur-2xl lg:backdrop-blur-none p-6 sm:p-8 md:p-10 lg:p-0 rounded-3xl lg:rounded-none shadow-2xl lg:shadow-none border border-white/70 lg:border-none transition-all my-auto lg:my-0">
           
           {/* Header Title with Logo Directly Beside "Welcome to" */}
           <div className="mb-6 sm:mb-8">
