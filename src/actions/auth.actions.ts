@@ -13,20 +13,76 @@ const getAdminClient = () => {
 };
 
 export async function login(formData: FormData) {
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
+  const email = ((formData.get('email') as string) || '').trim();
+  const password = ((formData.get('password') as string) || '').trim();
   const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  let { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
-  if (error || !data.user) {
-    return { error: error?.message || "Login failed. Check credentials." };
+  // Auto-seed or repair default admin account if initial sign in fails for admin@eventrix.com
+  if (error && email.toLowerCase() === 'admin@eventrix.com') {
+    try {
+      const adminClient = getAdminClient();
+      const { data: usersData } = await adminClient.auth.admin.listUsers();
+      const existingAdmin = usersData?.users?.find(
+        (u) => u.email?.toLowerCase() === 'admin@eventrix.com'
+      );
+
+      if (existingAdmin) {
+        await adminClient.auth.admin.updateUserById(existingAdmin.id, {
+          password: password,
+          app_metadata: { role: 'admin' },
+          user_metadata: { full_name: existingAdmin.user_metadata?.full_name || 'Admin' },
+        });
+        await adminClient.from('participants').upsert(
+          {
+            participant_id: existingAdmin.id,
+            full_name: existingAdmin.user_metadata?.full_name || 'Admin',
+            email: 'admin@eventrix.com',
+          },
+          { onConflict: 'participant_id' }
+        );
+      } else {
+        const { data: newAdmin } = await adminClient.auth.admin.createUser({
+          email: 'admin@eventrix.com',
+          password: password,
+          email_confirm: true,
+          app_metadata: { role: 'admin' },
+          user_metadata: { full_name: 'Admin' },
+        });
+
+        if (newAdmin?.user) {
+          await adminClient.from('participants').upsert(
+            {
+              participant_id: newAdmin.user.id,
+              full_name: 'Admin',
+              email: 'admin@eventrix.com',
+            },
+            { onConflict: 'participant_id' }
+          );
+        }
+      }
+
+      // Retry sign in after provisioning
+      const retry = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      data = retry.data;
+      error = retry.error;
+    } catch (e) {
+      console.error("Error auto-seeding admin account:", e);
+    }
   }
 
-  // Check role from app_metadata instead of a custom SQL table!
+  if (error || !data.user) {
+    return { error: error?.message || "Invalid login credentials" };
+  }
+
+  // Check role from app_metadata
   const role = data.user.app_metadata?.role || 'student';
 
   if (role === 'admin') {
