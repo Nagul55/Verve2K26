@@ -14,6 +14,10 @@ export async function updateProfile(userId: string, data: any) {
     return { error: "Invalid user session. Please sign in." };
   }
 
+  if (data?.mobile && !/^\d{10}$/.test(String(data.mobile).trim())) {
+    return { error: "Phone number must be exactly 10 digits." };
+  }
+
   const adminClient = getAdminClient();
   
   // Get the user's email securely from auth

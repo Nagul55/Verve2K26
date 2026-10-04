@@ -4,7 +4,7 @@ export const registrationSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters").max(100),
   registerNumber: z.string().min(3, "Register number is required"),
   email: z.string().email("Please enter a valid email address"),
-  mobile: z.string().min(10, "Please enter a valid mobile number").max(15),
+  mobile: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
   department: z.string().min(2, "Department is required"),
   yearOfStudy: z.string().min(1, "Year of study is required"),
   section: z.string().optional(),

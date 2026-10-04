@@ -43,6 +43,11 @@ export default function SignupPage() {
       return;
     }
 
+    if (mobileStr.length !== 10) {
+      toast.error('Phone number must be exactly 10 digits.');
+      return;
+    }
+
     if (passwordStr !== confirmPasswordStr) {
       toast.error('Passwords do not match. Please ensure Password and Confirm Password are identical.');
       return;
@@ -140,8 +145,11 @@ export default function SignupPage() {
                     type="tel"
                     name="mobile"
                     required
+                    maxLength={10}
+                    inputMode="numeric"
+                    pattern="[0-9]{10}"
                     value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
+                    onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
                     placeholder="Your Phone Number"
                     className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
                   />

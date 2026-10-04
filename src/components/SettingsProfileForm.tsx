@@ -22,11 +22,17 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const val = e.target.name === 'mobile' ? e.target.value.replace(/\D/g, '').slice(0, 10) : e.target.value;
+    setFormData(prev => ({ ...prev, [e.target.name]: val }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (formData.mobile && formData.mobile.length !== 10) {
+      toast.error("Phone number must be exactly 10 digits.");
+      return;
+    }
 
     startTransition(async () => {
       const { success, error } = await updateProfile(userId, formData);
@@ -107,7 +113,7 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Mobile Number</label>
-              <input name="mobile" value={formData.mobile} onChange={handleChange} disabled={!isEditing} className={inputClass} placeholder={isEditing ? "Your Phone Number" : "-"} />
+              <input name="mobile" type="tel" maxLength={10} inputMode="numeric" pattern="[0-9]{10}" value={formData.mobile} onChange={handleChange} disabled={!isEditing} className={inputClass} placeholder={isEditing ? "Your Phone Number" : "-"} />
             </div>
           </div>
         </div>

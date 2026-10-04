@@ -62,7 +62,8 @@ export default function CoordinatorsPage() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const val = e.target.name === 'mobile' ? e.target.value.replace(/\D/g, '').slice(0, 10) : e.target.value;
+    setFormData(prev => ({ ...prev, [e.target.name]: val }));
   };
 
   const handleCreateCoordinator = (e: React.FormEvent<HTMLFormElement>) => {
@@ -79,6 +80,11 @@ export default function CoordinatorsPage() {
       !formData.confirmPassword.trim()
     ) {
       toast.error("All fields are required. Please complete all fields to create a coordinator.");
+      return;
+    }
+
+    if (formData.mobile.length !== 10) {
+      toast.error("Phone number must be exactly 10 digits.");
       return;
     }
 
@@ -456,6 +462,9 @@ export default function CoordinatorsPage() {
                   <input 
                     type="tel"
                     name="mobile" 
+                    maxLength={10}
+                    inputMode="numeric"
+                    pattern="[0-9]{10}"
                     value={formData.mobile} 
                     onChange={handleChange} 
                     required 

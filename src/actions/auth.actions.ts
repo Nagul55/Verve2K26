@@ -61,6 +61,10 @@ export async function signup(formData: FormData) {
     return { error: 'All fields are required. Please fill in all details.' };
   }
 
+  if (!/^\d{10}$/.test(mobile.trim())) {
+    return { error: 'Phone number must be exactly 10 digits.' };
+  }
+
   if (password !== confirmPassword) {
     return { error: 'Passwords do not match. Please make sure your passwords match.' };
   }
@@ -148,6 +152,10 @@ export async function createCoordinator(formData: FormData) {
     !yearOfStudy.trim()
   ) {
     return { error: 'All fields (Full Name, Phone Number, Email, College, Department, Year of Study, Password, Confirm Password) are required.' };
+  }
+
+  if (!/^\d{10}$/.test(mobile.trim())) {
+    return { error: 'Phone number must be exactly 10 digits.' };
   }
 
   if (password !== confirmPassword) {
