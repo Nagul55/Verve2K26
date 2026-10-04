@@ -101,7 +101,7 @@ export default function SignupPage() {
       </div>
 
       {/* LEFT SECTION - Form (55% Width on Desktop) */}
-      <div className="w-full lg:w-[55%] min-h-dvh lg:min-h-screen pt-6 pb-12 px-4 sm:px-8 sm:py-10 lg:p-10 xl:p-12 flex flex-col justify-start lg:justify-center z-10 relative">
+      <div className="w-full lg:w-[55%] min-h-dvh lg:min-h-screen pt-10 sm:pt-12 pb-12 px-4 sm:px-8 lg:p-10 xl:p-12 flex flex-col justify-start lg:justify-center z-10 relative">
         
         {/* Glassmorphic Card Container */}
         <div className="max-w-xl lg:max-w-xl w-full mx-auto bg-white/95 lg:bg-transparent backdrop-blur-2xl lg:backdrop-blur-none p-5 sm:p-8 md:p-10 lg:p-0 rounded-3xl lg:rounded-none shadow-2xl lg:shadow-none border border-white/70 lg:border-none transition-all">
