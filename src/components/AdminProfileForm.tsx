@@ -75,13 +75,20 @@ export function AdminProfileForm({ initialData, userId }: AdminProfileFormProps)
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
       <div className="bg-white border-2 border-[#D9D9DF] rounded-xl overflow-hidden shadow-sm">
-        <div className="bg-gray-50 px-8 py-5 border-b-2 border-[#D9D9DF]">
-          <h3 className="font-anton text-2xl uppercase tracking-wide text-eventrix-black">
-            Personal Information
-          </h3>
-          <p className="text-xs text-eventrix-muted font-medium mt-1">
-            Manage your administrator account details.
-          </p>
+        <div className="bg-gray-50 px-8 py-5 border-b-2 border-[#D9D9DF] flex items-center gap-4">
+          <img
+            src="/images/user-avatar.png"
+            alt="Admin Profile Avatar"
+            className="w-12 h-12 rounded-full object-cover border-2 border-eventrix-lavender shadow-sm shrink-0"
+          />
+          <div>
+            <h3 className="font-anton text-2xl uppercase tracking-wide text-eventrix-black">
+              Personal Information
+            </h3>
+            <p className="text-xs text-eventrix-muted font-medium mt-0.5">
+              Manage your administrator account details.
+            </p>
+          </div>
         </div>
 
         <div className="p-8 space-y-6">
