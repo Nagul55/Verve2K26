@@ -48,7 +48,7 @@ function LoginForm() {
       {/* MOBILE & TABLET BACKGROUND AVATAR IMAGE */}
       <div className="lg:hidden absolute inset-0 z-0">
         <img
-          src="/mobile-hero-bg.png"
+          src="/images/mobile-hero-bg.png"
           alt="Eventrix Mobile Hero Background"
           className="w-full h-full object-cover object-center"
         />
@@ -68,7 +68,7 @@ function LoginForm() {
                 Welcome to
               </h1>
               <img
-                src="/eventrix-logo-official.png"
+                src="/assets/Eventrix logo.svg"
                 alt="Eventrix Logo"
                 className="h-10 sm:h-14 lg:h-16 xl:h-20 w-auto object-contain"
                 onError={(e) => {
@@ -177,7 +177,7 @@ function LoginForm() {
       {/* RIGHT SECTION - Avatar Image (45% Width on Desktop) */}
       <div className="hidden lg:block w-[45%] h-full relative overflow-hidden bg-[#7c3aed]">
         <img
-          src="/hero-illustration.jpg"
+          src="/images/mobile-hero-bg.png"
           alt="Eventrix Avatar Illustration"
           className="w-full h-full object-cover object-center transition-all duration-300"
           onError={(e) => { e.currentTarget.style.display = 'none'; }}

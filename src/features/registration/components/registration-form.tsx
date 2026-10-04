@@ -107,8 +107,8 @@ export function RegistrationForm() {
         <div className="flex justify-center mb-6">
           <div className="bg-white/95 p-3 rounded-xl shadow-lg border border-border">
             <Image
-              src="/images/sona-logo.png"
-              alt="Sona College Logo"
+              src="/assets/Eventrix logo.svg"
+              alt="Eventrix Logo"
               width={0}
               height={100}
               sizes="100vw"

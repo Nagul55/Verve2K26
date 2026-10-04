@@ -15,12 +15,12 @@ const anton = Anton({
 });
 
 export const metadata: Metadata = {
-  title: "EVENTRIX | Verve26",
+  title: "Eventrix",
   description: "Campus Events, Reimagined.",
   icons: {
-    icon: "/images/logo.png",
-    shortcut: "/images/logo.png",
-    apple: "/images/logo.png",
+    icon: "/assets/Eventrix logo.svg",
+    shortcut: "/assets/Eventrix logo.svg",
+    apple: "/assets/Eventrix logo.svg",
   },
 };
 

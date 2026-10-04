@@ -9,7 +9,7 @@ export function EventrixLogo({ className = "w-full h-auto", fill }: EventrixLogo
   // Using the provided user logo from the public directory
   return (
     <img 
-      src="/images/logo.png" 
+      src="/assets/Eventrix logo.svg" 
       alt="Eventrix Logo" 
       className={className}
     />

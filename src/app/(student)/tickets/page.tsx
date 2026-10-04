@@ -47,7 +47,7 @@ function TicketCard({ reg, participant }: { reg: any, participant: any }) {
            </div>
            {/* Lightbulb 3D Icon */}
            <div className="hidden sm:block w-32 h-32 md:w-48 md:h-48 relative animate-pulse shrink-0">
-              <img src="/assets/bulb_3d.jpg" alt="3D Bulb" className="w-full h-full object-contain mix-blend-multiply" />
+              <img src="/images/bulb_3d.jpg" alt="3D Bulb" className="w-full h-full object-contain mix-blend-multiply" />
            </div>
         </div>
 
@@ -101,7 +101,7 @@ function TicketCard({ reg, participant }: { reg: any, participant: any }) {
 
         {/* Bottom Silhouette & Script */}
         <div className="hidden md:block absolute bottom-0 left-0 w-full h-32 z-0 overflow-hidden rounded-bl-[2rem]">
-          <img src="/assets/building_silhouette.jpg" alt="Building Silhouette" className="w-full h-full object-cover mix-blend-multiply opacity-70 object-bottom" />
+          <img src="/images/building_silhouette.jpg" alt="Building Silhouette" className="w-full h-full object-cover mix-blend-multiply opacity-70 object-bottom" />
           <div className="absolute bottom-6 left-10 transform -rotate-6">
             <p className="font-serif italic text-2xl text-white drop-shadow-md leading-none">More Than</p>
             <p className="font-serif italic text-3xl text-white font-bold ml-6 drop-shadow-md leading-none mt-1">Just Events</p>
