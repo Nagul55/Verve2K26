@@ -84,7 +84,7 @@ export default function CoordinatorsPage() {
     }
 
     if (formData.mobile.length !== 10) {
-      toast.error("Phone number must be exactly 10 digits.");
+      toast.error("10 digits required");
       return;
     }
 
@@ -465,6 +465,9 @@ export default function CoordinatorsPage() {
                     maxLength={10}
                     inputMode="numeric"
                     pattern="[0-9]{10}"
+                    title="10 digits required"
+                    onInvalid={(e) => e.currentTarget.setCustomValidity('10 digits required')}
+                    onInput={(e) => e.currentTarget.setCustomValidity('')}
                     value={formData.mobile} 
                     onChange={handleChange} 
                     required 

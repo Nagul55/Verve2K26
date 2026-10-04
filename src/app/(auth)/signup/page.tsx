@@ -44,7 +44,7 @@ export default function SignupPage() {
     }
 
     if (mobileStr.length !== 10) {
-      toast.error('Phone number must be exactly 10 digits.');
+      toast.error('10 digits required');
       return;
     }
 
@@ -148,6 +148,9 @@ export default function SignupPage() {
                     maxLength={10}
                     inputMode="numeric"
                     pattern="[0-9]{10}"
+                    title="10 digits required"
+                    onInvalid={(e) => e.currentTarget.setCustomValidity('10 digits required')}
+                    onInput={(e) => e.currentTarget.setCustomValidity('')}
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
                     placeholder="Your Phone Number"

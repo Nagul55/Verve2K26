@@ -62,7 +62,7 @@ export async function signup(formData: FormData) {
   }
 
   if (!/^\d{10}$/.test(mobile.trim())) {
-    return { error: 'Phone number must be exactly 10 digits.' };
+    return { error: '10 digits required' };
   }
 
   if (password !== confirmPassword) {
@@ -155,7 +155,7 @@ export async function createCoordinator(formData: FormData) {
   }
 
   if (!/^\d{10}$/.test(mobile.trim())) {
-    return { error: 'Phone number must be exactly 10 digits.' };
+    return { error: '10 digits required' };
   }
 
   if (password !== confirmPassword) {

@@ -15,7 +15,7 @@ export async function updateProfile(userId: string, data: any) {
   }
 
   if (data?.mobile && !/^\d{10}$/.test(String(data.mobile).trim())) {
-    return { error: "Phone number must be exactly 10 digits." };
+    return { error: "10 digits required" };
   }
 
   const adminClient = getAdminClient();
