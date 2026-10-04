@@ -1,61 +1,42 @@
 import React from "react";
-import { Users, Calendar, Ticket, ShieldCheck, ArrowRight, Clock, CheckCircle2, AlertCircle } from "lucide-react";
-import { getSubEvents } from "@/actions/event.actions";
-import { createClient } from "@/lib/supabase/server";
+import { Users, Calendar, Ticket, ShieldCheck, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { getSubEvents, getAdminParticipants } from "@/actions/event.actions";
 import { DashboardCharts } from "@/components/admin/DashboardCharts";
 import Link from "next/link";
 import { ApproveButton } from "@/components/ApproveButton";
 
 export default async function AdminDashboard() {
   const events = await getSubEvents(undefined, true) || [];
-  const supabase = await createClient();
-  
-  // Fetch high-level admin stats: only count participants who have registered for at least one event
-  const { data: regParticipants } = await supabase
-    .from('registrations')
-    .select('participant_id');
+  const allParticipants = await getAdminParticipants() || [];
 
-  const { data: eventRegParticipants } = await supabase
-    .from('event_registrations')
-    .select('participant_id');
-
-  const registeredParticipantSet = new Set<string>();
-
-  if (regParticipants) {
-    regParticipants.forEach((r: { participant_id?: string }) => {
-      if (r.participant_id) registeredParticipantSet.add(r.participant_id);
+  // Helper to extract flat array of sub-events for a participant
+  const getParticipantEvents = (p: any): any[] => {
+    if (!p.registrations || !Array.isArray(p.registrations)) return [];
+    const subEvs: any[] = [];
+    p.registrations.forEach((reg: any) => {
+      reg.registration_sub_events?.forEach((rse: any) => {
+        if (rse.sub_events) {
+          subEvs.push(rse.sub_events);
+        }
+      });
     });
-  }
+    return subEvs;
+  };
 
-  if (eventRegParticipants) {
-    eventRegParticipants.forEach((r: { participant_id?: string }) => {
-      if (r.participant_id) registeredParticipantSet.add(r.participant_id);
-    });
-  }
+  // Filter participants who have registered for at least 1 sub-event
+  const registeredParticipants = allParticipants.filter(p => getParticipantEvents(p).length > 0);
+  const registeredParticipantsCount = registeredParticipants.length;
 
-  const registeredParticipantsCount = registeredParticipantSet.size;
+  // Calculate total sub-event registration bookings across all participants
+  const totalRegistrationsCount = allParticipants.reduce((acc, p) => acc + getParticipantEvents(p).length, 0);
 
-  const { count: subEventRegCount } = await supabase
-    .from('registration_sub_events')
-    .select('*', { count: 'exact', head: true });
-
-  const { count: directRegCount } = await supabase
-    .from('event_registrations')
-    .select('*', { count: 'exact', head: true });
-
-  const totalRegistrationsCount = (subEventRegCount || 0) + (directRegCount || 0);
-  
   // Fetch pending events for the table
   const pendingEvents = events.filter(e => e.status === 'Pending').slice(0, 5);
   
-  // Fetch recent participants
-  const { data: recentParticipants } = await supabase
-    .from('participants')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(5);
+  // Fetch recent participants (limit 5)
+  const recentParticipants = allParticipants.slice(0, 5);
 
-  // FETCH REAL DATA FOR CHARTS
+  // FETCH REAL DATA FOR CHARTS (Last 7 Days)
   const today = new Date();
   const last7DaysData = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date(today);
@@ -67,49 +48,36 @@ export default async function AdminDashboard() {
     };
   });
 
-  const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setDate(today.getDate() - 7);
+  allParticipants.forEach(p => {
+    if (p.registrations && Array.isArray(p.registrations)) {
+      p.registrations.forEach((reg: any) => {
+        if (reg.created_at) {
+          const regDate = new Date(reg.created_at).toISOString().split('T')[0];
+          const dayData = last7DaysData.find(d => d.dateStr === regDate);
+          if (dayData) {
+            dayData.registrations += (reg.registration_sub_events?.length || 1);
+          }
+        }
+      });
+    }
+  });
 
-  const { data: recentRegs } = await supabase
-    .from('registrations')
-    .select('created_at')
-    .gte('created_at', sevenDaysAgo.toISOString());
-    
-  if (recentRegs) {
-    recentRegs.forEach(reg => {
-      const regDate = new Date(reg.created_at).toISOString().split('T')[0];
-      const dayData = last7DaysData.find(d => d.dateStr === regDate);
-      if (dayData) {
-        dayData.registrations++;
-      }
-    });
-  }
-  
   const trendsData = last7DaysData.map(d => ({ name: d.name, registrations: d.registrations }));
 
-  const { data: subEventRegs } = await supabase
-    .from('registration_sub_events')
-    .select(`
-      sub_events (
-        category
-      )
-    `);
-
+  // CATEGORY POPULARITY CHART DATA
   const categoryCounts: Record<string, number> = {
     'Technical': 0,
     'Non-Technical': 0,
     'Workshops': 0,
   };
 
-  if (subEventRegs) {
-    subEventRegs.forEach(reg => {
-      // @ts-ignore
-      const category = reg.sub_events?.category;
-      if (category) {
-        categoryCounts[category] = (categoryCounts[category] || 0) + 1;
-      }
+  allParticipants.forEach(p => {
+    const evs = getParticipantEvents(p);
+    evs.forEach(ev => {
+      const cat = ev.category || 'Technical';
+      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
     });
-  }
+  });
 
   const popularityData = Object.entries(categoryCounts)
     .map(([name, value]) => ({ name, value }))
@@ -200,7 +168,7 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        {/* Recent Participants */}
+        {/* Recent Signups */}
         <div className="border border-[#D9D9DF] bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
           <div className="p-5 border-b border-[#D9D9DF] flex justify-between items-center bg-[#F8F8FC]">
             <h3 className="font-bold text-eventrix-black text-sm uppercase tracking-widest flex items-center gap-2">
@@ -213,19 +181,19 @@ export default async function AdminDashboard() {
           <div className="p-0 flex-1">
             {recentParticipants && recentParticipants.length > 0 ? (
               <div className="divide-y divide-[#D9D9DF]">
-                {recentParticipants.map(participant => (
-                  <div key={participant.participant_id} className="p-5 flex justify-between items-center hover:bg-[#F8F8FC] transition-colors">
+                {recentParticipants.map((participant: any) => (
+                  <div key={participant.id || participant.participant_id || participant.email} className="p-5 flex justify-between items-center hover:bg-[#F8F8FC] transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-eventrix-light-lavender flex items-center justify-center text-eventrix-lavender font-bold text-xs">
-                        {participant.full_name.charAt(0).toUpperCase()}
+                        {(participant.full_name || participant.email || '?').charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h4 className="font-bold text-eventrix-black text-sm">{participant.full_name}</h4>
+                        <h4 className="font-bold text-eventrix-black text-sm">{participant.full_name || 'Unnamed Participant'}</h4>
                         <p className="text-[10px] font-medium text-eventrix-muted mt-0.5">{participant.college || 'No college specified'}</p>
                       </div>
                     </div>
                     <span className="text-xs font-medium text-eventrix-muted flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {new Date(participant.created_at).toLocaleDateString()}
+                      <Clock className="w-3 h-3" /> {participant.created_at ? new Date(participant.created_at).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
                 ))}
