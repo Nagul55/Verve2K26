@@ -118,12 +118,13 @@ export default async function AdminDashboard() {
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
 
-  // DEMOGRAPHICS CALCULATIONS (Year of Study, Department, College)
-  const totalCountForDemo = allParticipants.length || 1;
+  // DEMOGRAPHICS CALCULATIONS (Year of Study, Department, College) - Computes ONLY from Student accounts
+  const studentParticipants = allParticipants.filter(p => (p.role || 'student').toLowerCase() === 'student');
+  const totalCountForDemo = studentParticipants.length || 1;
 
   // 1. Year of Study
   const yearCounts: Record<string, number> = {};
-  allParticipants.forEach(p => {
+  studentParticipants.forEach(p => {
     const yr = (p.year_of_study || p.yearOfStudy || '').trim();
     const label = yr ? (yr.includes('Yr') || yr.includes('Year') ? yr : `${yr} Year`) : 'Not Specified';
     yearCounts[label] = (yearCounts[label] || 0) + 1;
@@ -137,7 +138,7 @@ export default async function AdminDashboard() {
 
   // 2. Department Breakdown
   const deptCounts: Record<string, number> = {};
-  allParticipants.forEach(p => {
+  studentParticipants.forEach(p => {
     const dept = (p.department || '').trim().toUpperCase();
     const label = dept || 'NOT SPECIFIED';
     deptCounts[label] = (deptCounts[label] || 0) + 1;
@@ -151,7 +152,7 @@ export default async function AdminDashboard() {
 
   // 3. College Breakdown
   const collegeCounts: Record<string, number> = {};
-  allParticipants.forEach(p => {
+  studentParticipants.forEach(p => {
     const col = (p.college || '').trim();
     const label = col || 'Not Specified';
     collegeCounts[label] = (collegeCounts[label] || 0) + 1;

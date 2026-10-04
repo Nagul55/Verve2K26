@@ -393,6 +393,19 @@ export async function getParticipantRegistrations() {
 
 export async function getAdminParticipants() {
   const adminClient = getAdminClient();
+
+  const { data: authData } = await adminClient.auth.admin.listUsers();
+  const roleMap = new Map<string, string>();
+  if (authData?.users) {
+    authData.users.forEach(u => {
+      const role = u.app_metadata?.role || 'student';
+      roleMap.set(u.id, role);
+      if (u.email) {
+        roleMap.set(u.email.toLowerCase(), role);
+      }
+    });
+  }
+
   const { data, error } = await adminClient
     .from('participants')
     .select(`
@@ -427,10 +440,16 @@ export async function getAdminParticipants() {
       console.error("Error fetching raw participants:", rawError);
       return [];
     }
-    return rawData || [];
+    return (rawData || []).map(p => ({
+      ...p,
+      role: roleMap.get(p.participant_id) || (p.email ? roleMap.get(p.email.toLowerCase()) : null) || 'student'
+    }));
   }
 
-  return data || [];
+  return (data || []).map(p => ({
+    ...p,
+    role: roleMap.get(p.participant_id) || (p.email ? roleMap.get(p.email.toLowerCase()) : null) || 'student'
+  }));
 }
 
 export async function getCoordinatorParticipants() {
