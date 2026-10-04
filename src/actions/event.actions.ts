@@ -519,3 +519,49 @@ export async function getCoordinatorParticipants() {
 
   return Array.from(participantsMap.values());
 }
+
+export async function getStudentRegisteredEventIds() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const adminClient = getAdminClient();
+  const { data: registrations, error } = await adminClient
+    .from('registrations')
+    .select(`
+      registration_sub_events (
+        sub_event_id
+      )
+    `)
+    .eq('participant_id', user.id);
+
+  if (error || !registrations) return [];
+
+  const registeredIds: string[] = [];
+  registrations.forEach((reg: any) => {
+    reg.registration_sub_events?.forEach((rse: any) => {
+      if (rse.sub_event_id && !registeredIds.includes(rse.sub_event_id)) {
+        registeredIds.push(rse.sub_event_id);
+      }
+    });
+  });
+
+  return registeredIds;
+}
+
+export async function getSubEventRegistrationCounts() {
+  const adminClient = getAdminClient();
+  const { data } = await adminClient
+    .from('registration_sub_events')
+    .select('sub_event_id');
+
+  const counts: Record<string, number> = {};
+  if (data) {
+    data.forEach((item: any) => {
+      if (item.sub_event_id) {
+        counts[item.sub_event_id] = (counts[item.sub_event_id] || 0) + 1;
+      }
+    });
+  }
+  return counts;
+}
