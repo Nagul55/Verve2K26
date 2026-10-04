@@ -2,31 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Calendar, Users, Ticket, ArrowUpRight, TrendingUp } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 
-const data = [
-  { name: 'Mon', registrations: 12 },
-  { name: 'Tue', registrations: 19 },
-  { name: 'Wed', registrations: 15 },
-  { name: 'Thu', registrations: 28 },
-  { name: 'Fri', registrations: 22 },
-  { name: 'Sat', registrations: 45 },
-  { name: 'Sun', registrations: 62 },
-];
-
-const activityData = [
-  { name: 'Technical', value: 85 },
-  { name: 'Non-Technical', value: 65 },
-  { name: 'Workshops', value: 30 },
-];
-
-export function DashboardCharts({ 
-  trendsData = data, 
-  popularityData = activityData 
-}: { 
+interface DashboardChartsProps {
   trendsData?: { name: string; registrations: number }[];
   popularityData?: { name: string; value: number }[];
-}) {
+  growthRate?: string;
+}
+
+export function DashboardCharts({ 
+  trendsData = [], 
+  popularityData = [],
+  growthRate = "+0%"
+}: DashboardChartsProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -34,6 +22,8 @@ export function DashboardCharts({
   }, []);
 
   if (!isMounted) return <div className="h-[300px] w-full bg-[#F8F8FC] animate-pulse rounded-md"></div>;
+
+  const isNegative = growthRate.startsWith('-');
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -44,8 +34,17 @@ export function DashboardCharts({
             <h3 className="text-lg font-bold text-eventrix-black font-anton tracking-wide">REGISTRATION TRENDS</h3>
             <p className="text-[10px] font-bold text-eventrix-muted uppercase tracking-widest">Last 7 Days Activity</p>
           </div>
-          <div className="bg-[#F3F0FF] text-eventrix-lavender px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-            <TrendingUp className="w-3 h-3" /> +24%
+          <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
+            isNegative 
+              ? 'bg-red-100 text-red-700 border border-red-200' 
+              : 'bg-[#F3F0FF] text-eventrix-lavender border border-purple-200'
+          }`}>
+            {isNegative ? (
+              <TrendingDown className="w-3.5 h-3.5 text-red-600" />
+            ) : (
+              <TrendingUp className="w-3.5 h-3.5 text-eventrix-lavender" />
+            )}
+            <span>{growthRate}</span>
           </div>
         </div>
         
@@ -60,7 +59,7 @@ export function DashboardCharts({
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} allowDecimals={false} />
               <Tooltip 
                 contentStyle={{ backgroundColor: '#080A12', border: 'none', borderRadius: '4px', color: '#fff' }}
                 itemStyle={{ color: '#A78BFA' }}
@@ -80,7 +79,7 @@ export function DashboardCharts({
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={popularityData} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
-              <XAxis type="number" hide />
+              <XAxis type="number" hide allowDecimals={false} />
               <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} width={80} />
               <Tooltip 
                 cursor={{ fill: 'transparent' }}

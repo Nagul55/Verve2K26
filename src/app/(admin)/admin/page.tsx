@@ -62,6 +62,41 @@ export default async function AdminDashboard() {
     }
   });
 
+  // REAL-TIME ANALYTICS: Calculate 7-Day vs Previous 7-Day Registration Growth Rate
+  let currentPeriodRegs = 0;
+  let previousPeriodRegs = 0;
+
+  allParticipants.forEach(p => {
+    if (p.registrations && Array.isArray(p.registrations)) {
+      p.registrations.forEach((reg: any) => {
+        if (reg.created_at) {
+          const regDate = new Date(reg.created_at);
+          const diffDays = Math.floor((today.getTime() - regDate.getTime()) / (1000 * 3600 * 24));
+          const count = reg.registration_sub_events?.length || 1;
+          
+          if (diffDays >= 0 && diffDays < 7) {
+            currentPeriodRegs += count;
+          } else if (diffDays >= 7 && diffDays < 14) {
+            previousPeriodRegs += count;
+          }
+        }
+      });
+    }
+  });
+
+  let growthRate = "+0%";
+  if (previousPeriodRegs === 0) {
+    if (currentPeriodRegs > 0) {
+      growthRate = "+100%";
+    } else {
+      growthRate = "0%";
+    }
+  } else {
+    const diff = currentPeriodRegs - previousPeriodRegs;
+    const pct = Math.round((diff / previousPeriodRegs) * 100);
+    growthRate = pct >= 0 ? `+${pct}%` : `${pct}%`;
+  }
+
   const trendsData = last7DaysData.map(d => ({ name: d.name, registrations: d.registrations }));
 
   // CATEGORY POPULARITY CHART DATA
@@ -128,7 +163,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Charts Section */}
-      <DashboardCharts trendsData={trendsData} popularityData={popularityData} />
+      <DashboardCharts trendsData={trendsData} popularityData={popularityData} growthRate={growthRate} />
 
       {/* Tables Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
