@@ -37,7 +37,7 @@ export default async function AdminSettingsPage() {
       </div>
 
       <div className="bg-white border border-[#D9D9DF] p-8 rounded-md max-w-3xl">
-        <SettingsProfileForm initialData={initialData} userId={user.id} showAcademic={true} />
+        <SettingsProfileForm initialData={initialData} userId={user.id} showAcademic={false} showMobile={false} />
       </div>
     </div>
   );

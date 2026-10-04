@@ -14,7 +14,7 @@ export async function updateProfile(userId: string, data: any) {
     return { error: "Invalid user session. Please sign in." };
   }
 
-  if (data?.mobile && !/^\d{10}$/.test(String(data.mobile).trim())) {
+  if (data?.mobile && String(data.mobile).trim().length > 0 && !/^\d{10}$/.test(String(data.mobile).trim())) {
     return { error: "10 digits required" };
   }
 
@@ -25,11 +25,27 @@ export async function updateProfile(userId: string, data: any) {
   if (authErr || !authData?.user) {
     return { error: authErr?.message || "User account not found." };
   }
+
+  // Update Auth user_metadata (full_name) and email if changed
+  const authUpdates: any = {};
+  if (data.full_name) {
+    authUpdates.user_metadata = { ...authData.user.user_metadata, full_name: data.full_name };
+  }
+  if (data.email && data.email !== authData.user.email) {
+    authUpdates.email = data.email;
+  }
   
+  if (Object.keys(authUpdates).length > 0) {
+    const { error: updateAuthErr } = await adminClient.auth.admin.updateUserById(userId, authUpdates);
+    if (updateAuthErr) {
+      console.error("Error updating auth user:", updateAuthErr);
+    }
+  }
+
   // We use upsert in case the participant stub wasn't properly created during signup
   const { error } = await adminClient.from('participants').upsert({
     participant_id: userId,
-    email: authData.user.email,
+    email: data.email || authData.user.email,
     ...data
   }, {
     onConflict: 'participant_id'
