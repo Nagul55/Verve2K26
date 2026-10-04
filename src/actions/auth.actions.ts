@@ -127,23 +127,64 @@ export async function getCoordinators() {
 }
 
 export async function createCoordinator(formData: FormData) {
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-  const fullName = formData.get('fullName') as string;
-  const subEventId = formData.get('subEventId') as string;
+  const email = (formData.get('email') as string) || '';
+  const password = (formData.get('password') as string) || '';
+  const confirmPassword = (formData.get('confirmPassword') as string) || '';
+  const fullName = (formData.get('fullName') as string) || '';
+  const mobile = (formData.get('mobile') as string) || '';
+  const college = (formData.get('college') as string) || '';
+  const department = (formData.get('department') as string) || '';
+  const yearOfStudy = (formData.get('yearOfStudy') as string) || '';
+  const subEventId = (formData.get('subEventId') as string) || '';
   
+  if (
+    !email.trim() ||
+    !password.trim() ||
+    !confirmPassword.trim() ||
+    !fullName.trim() ||
+    !mobile.trim() ||
+    !college.trim() ||
+    !department.trim() ||
+    !yearOfStudy.trim()
+  ) {
+    return { error: 'All fields (Full Name, Phone Number, Email, College, Department, Year of Study, Password, Confirm Password) are required.' };
+  }
+
+  if (password !== confirmPassword) {
+    return { error: 'Passwords do not match. Please ensure Password and Confirm Password match.' };
+  }
+
   const adminClient = getAdminClient();
   
   const { data, error } = await adminClient.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
-    app_metadata: { role: 'coordinator', coordinating_event_id: subEventId },
+    app_metadata: { role: 'coordinator', coordinating_event_id: subEventId || null },
     user_metadata: { full_name: fullName }
   });
   
   if (error) {
     return { error: error.message };
+  }
+
+  if (data?.user) {
+    const { error: insertErr } = await adminClient
+      .from('participants')
+      .upsert({
+        participant_id: data.user.id,
+        full_name: fullName,
+        email: email,
+        mobile: mobile,
+        department: department,
+        year_of_study: yearOfStudy,
+        college: college,
+        register_number: ''
+      }, { onConflict: 'participant_id' });
+
+    if (insertErr) {
+      console.error("Error creating participant profile for coordinator:", insertErr);
+    }
   }
   
   return { success: true };

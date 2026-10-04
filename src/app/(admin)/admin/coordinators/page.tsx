@@ -15,7 +15,10 @@ import {
   MapPin, 
   Clock, 
   Sparkles,
-  UserPlus
+  UserPlus,
+  Phone,
+  Building2,
+  GraduationCap
 } from "lucide-react";
 import { 
   getCoordinators, 
@@ -35,8 +38,13 @@ export default function CoordinatorsPage() {
   // Add Coordinator form state
   const [formData, setFormData] = useState({
     fullName: "",
+    mobile: "",
     email: "",
+    college: "",
+    department: "",
+    yearOfStudy: "1st Year",
     password: "",
+    confirmPassword: "",
     subEventId: ""
   });
 
@@ -54,7 +62,7 @@ export default function CoordinatorsPage() {
     setSubEvents(eventsData);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
@@ -62,11 +70,35 @@ export default function CoordinatorsPage() {
     e.preventDefault();
     setStatus({ text: "", type: "" });
     
+    if (
+      !formData.fullName.trim() ||
+      !formData.mobile.trim() ||
+      !formData.email.trim() ||
+      !formData.college.trim() ||
+      !formData.department.trim() ||
+      !formData.yearOfStudy.trim() ||
+      !formData.password.trim() ||
+      !formData.confirmPassword.trim()
+    ) {
+      setStatus({ text: "All fields are required. Please complete all fields to create a coordinator.", type: "error" });
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setStatus({ text: "Passwords do not match. Please ensure Password and Confirm Password are identical.", type: "error" });
+      return;
+    }
+
     startTransition(async () => {
       const data = new FormData();
       data.append('fullName', formData.fullName);
+      data.append('mobile', formData.mobile);
       data.append('email', formData.email);
+      data.append('college', formData.college);
+      data.append('department', formData.department);
+      data.append('yearOfStudy', formData.yearOfStudy);
       data.append('password', formData.password);
+      data.append('confirmPassword', formData.confirmPassword);
       data.append('subEventId', formData.subEventId);
       
       const res = await createCoordinator(data);
@@ -75,7 +107,17 @@ export default function CoordinatorsPage() {
         setStatus({ text: res.error, type: "error" });
       } else {
         setStatus({ text: "Coordinator account created successfully!", type: "success" });
-        setFormData({ fullName: "", email: "", password: "", subEventId: "" });
+        setFormData({
+          fullName: "",
+          mobile: "",
+          email: "",
+          college: "",
+          department: "",
+          yearOfStudy: "1st Year",
+          password: "",
+          confirmPassword: "",
+          subEventId: ""
+        });
         await loadData();
       }
     });
@@ -401,14 +443,15 @@ export default function CoordinatorsPage() {
                 <UserPlus className="w-6 h-6 text-eventrix-lavender" /> Create New Coordinator Account
               </h2>
               <p className="text-xs text-eventrix-muted font-medium mt-1">
-                Register a new event coordinator account.
+                Fill in all required fields to register a new event coordinator account.
               </p>
             </div>
 
             <form onSubmit={handleCreateCoordinator} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
-                <div className="space-y-2 md:col-span-2">
+                {/* Full Name */}
+                <div className="space-y-2">
                   <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
                     Full Name <span className="text-red-500">*</span>
                   </label>
@@ -422,7 +465,24 @@ export default function CoordinatorsPage() {
                   />
                 </div>
 
+                {/* Phone Number */}
                 <div className="space-y-2">
+                  <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="tel"
+                    name="mobile" 
+                    value={formData.mobile} 
+                    onChange={handleChange} 
+                    required 
+                    placeholder="+91 9876543210" 
+                    className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
+                  />
+                </div>
+
+                {/* Email Address */}
+                <div className="space-y-2 md:col-span-2">
                   <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
                     Email Address <span className="text-red-500">*</span>
                   </label>
@@ -437,21 +497,112 @@ export default function CoordinatorsPage() {
                   />
                 </div>
 
+                {/* College / Institution Name */}
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
+                    College / Institution Name <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="text"
+                    name="college" 
+                    value={formData.college} 
+                    onChange={handleChange} 
+                    required 
+                    placeholder="e.g. SRM Institute of Science and Technology" 
+                    className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
+                  />
+                </div>
+
+                {/* Department / Branch */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
+                    Department / Branch <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="text"
+                    name="department" 
+                    value={formData.department} 
+                    onChange={handleChange} 
+                    required 
+                    placeholder="e.g. B.Tech IT / CSE" 
+                    className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
+                  />
+                </div>
+
+                {/* Year of Study */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
+                    Year of Study <span className="text-red-500">*</span>
+                  </label>
+                  <select 
+                    name="yearOfStudy" 
+                    value={formData.yearOfStudy} 
+                    onChange={handleChange} 
+                    required 
+                    className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium cursor-pointer" 
+                  >
+                    <option value="1st Year">1st Year</option>
+                    <option value="2nd Year">2nd Year</option>
+                    <option value="3rd Year">3rd Year</option>
+                    <option value="4th Year">4th Year</option>
+                    <option value="PG / Other">PG / Other</option>
+                  </select>
+                </div>
+
+                {/* Password */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest flex items-center gap-1">
                     <Key className="w-3.5 h-3.5" /> Password <span className="text-red-500">*</span>
                   </label>
                   <input 
-                    type="text" 
+                    type="password" 
                     name="password" 
                     value={formData.password} 
                     onChange={handleChange} 
                     required 
-                    placeholder="Min 6 characters" 
+                    placeholder="••••••••" 
                     minLength={6} 
                     className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
                   />
                 </div>
+
+                {/* Confirm Password */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest flex items-center gap-1">
+                    <Key className="w-3.5 h-3.5" /> Confirm Password <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="password" 
+                    name="confirmPassword" 
+                    value={formData.confirmPassword} 
+                    onChange={handleChange} 
+                    required 
+                    placeholder="••••••••" 
+                    minLength={6} 
+                    className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
+                  />
+                </div>
+
+                {/* Assign Sub Event Optional */}
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
+                    Assign Sub-Event Permission (Optional)
+                  </label>
+                  <select
+                    name="subEventId"
+                    value={formData.subEventId}
+                    onChange={handleChange}
+                    className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium cursor-pointer"
+                  >
+                    <option value="">No sub-event permitted initially</option>
+                    {subEvents.map(ev => (
+                      <option key={ev.id} value={ev.id}>
+                        {ev.title} ({ev.category})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
               </div>
 
               <div className="pt-4 border-t border-[#D9D9DF] flex flex-col sm:flex-row gap-4 items-center justify-between">
