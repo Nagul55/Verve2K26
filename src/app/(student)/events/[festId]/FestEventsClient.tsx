@@ -168,11 +168,7 @@ export function FestEventsClient({
       {selectedEvent && (
         <EventDetailsModal
           event={selectedEvent}
-          festId={fest.id}
-          isRegistered={registeredIds.includes(selectedEvent.id)}
-          registeredCount={registrationCounts[selectedEvent.id] || 0}
           onClose={() => setSelectedEvent(null)}
-          onRegisterSuccess={handleRegisterSuccess}
         />
       )}
     </div>

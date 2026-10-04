@@ -1,9 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { X, Calendar, Clock, MapPin, Users, User, Check, ShieldAlert, Trophy, Phone, ArrowRight, Loader2 } from "lucide-react";
-import { registerForEvents } from "@/actions/event.actions";
-import { toast } from "sonner";
+import React, { useEffect } from "react";
+import { X, Calendar, Clock, MapPin, Users, User, ShieldAlert, Trophy, Phone } from "lucide-react";
 
 export interface SubEvent {
   id: string;
@@ -29,11 +27,7 @@ export interface SubEvent {
 
 interface EventDetailsModalProps {
   event: SubEvent | null;
-  festId: string;
-  isRegistered?: boolean;
-  registeredCount?: number;
   onClose: () => void;
-  onRegisterSuccess?: (eventId: string) => void;
 }
 
 export function parseEventData(event: SubEvent) {
@@ -175,22 +169,8 @@ function parseContactStr(str: string) {
 
 export function EventDetailsModal({
   event,
-  festId,
-  isRegistered = false,
-  registeredCount = 0,
-  onClose,
-  onRegisterSuccess
+  onClose
 }: EventDetailsModalProps) {
-  const [localRegistered, setLocalRegistered] = useState(isRegistered);
-  const [isPending, setIsPending] = useState(false);
-  const [showTeamForm, setShowTeamForm] = useState(false);
-  const [teamName, setTeamName] = useState("");
-  const [teamMembers, setTeamMembers] = useState("");
-
-  useEffect(() => {
-    setLocalRegistered(isRegistered);
-  }, [isRegistered]);
-
   // Lock body scroll while modal is open, preserving scroll position on close
   useEffect(() => {
     if (!event) return;
@@ -213,53 +193,7 @@ export function EventDetailsModal({
   if (!event) return null;
 
   const parsed = parseEventData(event);
-  const isTeam = event.participation_type === "Team";
-  const capacity = event.capacity || 100;
-  const isFull = registeredCount >= capacity;
-  const isClosed = event.status === "Closed";
-
   const posterUrl = event.image_url || event.poster_url || event.banner_url || null;
-
-  const handleRegisterClick = () => {
-    if (localRegistered || isFull || isClosed || isPending) return;
-
-    if (isTeam && !showTeamForm) {
-      setShowTeamForm(true);
-      return;
-    }
-
-    executeRegistration();
-  };
-
-  const executeRegistration = async () => {
-    if (isTeam && !teamName.trim()) {
-      toast.error("Please enter a team name to register.");
-      return;
-    }
-
-    setIsPending(true);
-    try {
-      const teamNamesMap = isTeam ? { [event.id]: teamName.trim() } : undefined;
-      const teamMembersMap = isTeam && teamMembers.trim() ? { [event.id]: teamMembers.trim() } : undefined;
-
-      const res = await registerForEvents(festId, [event.id], teamNamesMap, teamMembersMap);
-
-      if (res.success) {
-        toast.success(`Successfully registered for ${event.title}!`);
-        setLocalRegistered(true);
-        setShowTeamForm(false);
-        if (onRegisterSuccess) {
-          onRegisterSuccess(event.id);
-        }
-      } else {
-        toast.error(res.error || "Failed to register for event.");
-      }
-    } catch (err: any) {
-      toast.error(err.message || "An unexpected error occurred during registration.");
-    } finally {
-      setIsPending(false);
-    }
-  };
 
   return (
     <div
@@ -422,111 +356,6 @@ export function EventDetailsModal({
                 )}
               </div>
             </div>
-          )}
-
-          {/* Team Registration Inline Form */}
-          {showTeamForm && !localRegistered && (
-            <div className="space-y-4 p-4 bg-eventrix-lavender/10 border border-eventrix-lavender/30 rounded-md animate-in fade-in duration-200">
-              <h4 className="text-xs font-bold text-eventrix-black uppercase tracking-widest">
-                Team Details Required
-              </h4>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[10px] font-bold text-eventrix-muted uppercase block mb-1">
-                    Team Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={teamName}
-                    onChange={(e) => setTeamName(e.target.value)}
-                    placeholder="Enter your team name"
-                    className="w-full text-xs px-3 py-2 border border-[#D9D9DF] rounded-md bg-white focus:outline-none focus:border-eventrix-lavender font-medium"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-eventrix-muted uppercase block mb-1">
-                    Team Member Emails (Optional, comma-separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={teamMembers}
-                    onChange={(e) => setTeamMembers(e.target.value)}
-                    placeholder="e.g. member1@example.com, member2@example.com"
-                    className="w-full text-xs px-3 py-2 border border-[#D9D9DF] rounded-md bg-white focus:outline-none focus:border-eventrix-lavender font-medium"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer / Registration Action Bar */}
-        <div className="p-6 border-t border-[#D9D9DF] bg-white">
-          {localRegistered ? (
-            <button
-              disabled
-              className="w-full bg-emerald-600 text-white font-bold text-sm tracking-wide uppercase py-3.5 rounded-md flex items-center justify-center gap-2 cursor-default opacity-90 shadow-sm"
-            >
-              <Check className="w-4 h-4" /> Registered ✓
-            </button>
-          ) : isClosed ? (
-            <button
-              disabled
-              className="w-full bg-gray-200 text-gray-500 font-bold text-sm tracking-wide uppercase py-3.5 rounded-md flex items-center justify-center gap-2 cursor-not-allowed"
-            >
-              Registration Closed
-            </button>
-          ) : isFull ? (
-            <button
-              disabled
-              className="w-full bg-gray-200 text-gray-500 font-bold text-sm tracking-wide uppercase py-3.5 rounded-md flex items-center justify-center gap-2 cursor-not-allowed"
-            >
-              Event Full
-            </button>
-          ) : showTeamForm ? (
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setShowTeamForm(false)}
-                className="px-4 py-3.5 border border-[#D9D9DF] rounded-md font-bold text-xs uppercase text-eventrix-muted hover:text-eventrix-black hover:bg-gray-50 transition-colors"
-              >
-                Back
-              </button>
-              <button
-                type="button"
-                onClick={executeRegistration}
-                disabled={isPending}
-                className="flex-1 bg-eventrix-black text-white px-8 py-3.5 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-eventrix-lavender hover:text-black transition-all shadow-[4px_4px_0px_0px_#A78BFA] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                {isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Registering...
-                  </>
-                ) : (
-                  <>
-                    Confirm Registration <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={handleRegisterClick}
-              disabled={isPending}
-              className="w-full bg-eventrix-black text-white px-8 py-3.5 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-eventrix-lavender hover:text-black transition-all shadow-[4px_4px_0px_0px_#A78BFA] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Registering...
-                </>
-              ) : (
-                <>
-                  Register Now <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
           )}
         </div>
       </div>
