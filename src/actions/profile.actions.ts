@@ -11,6 +11,35 @@ const getAdminClient = () => {
   );
 };
 
+export async function getProfileForUser(userId: string, email?: string) {
+  if (!userId) return null;
+  const adminClient = getAdminClient();
+
+  let { data: profile } = await adminClient
+    .from('participants')
+    .select('*')
+    .eq('participant_id', userId)
+    .maybeSingle();
+
+  if (!profile && email) {
+    const { data: profileByEmail } = await adminClient
+      .from('participants')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (profileByEmail) {
+      profile = profileByEmail;
+      await adminClient
+        .from('participants')
+        .update({ participant_id: userId })
+        .eq('email', email);
+    }
+  }
+
+  return profile;
+}
+
 export async function updateProfile(userId: string, data: any) {
   if (!userId || typeof userId !== 'string' || userId.trim().length < 10) {
     return { error: "Invalid user session. Please sign in." };

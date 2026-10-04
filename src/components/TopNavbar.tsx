@@ -5,6 +5,8 @@ import Link from "next/link";
 import { MobileNav } from "./MobileNav";
 import { LogoutButton } from "./LogoutButton";
 
+import { getProfileForUser } from "@/actions/profile.actions";
+
 export async function TopNavbar() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -16,9 +18,9 @@ export async function TopNavbar() {
   };
 
   if (user) {
-    const { data } = await supabase.from('participants').select('*').eq('participant_id', user.id).single();
-    if (data) {
-      profile = data;
+    const dbProfile = await getProfileForUser(user.id, user.email);
+    if (dbProfile) {
+      profile = dbProfile;
     } else {
       profile.full_name = user.user_metadata?.full_name || "STUDENT";
     }
