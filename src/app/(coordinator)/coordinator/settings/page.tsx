@@ -13,6 +13,8 @@ export default async function CoordinatorSettingsPage() {
   const profile = await getProfileForUser(user.id, user.email);
 
   const initialData = {
+    role: user.app_metadata?.role || 'coordinator',
+    gender: profile?.gender || user.user_metadata?.gender || '',
     full_name: profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || '',
     email: profile?.email || user.email || '',
     mobile: profile?.mobile || '',

@@ -37,6 +37,31 @@ export async function getProfileForUser(userId: string, email?: string) {
     }
   }
 
+  // Fetch Auth user metadata to guarantee fallback profile information
+  const { data: authData } = await adminClient.auth.admin.getUserById(userId);
+  const userMetaData = authData?.user?.user_metadata || {};
+
+  if (!profile) {
+    profile = {
+      participant_id: userId,
+      full_name: userMetaData.full_name || email?.split('@')[0] || 'User',
+      email: email || '',
+      mobile: '',
+      college: '',
+      department: '',
+      year_of_study: '',
+      register_number: '',
+      gender: userMetaData.gender || ''
+    };
+  } else {
+    if (!profile.gender && userMetaData.gender) {
+      profile.gender = userMetaData.gender;
+    }
+    if (!profile.full_name && userMetaData.full_name) {
+      profile.full_name = userMetaData.full_name;
+    }
+  }
+
   return profile;
 }
 
@@ -57,14 +82,23 @@ export async function updateProfile(userId: string, data: any) {
     return { error: authErr?.message || "User account not found." };
   }
   
-  // We use upsert in case the participant stub wasn't properly created during signup
-  const { error } = await adminClient.from('participants').upsert({
+  const payload = {
     participant_id: userId,
     email: authData.user.email,
     ...data
-  }, {
+  };
+
+  let { error } = await adminClient.from('participants').upsert(payload, {
     onConflict: 'participant_id'
   });
+
+  if (error && (error.code === 'PGRST204' || (error.message && error.message.toLowerCase().includes('gender')))) {
+    const { gender, ...payloadWithoutGender } = payload;
+    const { error: fallbackErr } = await adminClient.from('participants').upsert(payloadWithoutGender, {
+      onConflict: 'participant_id'
+    });
+    error = fallbackErr;
+  }
 
   if (error) {
     return { error: error.message };

@@ -12,6 +12,31 @@ const getAdminClient = () => {
   );
 };
 
+export async function upsertParticipantProfile(adminClient: any, payload: any) {
+  const { error } = await adminClient
+    .from('participants')
+    .upsert(payload, { onConflict: 'participant_id' });
+
+  if (error) {
+    if (error.code === 'PGRST204' || (error.message && error.message.toLowerCase().includes('gender'))) {
+      console.warn("Gender column missing in participants table, performing fallback upsert without gender column.");
+      const { gender, ...payloadWithoutGender } = payload;
+      const { error: fallbackErr } = await adminClient
+        .from('participants')
+        .upsert(payloadWithoutGender, { onConflict: 'participant_id' });
+
+      if (fallbackErr) {
+        console.error("Error inserting participant profile (fallback):", fallbackErr);
+        return { error: fallbackErr.message };
+      }
+      return { success: true };
+    }
+    console.error("Error inserting participant profile:", error);
+    return { error: error.message };
+  }
+  return { success: true };
+}
+
 export async function login(formData: FormData) {
   const email = ((formData.get('email') as string) || '').trim();
   const password = ((formData.get('password') as string) || '').trim();
@@ -157,23 +182,17 @@ export async function signup(formData: FormData) {
 
   // 3. Create the participant stub
   if (authData.user) {
-    const { error: insertError } = await adminClient
-      .from('participants')
-      .insert({
-        participant_id: authData.user.id,
-        full_name: fullName,
-        email: email,
-        mobile: mobile,
-        department: department,
-        year_of_study: yearOfStudy,
-        college: college,
-        gender: gender,
-        register_number: ''
-      });
-      
-    if (insertError) {
-      console.error("Error creating participant stub:", insertError);
-    }
+    await upsertParticipantProfile(adminClient, {
+      participant_id: authData.user.id,
+      full_name: fullName,
+      email: email,
+      mobile: mobile,
+      department: department,
+      year_of_study: yearOfStudy,
+      college: college,
+      gender: gender,
+      register_number: ''
+    });
   }
 
   return { success: true, redirectTo: '/?registered=true' };
@@ -252,22 +271,20 @@ export async function createCoordinator(formData: FormData) {
   }
 
   if (data?.user) {
-    const { error: insertErr } = await adminClient
-      .from('participants')
-      .upsert({
-        participant_id: data.user.id,
-        full_name: fullName,
-        email: email,
-        mobile: mobile,
-        department: department,
-        year_of_study: yearOfStudy,
-        college: college,
-        gender: gender,
-        register_number: ''
-      }, { onConflict: 'participant_id' });
+    const res = await upsertParticipantProfile(adminClient, {
+      participant_id: data.user.id,
+      full_name: fullName,
+      email: email,
+      mobile: mobile,
+      department: department,
+      year_of_study: yearOfStudy,
+      college: college,
+      gender: gender,
+      register_number: ''
+    });
 
-    if (insertErr) {
-      console.error("Error creating participant profile for coordinator:", insertErr);
+    if (res.error) {
+      console.error("Error creating participant profile for coordinator:", res.error);
     }
   }
   

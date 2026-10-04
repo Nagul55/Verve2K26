@@ -14,6 +14,8 @@ export default async function SettingsPage() {
   }
 
   const initialData = {
+    role: user?.app_metadata?.role || 'student',
+    gender: profile?.gender || user?.user_metadata?.gender || '',
     full_name: profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
     email: profile?.email || user?.email || '',
     mobile: profile?.mobile || '',
