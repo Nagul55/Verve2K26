@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Calendar, Clock, MapPin, ArrowLeft, ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
-import { EventDetailsModal, SubEvent } from "@/components/EventDetailsModal";
+import { EventDetailsModal, SubEvent, parseEventData } from "@/components/EventDetailsModal";
 
 interface FestEventsClientProps {
   fest: any;
@@ -67,6 +67,7 @@ export function FestEventsClient({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {techEvents.map((event) => {
               const isReg = registeredIds.includes(event.id);
+              const parsed = parseEventData(event);
               return (
                 <div
                   key={event.id}
@@ -87,7 +88,7 @@ export function FestEventsClient({
                     {event.title}
                   </h4>
                   <p className="text-xs text-eventrix-muted mb-4 line-clamp-2">
-                    {event.description}
+                    {parsed.cleanDescription}
                   </p>
 
                   <div className="space-y-1.5 text-[10px] text-eventrix-black font-medium">
@@ -118,6 +119,7 @@ export function FestEventsClient({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {nonTechEvents.map((event) => {
               const isReg = registeredIds.includes(event.id);
+              const parsed = parseEventData(event);
               return (
                 <div
                   key={event.id}
@@ -138,7 +140,7 @@ export function FestEventsClient({
                     {event.title}
                   </h4>
                   <p className="text-xs text-eventrix-muted mb-4 line-clamp-2">
-                    {event.description}
+                    {parsed.cleanDescription}
                   </p>
 
                   <div className="space-y-1.5 text-[10px] text-eventrix-black font-medium">

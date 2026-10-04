@@ -5,6 +5,7 @@ import { Check, Calendar, MapPin, Clock, AlertTriangle } from "lucide-react";
 import { registerForEvents } from "@/actions/event.actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { parseEventData } from "@/components/EventDetailsModal";
 
 export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }) {
   const router = useRouter();
@@ -175,7 +176,7 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
 
                       <span className="text-[9px] md:text-[10px] font-bold text-eventrix-lavender uppercase mb-2 block tracking-widest">{event.category} - {event.participation_type}</span>
                       <h4 className="font-bold text-base md:text-lg text-eventrix-black mb-1">{event.title}</h4>
-                      <p className="text-[11px] md:text-xs text-eventrix-muted mb-4 line-clamp-2">{event.description}</p>
+                      <p className="text-[11px] md:text-xs text-eventrix-muted mb-4 line-clamp-2">{parseEventData(event).cleanDescription}</p>
 
                       <div className="space-y-1.5 text-[9px] md:text-[10px] text-eventrix-black font-medium">
                         <div className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.date}</div>
@@ -213,7 +214,7 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
 
                       <span className="text-[9px] md:text-[10px] font-bold text-eventrix-lavender uppercase mb-2 block tracking-widest">{event.category} - {event.participation_type}</span>
                       <h4 className="font-bold text-base md:text-lg text-eventrix-black mb-1">{event.title}</h4>
-                      <p className="text-[11px] md:text-xs text-eventrix-muted mb-4 line-clamp-2">{event.description}</p>
+                      <p className="text-[11px] md:text-xs text-eventrix-muted mb-4 line-clamp-2">{parseEventData(event).cleanDescription}</p>
 
                       <div className="space-y-1.5 text-[9px] md:text-[10px] text-eventrix-black font-medium">
                         <div className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.date}</div>
