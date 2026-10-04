@@ -8,6 +8,23 @@ export default async function AdminSettingsPage() {
   
   if (!user) return null;
 
+  let profile = null;
+  const { data } = await supabase
+    .from('participants')
+    .select('*')
+    .eq('participant_id', user.id)
+    .single();
+  profile = data;
+
+  const initialData = profile || {
+    full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+    email: user.email || '',
+    mobile: '',
+    college: '',
+    department: '',
+    year_of_study: ''
+  };
+
   return (
     <div className="space-y-10">
       <div>
@@ -20,7 +37,7 @@ export default async function AdminSettingsPage() {
       </div>
 
       <div className="bg-white border border-[#D9D9DF] p-8 rounded-md max-w-3xl">
-        <SettingsProfileForm initialData={{ full_name: user.user_metadata?.full_name, email: user.email }} userId={user.id} />
+        <SettingsProfileForm initialData={initialData} userId={user.id} showAcademic={true} />
       </div>
     </div>
   );

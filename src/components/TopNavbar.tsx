@@ -57,7 +57,11 @@ export async function TopNavbar() {
             )}
           </div>
           
-          <Link href="/settings" title="Settings" className="text-eventrix-muted hover:text-eventrix-black transition-colors hidden sm:block">
+          <Link 
+            href={role === 'admin' ? '/admin/settings' : role === 'coordinator' ? '/coordinator/settings' : '/settings'} 
+            title="Settings" 
+            className="text-eventrix-muted hover:text-eventrix-black transition-colors hidden sm:block"
+          >
             <Settings className="w-4 h-4" />
           </Link>
           

@@ -8,6 +8,23 @@ export default async function CoordinatorSettingsPage() {
   
   if (!user) return null;
 
+  let profile = null;
+  const { data } = await supabase
+    .from('participants')
+    .select('*')
+    .eq('participant_id', user.id)
+    .single();
+  profile = data;
+
+  const initialData = profile || {
+    full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+    email: user.email || '',
+    mobile: '',
+    college: '',
+    department: '',
+    year_of_study: ''
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -16,7 +33,7 @@ export default async function CoordinatorSettingsPage() {
         </h1>
       </div>
 
-      <SettingsProfileForm initialData={{ full_name: user.user_metadata?.full_name, email: user.email }} userId={user.id} showAcademic={false} />
+      <SettingsProfileForm initialData={initialData} userId={user.id} showAcademic={true} />
     </div>
   );
 }
