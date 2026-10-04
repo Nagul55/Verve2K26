@@ -10,9 +10,40 @@ export default async function AdminDashboard() {
   const events = await getSubEvents(undefined, true) || [];
   const supabase = await createClient();
   
-  // Fetch high-level admin stats
-  const { count: participantsCount } = await supabase.from('participants').select('*', { count: 'exact', head: true });
-  const { count: registrationsCount } = await supabase.from('event_registrations').select('*', { count: 'exact', head: true });
+  // Fetch high-level admin stats: only count participants who have registered for at least one event
+  const { data: regParticipants } = await supabase
+    .from('registrations')
+    .select('participant_id');
+
+  const { data: eventRegParticipants } = await supabase
+    .from('event_registrations')
+    .select('participant_id');
+
+  const registeredParticipantSet = new Set<string>();
+
+  if (regParticipants) {
+    regParticipants.forEach((r: { participant_id?: string }) => {
+      if (r.participant_id) registeredParticipantSet.add(r.participant_id);
+    });
+  }
+
+  if (eventRegParticipants) {
+    eventRegParticipants.forEach((r: { participant_id?: string }) => {
+      if (r.participant_id) registeredParticipantSet.add(r.participant_id);
+    });
+  }
+
+  const registeredParticipantsCount = registeredParticipantSet.size;
+
+  const { count: subEventRegCount } = await supabase
+    .from('registration_sub_events')
+    .select('*', { count: 'exact', head: true });
+
+  const { count: directRegCount } = await supabase
+    .from('event_registrations')
+    .select('*', { count: 'exact', head: true });
+
+  const totalRegistrationsCount = (subEventRegCount || 0) + (directRegCount || 0);
   
   // Fetch pending events for the table
   const pendingEvents = events.filter(e => e.status === 'Pending').slice(0, 5);
@@ -85,8 +116,8 @@ export default async function AdminDashboard() {
     .sort((a, b) => b.value - a.value);
 
   const stats = [
-    { label: "TOTAL PARTICIPANTS", value: participantsCount || 0, icon: Users },
-    { label: "TOTAL REGISTRATIONS", value: registrationsCount || 0, icon: Ticket },
+    { label: "TOTAL PARTICIPANTS", value: registeredParticipantsCount, icon: Users },
+    { label: "TOTAL REGISTRATIONS", value: totalRegistrationsCount, icon: Ticket },
     { label: "PENDING APPROVALS", value: events.filter(e => e.status === 'Pending').length, icon: AlertCircle, alert: true },
     { label: "ACTIVE EVENTS", value: events.filter(e => e.status === 'Approved').length, icon: Calendar },
   ];
