@@ -439,12 +439,17 @@ export async function getCoordinatorParticipants() {
   if (!user) return [];
 
   const assignedEventId = user.app_metadata?.coordinating_event_id;
+  const adminClient = getAdminClient();
+
   if (!assignedEventId) {
-     return getAdminParticipants(); // Fallback if admin
+     // Fallback: Return admin participants but ONLY those who registered for events
+     const allParticipants = await getAdminParticipants();
+     return allParticipants.filter((p: any) => {
+       if (!p.registrations || !Array.isArray(p.registrations)) return false;
+       return p.registrations.some((reg: any) => reg.registration_sub_events && reg.registration_sub_events.length > 0);
+     });
   }
 
-  const adminClient = getAdminClient();
-  
   const { data, error } = await adminClient
     .from('registration_sub_events')
     .select(`

@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, Clock, ShieldCheck, Download, Search, RefreshCw, XCircle } from "lucide-react";
+import { CheckCircle2, ShieldCheck, Download, XCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
@@ -18,43 +18,32 @@ export default async function CoordinatorAttendancePage() {
   const assignedEventId = user?.app_metadata?.coordinating_event_id;
   const adminClient = getAdminClient();
 
-  let logs: any[] = [];
-  
+  let rawLogs: any[] = [];
+
   if (assignedEventId) {
     const { data } = await adminClient
       .from('attendance')
-      .select(`
-        attendance_id,
-        scanned_at,
-        source,
-        status,
-        participants (
-          full_name,
-          register_number
-        )
-      `)
+      .select('attendance_id, scanned_at, source, status, participant_id, event_id')
       .eq('event_id', assignedEventId)
       .order('scanned_at', { ascending: false });
-      
-    logs = data || [];
+    rawLogs = data || [];
   } else {
-    // If not assigned to a specific event (e.g. general coordinator/admin)
     const { data } = await adminClient
       .from('attendance')
-      .select(`
-        attendance_id,
-        scanned_at,
-        source,
-        status,
-        participants (
-          full_name,
-          register_number
-        )
-      `)
+      .select('attendance_id, scanned_at, source, status, participant_id, event_id')
       .order('scanned_at', { ascending: false });
-      
-    logs = data || [];
+    rawLogs = data || [];
   }
+
+  // Fetch real participants details from DB map to accurately populate name and details
+  const { data: participantsData } = await adminClient.from('participants').select('*');
+  const partMap = new Map<string, any>();
+  (participantsData || []).forEach(p => partMap.set(p.participant_id, p));
+
+  const logs = rawLogs.map(log => ({
+    ...log,
+    participants: partMap.get(log.participant_id) || null
+  }));
 
   return (
     <div className="space-y-8 pb-12">
@@ -98,20 +87,24 @@ export default async function CoordinatorAttendancePage() {
               </tr>
             ) : (
               logs.map((log) => {
-                const logDate = new Date(log.scanned_at);
-                const shortId = `LOG-${log.attendance_id.split('-')[0].toUpperCase()}`;
+                const logDate = log.scanned_at ? new Date(log.scanned_at) : new Date();
+                const shortId = `LOG-${log.attendance_id ? log.attendance_id.split('-')[0].toUpperCase() : '001'}`;
                 
                 return (
-                  <tr key={log.attendance_id} className="hover:bg-[#F8F8FC] transition-colors">
+                  <tr key={log.attendance_id || Math.random()} className="hover:bg-[#F8F8FC] transition-colors">
                     <td className="px-6 py-4 font-mono font-bold text-xs text-eventrix-lavender">{shortId}</td>
-                    <td className="px-6 py-4 font-bold text-eventrix-black">{log.participants?.full_name || 'Unknown'}</td>
-                    <td className="px-6 py-4 font-mono font-bold text-xs text-eventrix-muted">{log.participants?.register_number || 'N/A'}</td>
+                    <td className="px-6 py-4 font-bold text-eventrix-black">
+                      {log.participants?.full_name || log.participants?.email || 'Registered Participant'}
+                    </td>
+                    <td className="px-6 py-4 font-mono font-bold text-xs text-eventrix-muted">
+                      {log.participants?.register_number || 'N/A'}
+                    </td>
                     <td className="px-6 py-4 text-xs font-medium text-eventrix-black">
                       {logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} <span className="text-eventrix-muted">({logDate.toLocaleDateString()})</span>
                     </td>
                     <td className="px-6 py-4 text-xs">
                       <span className="bg-[#F8F8FC] border border-[#D9D9DF] px-2.5 py-1 rounded font-medium">
-                        {log.source === 'QR_Scanner' ? 'QR Scanner' : log.source}
+                        {log.source === 'QR_Scanner' ? 'QR Scanner' : (log.source || 'Manual Scan')}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -121,7 +114,7 @@ export default async function CoordinatorAttendancePage() {
                         </span>
                       ) : (
                         <span className="bg-red-100 text-red-800 border border-red-300 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1">
-                          <XCircle className="w-3 h-3" /> {log.status}
+                          <XCircle className="w-3 h-3" /> {log.status || 'Check-in Error'}
                         </span>
                       )}
                     </td>
