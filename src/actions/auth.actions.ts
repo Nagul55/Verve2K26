@@ -42,6 +42,11 @@ export async function signup(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const fullName = formData.get('fullName') as string;
+  const mobile = (formData.get('mobile') as string) || '';
+  const college = (formData.get('college') as string) || '';
+  const department = (formData.get('department') as string) || '';
+  const yearOfStudy = (formData.get('yearOfStudy') as string) || '';
+  const registerNumber = (formData.get('registerNumber') as string) || '';
   
   const adminClient = getAdminClient();
 
@@ -68,11 +73,11 @@ export async function signup(formData: FormData) {
         participant_id: authData.user.id,
         full_name: fullName,
         email: email,
-        mobile: '',
-        department: '',
-        year_of_study: '',
-        college: '',
-        register_number: ''
+        mobile: mobile,
+        department: department,
+        year_of_study: yearOfStudy,
+        college: college,
+        register_number: registerNumber
       });
       
     if (insertError) {

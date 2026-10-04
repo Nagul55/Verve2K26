@@ -118,6 +118,51 @@ export default async function AdminDashboard() {
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
 
+  // DEMOGRAPHICS CALCULATIONS (Year of Study, Department, College)
+  const totalCountForDemo = allParticipants.length || 1;
+
+  // 1. Year of Study
+  const yearCounts: Record<string, number> = {};
+  allParticipants.forEach(p => {
+    const yr = (p.year_of_study || p.yearOfStudy || '').trim();
+    const label = yr ? (yr.includes('Yr') || yr.includes('Year') ? yr : `${yr} Year`) : 'Not Specified';
+    yearCounts[label] = (yearCounts[label] || 0) + 1;
+  });
+
+  const yearData = Object.entries(yearCounts).map(([name, count]) => ({
+    name,
+    count,
+    percentage: Math.round((count / totalCountForDemo) * 100)
+  })).sort((a, b) => b.count - a.count);
+
+  // 2. Department Breakdown
+  const deptCounts: Record<string, number> = {};
+  allParticipants.forEach(p => {
+    const dept = (p.department || '').trim().toUpperCase();
+    const label = dept || 'NOT SPECIFIED';
+    deptCounts[label] = (deptCounts[label] || 0) + 1;
+  });
+
+  const deptData = Object.entries(deptCounts).map(([name, count]) => ({
+    name,
+    count,
+    percentage: Math.round((count / totalCountForDemo) * 100)
+  })).sort((a, b) => b.count - a.count);
+
+  // 3. College Breakdown
+  const collegeCounts: Record<string, number> = {};
+  allParticipants.forEach(p => {
+    const col = (p.college || '').trim();
+    const label = col || 'Not Specified';
+    collegeCounts[label] = (collegeCounts[label] || 0) + 1;
+  });
+
+  const collegeData = Object.entries(collegeCounts).map(([name, count]) => ({
+    name,
+    count,
+    percentage: Math.round((count / totalCountForDemo) * 100)
+  })).sort((a, b) => b.count - a.count);
+
   const stats = [
     { label: "TOTAL PARTICIPANTS", value: registeredParticipantsCount, icon: Users },
     { label: "TOTAL REGISTRATIONS", value: totalRegistrationsCount, icon: Ticket },
@@ -162,8 +207,15 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
-      {/* Charts Section */}
-      <DashboardCharts trendsData={trendsData} popularityData={popularityData} growthRate={growthRate} />
+      {/* Charts & Demographics Section */}
+      <DashboardCharts 
+        trendsData={trendsData} 
+        popularityData={popularityData} 
+        growthRate={growthRate} 
+        yearData={yearData}
+        deptData={deptData}
+        collegeData={collegeData}
+      />
 
       {/* Tables Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
