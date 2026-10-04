@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { signup } from "@/actions/auth.actions";
-import { Eye, EyeOff, User, Mail, AlertCircle, Phone, Building2, GraduationCap, Calendar, Hash } from 'lucide-react';
+import { Eye, EyeOff, User, Mail, AlertCircle, Phone, Building2, GraduationCap, Calendar, Lock } from 'lucide-react';
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('');
@@ -12,9 +12,10 @@ export default function SignupPage() {
   const [college, setCollege] = useState('');
   const [department, setDepartment] = useState('');
   const [yearOfStudy, setYearOfStudy] = useState('1st Year');
-  const [registerNumber, setRegisterNumber] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -26,8 +27,8 @@ export default function SignupPage() {
     const collegeStr = (formData.get('college') as string) || '';
     const departmentStr = (formData.get('department') as string) || '';
     const yearOfStudyStr = (formData.get('yearOfStudy') as string) || '';
-    const registerNumberStr = (formData.get('registerNumber') as string) || '';
     const passwordStr = (formData.get('password') as string) || '';
+    const confirmPasswordStr = (formData.get('confirmPassword') as string) || '';
 
     if (
       !fullNameStr.trim() ||
@@ -36,10 +37,15 @@ export default function SignupPage() {
       !collegeStr.trim() ||
       !departmentStr.trim() ||
       !yearOfStudyStr.trim() ||
-      !registerNumberStr.trim() ||
-      !passwordStr.trim()
+      !passwordStr.trim() ||
+      !confirmPasswordStr.trim()
     ) {
-      setErrorMsg('All fields are required. Please fill in all inputs to create your account.');
+      setErrorMsg('All fields are required. Please fill in all fields to create your account.');
+      return;
+    }
+
+    if (passwordStr !== confirmPasswordStr) {
+      setErrorMsg('Passwords do not match. Please ensure Password and Confirm Password are identical.');
       return;
     }
 
@@ -96,7 +102,7 @@ export default function SignupPage() {
               <span className="font-anton text-3xl text-eventrix-lavender tracking-widest hidden" id="fallback-logo">EVENTRIX</span>
             </div>
             <p className="text-gray-900 lg:text-gray-500 text-xs sm:text-sm font-bold mt-2">
-              All 8 fields are required to register your account.
+              Fill all required fields below to create your account.
             </p>
           </div>
 
@@ -235,27 +241,8 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {/* Grid 3: Register Number & Password */}
+            {/* Grid 3: Password & Confirm Password */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {/* Register Number Input */}
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-gray-900 block">
-                  Register / Roll Number <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    name="registerNumber"
-                    required
-                    value={registerNumber}
-                    onChange={(e) => setRegisterNumber(e.target.value)}
-                    placeholder="e.g. 717822P101"
-                    className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
-                  />
-                  <Hash className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-              </div>
-
               {/* Password Input */}
               <div className="space-y-1">
                 <label className="text-xs font-extrabold text-gray-900 block">
@@ -277,6 +264,31 @@ export default function SignupPage() {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-900 p-1 transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password Input */}
+              <div className="space-y-1">
+                <label className="text-xs font-extrabold text-gray-900 block">
+                  Confirm Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all pr-10 shadow-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-900 p-1 transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>

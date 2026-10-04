@@ -41,24 +41,28 @@ export async function login(formData: FormData) {
 export async function signup(formData: FormData) {
   const email = (formData.get('email') as string) || '';
   const password = (formData.get('password') as string) || '';
+  const confirmPassword = (formData.get('confirmPassword') as string) || '';
   const fullName = (formData.get('fullName') as string) || '';
   const mobile = (formData.get('mobile') as string) || '';
   const college = (formData.get('college') as string) || '';
   const department = (formData.get('department') as string) || '';
   const yearOfStudy = (formData.get('yearOfStudy') as string) || '';
-  const registerNumber = (formData.get('registerNumber') as string) || '';
 
   if (
     !email.trim() ||
     !password.trim() ||
+    !confirmPassword.trim() ||
     !fullName.trim() ||
     !mobile.trim() ||
     !college.trim() ||
     !department.trim() ||
-    !yearOfStudy.trim() ||
-    !registerNumber.trim()
+    !yearOfStudy.trim()
   ) {
-    return { error: 'Please fill in all 8 required fields to create your account.' };
+    return { error: 'All fields are required. Please fill in all details.' };
+  }
+
+  if (password !== confirmPassword) {
+    return { error: 'Passwords do not match. Please make sure your passwords match.' };
   }
   
   const adminClient = getAdminClient();
@@ -90,7 +94,7 @@ export async function signup(formData: FormData) {
         department: department,
         year_of_study: yearOfStudy,
         college: college,
-        register_number: registerNumber
+        register_number: ''
       });
       
     if (insertError) {
