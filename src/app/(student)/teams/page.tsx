@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useTransition } from "react";
-import { Users, Plus, AlertTriangle } from "lucide-react";
+import { Users, Plus } from "lucide-react";
 import { getSubEvents } from "@/actions/event.actions";
 import { createTeam } from "@/actions/team.actions";
+import { toast } from "sonner";
 
 export default function TeamsPage() {
   const [events, setEvents] = useState<any[]>([]);
@@ -12,7 +13,6 @@ export default function TeamsPage() {
   const [selectedEventId, setSelectedEventId] = useState("");
   
   const [isPending, startTransition] = useTransition();
-  const [message, setMessage] = useState({ text: "", type: "" });
 
   useEffect(() => {
     async function loadEvents() {
@@ -27,14 +27,13 @@ export default function TeamsPage() {
     e.preventDefault();
     if (!teamName || !leaderEmail || !selectedEventId) return;
 
-    setMessage({ text: "", type: "" });
     startTransition(async () => {
       const res = await createTeam(teamName, selectedEventId, leaderEmail);
       if (res.success) {
-        setMessage({ text: "Team created successfully!", type: "success" });
+        toast.success("Team created successfully!");
         setTeamName("");
       } else {
-        setMessage({ text: res.error || "An error occurred", type: "error" });
+        toast.error(res.error || "An error occurred");
       }
     });
   };
@@ -95,13 +94,6 @@ export default function TeamsPage() {
               required
             />
           </div>
-
-          {message.text && (
-            <div className={`p-4 rounded-md text-sm font-bold flex gap-3 ${message.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
-              {message.type === 'error' && <AlertTriangle className="w-5 h-5 shrink-0" />}
-              {message.text}
-            </div>
-          )}
 
           <button 
             type="submit" 

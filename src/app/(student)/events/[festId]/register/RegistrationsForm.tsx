@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { toast } from "sonner";
 import { Check, Calendar, MapPin, Clock, AlertTriangle } from "lucide-react";
 import { registerForEvents } from "@/actions/event.actions";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }) {
   const router = useRouter();
@@ -64,13 +64,13 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
           showTeamStep ? membersStrMap : undefined
         );
         if (res.success) {
-          toast.success("Successfully registered for events!");
+          toast.success("Event registration successful!");
           router.push("/registrations");
         } else {
-          toast.error(res.error || "Registration failed");
+          toast.error(res.error || "Event registration failed");
         }
       } catch (err: any) {
-        toast.error(`Error: Something went wrong. ${err.message || 'Please try again.'}`);
+        toast.error(`Something went wrong: ${err.message || 'Please try again.'}`);
       }
     });
   };

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { toast } from "sonner";
 import { Plus, Save, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -10,6 +9,7 @@ import { createFest } from "@/actions/event.actions";
 export default function CreateFestPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [statusMsg, setStatusMsg] = useState({ text: "", type: "" });
 
   const [formData, setFormData] = useState({
     name: "",
@@ -24,6 +24,7 @@ export default function CreateFestPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setStatusMsg({ text: "", type: "" });
 
     startTransition(async () => {
       const { success, error } = await createFest(
@@ -34,9 +35,9 @@ export default function CreateFestPage() {
       );
 
       if (error) {
-        toast.error(error);
+        setStatusMsg({ text: error, type: "error" });
       } else {
-        toast.success("Main Event created successfully!");
+        setStatusMsg({ text: "Main Event created successfully!", type: "success" });
         setTimeout(() => {
           router.push('/admin/events');
           router.refresh();
@@ -90,6 +91,12 @@ export default function CreateFestPage() {
               </div>
             </div>
           </div>
+
+          {statusMsg.text && (
+            <div className={`p-4 rounded-md text-sm font-bold flex gap-3 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+              {statusMsg.text}
+            </div>
+          )}
 
           <div className="pt-6 border-t border-[#D9D9DF]">
             <button 

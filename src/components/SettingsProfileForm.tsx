@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { toast } from "sonner";
-import { Save, Edit2, X } from "lucide-react";
+import { Save, Edit2 } from "lucide-react";
 import { updateProfile } from "@/actions/profile.actions";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export function SettingsProfileForm({ initialData, userId, showAcademic = true }: { initialData: any, userId: string, showAcademic?: boolean }) {
   const router = useRouter();

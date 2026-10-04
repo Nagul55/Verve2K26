@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Users, Lock, UserMinus, ShieldAlert } from "lucide-react";
 import { removeTeamMember, lockTeam } from "@/actions/team.actions";
+import { toast } from "sonner";
 
 export function TeamManager({ teamDetails }: { teamDetails: any }) {
   const [loading, setLoading] = useState(false);
@@ -12,9 +13,10 @@ export function TeamManager({ teamDetails }: { teamDetails: any }) {
     setLoading(true);
     const res = await removeTeamMember(teamDetails.teamId, participantId);
     if (res.success) {
+      toast.success("Team member removed successfully!");
       window.location.reload();
     } else {
-      alert(res.error);
+      toast.error(res.error || "Failed to remove team member");
       setLoading(false);
     }
   };
@@ -24,9 +26,10 @@ export function TeamManager({ teamDetails }: { teamDetails: any }) {
     setLoading(true);
     const res = await lockTeam(teamDetails.teamId);
     if (res.success) {
+      toast.success("Team locked successfully!");
       window.location.reload();
     } else {
-      alert(res.error);
+      toast.error(res.error || "Failed to lock team");
       setLoading(false);
     }
   };

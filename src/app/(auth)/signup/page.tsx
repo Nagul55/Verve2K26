@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { signup } from "@/actions/auth.actions";
-import { Eye, EyeOff, User, Mail, AlertCircle, Phone, Building2, GraduationCap, Calendar, Lock } from 'lucide-react';
-import { toast } from "sonner";
+import { Eye, EyeOff, User, Mail, Phone, Building2, GraduationCap, Calendar, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('');
@@ -57,6 +57,7 @@ export default function SignupPage() {
         toast.error(res.error);
         setIsLoading(false);
       } else if (res?.success && res?.redirectTo) {
+        toast.success("Account created successfully!");
         window.location.href = res.redirectTo;
       }
     } catch (err: any) {

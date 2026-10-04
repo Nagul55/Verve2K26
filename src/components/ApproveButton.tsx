@@ -4,6 +4,7 @@ import React, { useState, useTransition } from "react";
 import { CheckCircle2, ShieldCheck } from "lucide-react";
 import { approveSubEvent } from "@/actions/event.actions";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export function ApproveButton({ id, isApproved }: { id: string, isApproved: boolean }) {
   const router = useRouter();
@@ -21,7 +22,10 @@ export function ApproveButton({ id, isApproved }: { id: string, isApproved: bool
     startTransition(async () => {
       const res = await approveSubEvent(id);
       if (res.success) {
+        toast.success("Event approved and published live!");
         router.refresh();
+      } else if (res.error) {
+        toast.error(res.error);
       }
     });
   };

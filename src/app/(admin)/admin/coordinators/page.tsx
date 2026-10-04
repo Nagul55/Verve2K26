@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useTransition } from "react";
-import { toast } from "sonner";
 import { 
   Plus, 
   Users, 
@@ -28,6 +27,7 @@ import {
   deleteCoordinator 
 } from "@/actions/auth.actions";
 import { getSubEvents, approveAndPermitSubEvent } from "@/actions/event.actions";
+import { toast } from "sonner";
 
 export default function CoordinatorsPage() {
   const [activeTab, setActiveTab] = useState<"manage" | "add">("manage");
@@ -139,7 +139,7 @@ export default function CoordinatorsPage() {
       if (res.error) {
         toast.error(res.error);
       } else {
-        toast.success(`Coordinator account for ${name} removed from system`);
+        toast.success("Coordinator removed successfully!");
         await loadData();
       }
     });

@@ -3,6 +3,7 @@
 import React, { useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface DeleteButtonProps {
   id: string;
@@ -19,9 +20,10 @@ export function DeleteButton({ id, onDelete, itemType }: DeleteButtonProps) {
       startTransition(async () => {
         const { success, error } = await onDelete(id);
         if (success) {
+          toast.success(`${itemType} deleted successfully!`);
           router.refresh();
         } else {
-          alert(`Error deleting ${itemType}: ${error}`);
+          toast.error(`Error deleting ${itemType}: ${error}`);
         }
       });
     }

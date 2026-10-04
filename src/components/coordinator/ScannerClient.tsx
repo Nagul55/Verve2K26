@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { QrCode, Scan, Search, CheckCircle2, XCircle, UserCheck } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
+import { toast } from "sonner";
 
 export default function ScannerClient({ assignedEventId }: { assignedEventId: string | null }) {
   const [scanning, setScanning] = useState(false);
@@ -24,7 +25,7 @@ export default function ScannerClient({ assignedEventId }: { assignedEventId: st
 
   const startScanner = async () => {
     if (!assignedEventId) {
-      alert("Error: You are not assigned to any specific event. Cannot scan tickets.");
+      toast.error("You are not assigned to any specific event. Cannot scan tickets.");
       return;
     }
 
@@ -52,9 +53,11 @@ export default function ScannerClient({ assignedEventId }: { assignedEventId: st
             if (data.pid) {
               verifyTicketApi(data.pid, data.event_id);
             } else {
+              toast.error("Invalid Ticket QR Format");
               setScanResult({ success: false, message: "Invalid Ticket QR Format" });
             }
           } catch (e) {
+            toast.error("Invalid Ticket QR Format");
             setScanResult({ success: false, message: "Invalid Ticket QR Format (Not JSON)" });
           }
         },
@@ -65,6 +68,7 @@ export default function ScannerClient({ assignedEventId }: { assignedEventId: st
     } catch (err) {
       console.error(err);
       setScanning(false);
+      toast.error("Failed to start camera. Please check permissions.");
       setScanResult({ success: false, message: "Failed to start camera. Please check permissions." });
     }
   };
@@ -79,9 +83,11 @@ export default function ScannerClient({ assignedEventId }: { assignedEventId: st
   const verifyTicketApi = async (pid: string, qrEventId?: string) => {
     try {
       if (qrEventId && qrEventId !== assignedEventId) {
+        const errMsg = "WRONG TICKET! This ticket is for a different event.";
+        toast.error(errMsg);
         setScanResult({
           success: false,
-          message: "WRONG TICKET! This ticket is for a different event. Please ask the participant to show the ticket for your event."
+          message: errMsg
         });
         return;
       }
@@ -94,6 +100,7 @@ export default function ScannerClient({ assignedEventId }: { assignedEventId: st
       const data = await res.json();
       
       if (res.ok) {
+        toast.success(data.message || "Ticket verified successfully!");
         setScanResult({
           success: true,
           participant: data.participantName || "Verified Participant",
@@ -102,12 +109,14 @@ export default function ScannerClient({ assignedEventId }: { assignedEventId: st
           message: data.message
         });
       } else {
+        toast.error(data.error || "Failed to verify ticket");
         setScanResult({
           success: false,
           message: data.error
         });
       }
     } catch (err) {
+      toast.error("Network error occurred.");
       setScanResult({ success: false, message: "Network error occurred." });
     }
   };
@@ -118,7 +127,7 @@ export default function ScannerClient({ assignedEventId }: { assignedEventId: st
     if (!manualQuery.trim()) return;
     
     // In a full model, this would ping a `/api/admin/manual-lookup` endpoint
-    alert("Manual lookup is currently under construction. Please use QR Scan.");
+    toast.info("Manual lookup is currently under construction. Please use QR Scan.");
   };
 
   return (

@@ -39,6 +39,7 @@ function LoginForm() {
         toast.error(res.error);
         setIsLoading(false);
       } else if (res?.success && res?.redirectTo) {
+        toast.success("Login successful!");
         window.location.href = res.redirectTo;
       }
     } catch (err: any) {

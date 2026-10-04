@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Check, X, ShieldAlert, Users } from "lucide-react";
 import { acceptTeamInvitation, rejectTeamInvitation } from "@/actions/team.actions";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export function InvitationsList({ invitations }: { invitations: any[] }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -17,9 +18,10 @@ export function InvitationsList({ invitations }: { invitations: any[] }) {
       invitation.teams.sub_events.fest_id
     );
     if (res.success) {
+      toast.success("Team invitation accepted!");
       router.push("/registrations");
     } else {
-      alert(res.error);
+      toast.error(res.error || "Failed to accept team invitation");
       setLoadingId(null);
     }
   };
@@ -29,9 +31,10 @@ export function InvitationsList({ invitations }: { invitations: any[] }) {
     setLoadingId(teamId);
     const res = await rejectTeamInvitation(teamId);
     if (res.success) {
+      toast.info("Team invitation rejected.");
       window.location.reload();
     } else {
-      alert(res.error);
+      toast.error(res.error || "Failed to reject team invitation");
       setLoadingId(null);
     }
   };
