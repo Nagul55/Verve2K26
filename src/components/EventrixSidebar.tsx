@@ -29,7 +29,11 @@ export function EventrixSidebar() {
         
         <nav className="mt-6 px-4 space-y-1.5">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            const isDashboardRoute = item.href === "/admin" || item.href === "/coordinator" || item.href === "/dashboard";
+            const isActive = isDashboardRoute 
+              ? pathname === item.href 
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
             return (
               <Link
                 key={item.name}

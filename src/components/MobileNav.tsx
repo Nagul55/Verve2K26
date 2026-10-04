@@ -91,7 +91,11 @@ export function MobileNav({ role = 'student' }: { role?: string }) {
 
         <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            const isDashboardRoute = item.href === "/admin" || item.href === "/coordinator" || item.href === "/dashboard";
+            const isActive = isDashboardRoute 
+              ? pathname === item.href 
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
             return (
               <Link
                 key={item.name}
