@@ -110,6 +110,7 @@ export default function CoordinatorsPage() {
       data.append('fullName', formData.fullName);
       data.append('mobile', formData.mobile);
       data.append('email', formData.email);
+      data.append('gender', formData.gender);
       data.append('college', formData.college);
       data.append('department', formData.department);
       data.append('yearOfStudy', formData.yearOfStudy);
