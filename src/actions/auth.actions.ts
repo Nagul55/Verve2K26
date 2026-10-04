@@ -39,14 +39,27 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-  const fullName = formData.get('fullName') as string;
+  const email = (formData.get('email') as string) || '';
+  const password = (formData.get('password') as string) || '';
+  const fullName = (formData.get('fullName') as string) || '';
   const mobile = (formData.get('mobile') as string) || '';
   const college = (formData.get('college') as string) || '';
   const department = (formData.get('department') as string) || '';
   const yearOfStudy = (formData.get('yearOfStudy') as string) || '';
   const registerNumber = (formData.get('registerNumber') as string) || '';
+
+  if (
+    !email.trim() ||
+    !password.trim() ||
+    !fullName.trim() ||
+    !mobile.trim() ||
+    !college.trim() ||
+    !department.trim() ||
+    !yearOfStudy.trim() ||
+    !registerNumber.trim()
+  ) {
+    return { error: 'Please fill in all 8 required fields to create your account.' };
+  }
   
   const adminClient = getAdminClient();
 

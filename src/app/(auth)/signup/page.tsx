@@ -20,12 +20,26 @@ export default function SignupPage() {
 
   const clientAction = async (formData: FormData) => {
     setErrorMsg('');
-    const fullNameStr = formData.get('fullName') as string;
-    const emailStr = formData.get('email') as string;
-    const passwordStr = formData.get('password') as string;
+    const fullNameStr = (formData.get('fullName') as string) || '';
+    const mobileStr = (formData.get('mobile') as string) || '';
+    const emailStr = (formData.get('email') as string) || '';
+    const collegeStr = (formData.get('college') as string) || '';
+    const departmentStr = (formData.get('department') as string) || '';
+    const yearOfStudyStr = (formData.get('yearOfStudy') as string) || '';
+    const registerNumberStr = (formData.get('registerNumber') as string) || '';
+    const passwordStr = (formData.get('password') as string) || '';
 
-    if (!fullNameStr?.trim() || !emailStr?.trim() || !passwordStr?.trim()) {
-      setErrorMsg('Please fill out all required fields.');
+    if (
+      !fullNameStr.trim() ||
+      !mobileStr.trim() ||
+      !emailStr.trim() ||
+      !collegeStr.trim() ||
+      !departmentStr.trim() ||
+      !yearOfStudyStr.trim() ||
+      !registerNumberStr.trim() ||
+      !passwordStr.trim()
+    ) {
+      setErrorMsg('All fields are required. Please fill in all inputs to create your account.');
       return;
     }
 
@@ -82,13 +96,13 @@ export default function SignupPage() {
               <span className="font-anton text-3xl text-eventrix-lavender tracking-widest hidden" id="fallback-logo">EVENTRIX</span>
             </div>
             <p className="text-gray-900 lg:text-gray-500 text-xs sm:text-sm font-bold mt-2">
-              Create your account to register for events.
+              All 8 fields are required to register your account.
             </p>
           </div>
 
           {/* Error Alert */}
           {errorMsg && (
-            <div className="mb-5 p-4 rounded-xl bg-red-50/95 border border-red-200 text-red-700 text-xs sm:text-sm flex items-center gap-2.5 animate-fadeIn">
+            <div className="mb-5 p-4 rounded-xl bg-red-50/95 border border-red-200 text-red-700 text-xs sm:text-sm flex items-center gap-2.5 animate-fadeIn font-bold">
               <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
               <span>{errorMsg}</span>
             </div>
@@ -121,12 +135,13 @@ export default function SignupPage() {
               {/* Phone Number Input */}
               <div className="space-y-1">
                 <label className="text-xs font-extrabold text-gray-900 block">
-                  Phone Number
+                  Phone Number <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
                     type="tel"
                     name="mobile"
+                    required
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value)}
                     placeholder="+91 9876543210"
@@ -159,12 +174,13 @@ export default function SignupPage() {
             {/* College Name */}
             <div className="space-y-1">
               <label className="text-xs font-extrabold text-gray-900 block">
-                College / Institution Name
+                College / Institution Name <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
                   type="text"
                   name="college"
+                  required
                   value={college}
                   onChange={(e) => setCollege(e.target.value)}
                   placeholder="e.g. SRM Institute of Science and Technology"
@@ -179,12 +195,13 @@ export default function SignupPage() {
               {/* Department Input */}
               <div className="space-y-1">
                 <label className="text-xs font-extrabold text-gray-900 block">
-                  Department / Branch
+                  Department / Branch <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     name="department"
+                    required
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
                     placeholder="e.g. B.Tech IT / CSE"
@@ -197,11 +214,12 @@ export default function SignupPage() {
               {/* Year of Study Dropdown */}
               <div className="space-y-1">
                 <label className="text-xs font-extrabold text-gray-900 block">
-                  Year of Study
+                  Year of Study <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <select
                     name="yearOfStudy"
+                    required
                     value={yearOfStudy}
                     onChange={(e) => setYearOfStudy(e.target.value)}
                     className="w-full bg-white text-gray-950 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm appearance-none cursor-pointer"
@@ -222,12 +240,13 @@ export default function SignupPage() {
               {/* Register Number Input */}
               <div className="space-y-1">
                 <label className="text-xs font-extrabold text-gray-900 block">
-                  Register / Roll Number
+                  Register / Roll Number <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     name="registerNumber"
+                    required
                     value={registerNumber}
                     onChange={(e) => setRegisterNumber(e.target.value)}
                     placeholder="e.g. 717822P101"
