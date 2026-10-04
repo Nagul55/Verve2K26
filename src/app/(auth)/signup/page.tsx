@@ -5,29 +5,37 @@ import Link from 'next/link';
 import { signup } from "@/actions/auth.actions";
 import { Eye, EyeOff, User, Mail, Phone, Building2, GraduationCap, Calendar, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import { useFormDraft } from '@/hooks/useFormDraft';
 
 export default function SignupPage() {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [mobile, setMobile] = useState('');
-  const [college, setCollege] = useState('');
-  const [department, setDepartment] = useState('');
-  const [yearOfStudy, setYearOfStudy] = useState('1st Year');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const { formData, setFormData, resetForm } = useFormDraft({
+    key: "eventrix_signup_form_draft",
+    initialValues: {
+      fullName: '',
+      email: '',
+      mobile: '',
+      college: '',
+      department: '',
+      yearOfStudy: '1st Year',
+      password: '',
+      confirmPassword: '',
+    },
+    excludeKeys: ['password', 'confirmPassword'],
+  });
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const clientAction = async (formData: FormData) => {
-    const fullNameStr = (formData.get('fullName') as string) || '';
-    const mobileStr = (formData.get('mobile') as string) || '';
-    const emailStr = (formData.get('email') as string) || '';
-    const collegeStr = (formData.get('college') as string) || '';
-    const departmentStr = (formData.get('department') as string) || '';
-    const yearOfStudyStr = (formData.get('yearOfStudy') as string) || '';
-    const passwordStr = (formData.get('password') as string) || '';
-    const confirmPasswordStr = (formData.get('confirmPassword') as string) || '';
+  const clientAction = async (fData: FormData) => {
+    const fullNameStr = (fData.get('fullName') as string) || '';
+    const mobileStr = (fData.get('mobile') as string) || '';
+    const emailStr = (fData.get('email') as string) || '';
+    const collegeStr = (fData.get('college') as string) || '';
+    const departmentStr = (fData.get('department') as string) || '';
+    const yearOfStudyStr = (fData.get('yearOfStudy') as string) || '';
+    const passwordStr = (fData.get('password') as string) || '';
+    const confirmPasswordStr = (fData.get('confirmPassword') as string) || '';
 
     if (
       !fullNameStr.trim() ||
@@ -56,13 +64,14 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      const res = await signup(formData);
+      const res = await signup(fData);
       
       if (res?.error) {
         toast.error(res.error);
         setIsLoading(false);
       } else if (res?.success && res?.redirectTo) {
         toast.success("Account created successfully!");
+        resetForm();
         window.location.href = res.redirectTo;
       }
     } catch (err: any) {
@@ -126,8 +135,8 @@ export default function SignupPage() {
                     type="text"
                     name="fullName"
                     required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    value={formData.fullName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
                     placeholder="Your Full Name"
                     className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
                   />
@@ -151,8 +160,8 @@ export default function SignupPage() {
                     title="10 digits required"
                     onInvalid={(e) => e.currentTarget.setCustomValidity('10 digits required')}
                     onInput={(e) => e.currentTarget.setCustomValidity('')}
-                    value={mobile}
-                    onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    value={formData.mobile}
+                    onChange={(e) => setFormData(prev => ({ ...prev, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
                     placeholder="Your Phone Number"
                     className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
                   />
@@ -171,8 +180,8 @@ export default function SignupPage() {
                   type="email"
                   name="email"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="john.doe@example.com"
                   className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
                 />
@@ -190,8 +199,8 @@ export default function SignupPage() {
                   type="text"
                   name="college"
                   required
-                  value={college}
-                  onChange={(e) => setCollege(e.target.value)}
+                  value={formData.college}
+                  onChange={(e) => setFormData(prev => ({ ...prev, college: e.target.value }))}
                   placeholder="College Name"
                   className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
                 />
@@ -211,8 +220,8 @@ export default function SignupPage() {
                     type="text"
                     name="department"
                     required
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
+                    value={formData.department}
+                    onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
                     placeholder="Information Technology"
                     className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
                   />
@@ -229,8 +238,8 @@ export default function SignupPage() {
                   <select
                     name="yearOfStudy"
                     required
-                    value={yearOfStudy}
-                    onChange={(e) => setYearOfStudy(e.target.value)}
+                    value={formData.yearOfStudy}
+                    onChange={(e) => setFormData(prev => ({ ...prev, yearOfStudy: e.target.value }))}
                     className="w-full bg-white text-gray-950 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm appearance-none cursor-pointer"
                   >
                     <option value="1st Year">1st Year</option>
@@ -256,8 +265,8 @@ export default function SignupPage() {
                     type={showPassword ? 'text' : 'password'}
                     name="password"
                     required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={formData.password}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                     placeholder="••••••••"
                     className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all pr-10 shadow-sm"
                   />
@@ -281,8 +290,8 @@ export default function SignupPage() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     name="confirmPassword"
                     required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     placeholder="••••••••"
                     className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all pr-10 shadow-sm"
                   />

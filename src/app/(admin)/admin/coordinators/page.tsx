@@ -28,6 +28,7 @@ import {
 } from "@/actions/auth.actions";
 import { getSubEvents, approveAndPermitSubEvent } from "@/actions/event.actions";
 import { toast } from "sonner";
+import { useFormDraft } from "@/hooks/useFormDraft";
 
 export default function CoordinatorsPage() {
   const [activeTab, setActiveTab] = useState<"manage" | "add">("manage");
@@ -35,16 +36,20 @@ export default function CoordinatorsPage() {
   const [subEvents, setSubEvents] = useState<any[]>([]);
   const [isPending, startTransition] = useTransition();
 
-  // Add Coordinator form state
-  const [formData, setFormData] = useState({
-    fullName: "",
-    mobile: "",
-    email: "",
-    college: "",
-    department: "",
-    yearOfStudy: "1st Year",
-    password: "",
-    confirmPassword: ""
+  // Add Coordinator form draft persistence (excluding passwords)
+  const { formData, setFormData, resetForm } = useFormDraft({
+    key: "eventrix_coordinator_form_draft",
+    initialValues: {
+      fullName: "",
+      mobile: "",
+      email: "",
+      college: "",
+      department: "",
+      yearOfStudy: "1st Year",
+      password: "",
+      confirmPassword: ""
+    },
+    excludeKeys: ["password", "confirmPassword"]
   });
 
   // Track selected coordinator for event permission approvals
@@ -110,19 +115,24 @@ export default function CoordinatorsPage() {
         toast.error(res.error);
       } else {
         toast.success("Coordinator account created successfully!");
-        setFormData({
-          fullName: "",
-          mobile: "",
-          email: "",
-          college: "",
-          department: "",
-          yearOfStudy: "1st Year",
-          password: "",
-          confirmPassword: ""
-        });
+        resetForm();
         await loadData();
       }
     });
+  };
+
+  const handleCancelForm = () => {
+    const hasValues = Object.entries(formData).some(
+      ([k, v]) => k !== "password" && k !== "confirmPassword" && k !== "yearOfStudy" && Boolean(v)
+    );
+    if (hasValues) {
+      if (confirm("You have unsaved form information. Are you sure you want to discard this draft?")) {
+        resetForm();
+        setActiveTab("manage");
+      }
+    } else {
+      setActiveTab("manage");
+    }
   };
 
   const handleUpdateAssignment = (coordinatorId: string, subEventId: string) => {
@@ -583,7 +593,7 @@ export default function CoordinatorsPage() {
               <div className="pt-4 border-t border-[#D9D9DF] flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <button
                   type="button"
-                  onClick={() => setActiveTab("manage")}
+                  onClick={handleCancelForm}
                   className="text-xs font-bold text-eventrix-muted hover:text-eventrix-black uppercase tracking-wider"
                 >
                   Cancel

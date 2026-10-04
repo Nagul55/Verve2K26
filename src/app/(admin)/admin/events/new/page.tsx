@@ -1,21 +1,25 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useTransition } from "react";
 import { Plus, Save, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createFest } from "@/actions/event.actions";
+import { toast } from "sonner";
+import { useFormDraft } from "@/hooks/useFormDraft";
 
 export default function CreateFestPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [statusMsg, setStatusMsg] = useState({ text: "", type: "" });
 
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    min_technical: "1",
-    min_non_technical: "1"
+  const { formData, setFormData, resetForm } = useFormDraft({
+    key: "eventrix_main_event_form_draft",
+    initialValues: {
+      name: "",
+      description: "",
+      min_technical: "1",
+      min_non_technical: "1"
+    }
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -24,7 +28,6 @@ export default function CreateFestPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setStatusMsg({ text: "", type: "" });
 
     startTransition(async () => {
       const { success, error } = await createFest(
@@ -35,9 +38,10 @@ export default function CreateFestPage() {
       );
 
       if (error) {
-        setStatusMsg({ text: error, type: "error" });
+        toast.error(error);
       } else {
-        setStatusMsg({ text: "Main Event created successfully!", type: "success" });
+        toast.success("Main Event created successfully!");
+        resetForm();
         setTimeout(() => {
           router.push('/admin/events');
           router.refresh();
@@ -91,12 +95,6 @@ export default function CreateFestPage() {
               </div>
             </div>
           </div>
-
-          {statusMsg.text && (
-            <div className={`p-4 rounded-md text-sm font-bold flex gap-3 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
-              {statusMsg.text}
-            </div>
-          )}
 
           <div className="pt-6 border-t border-[#D9D9DF]">
             <button 

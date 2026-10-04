@@ -6,12 +6,14 @@ import { updateProfile } from "@/actions/profile.actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { useFormDraft } from "@/hooks/useFormDraft";
+
 export function SettingsProfileForm({ initialData, userId, showAcademic = true }: { initialData: any, userId: string, showAcademic?: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const initialValues = {
     full_name: initialData?.full_name || "",
     email: initialData?.email || "",
     mobile: initialData?.mobile || "",
@@ -19,6 +21,12 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
     register_number: initialData?.register_number || "",
     department: initialData?.department || "",
     year_of_study: initialData?.year_of_study || "",
+  };
+
+  const { formData, setFormData, clearDraft } = useFormDraft({
+    key: `eventrix_profile_form_draft_${userId}`,
+    initialValues,
+    showRestoredToast: isEditing,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,6 +47,7 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
       if (error) {
         toast.error(error);
       } else {
+        clearDraft();
         toast.success("Profile updated successfully!");
         setIsEditing(false);
         router.refresh();
@@ -70,16 +79,9 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
             <button 
               type="button" 
               onClick={() => {
+                clearDraft();
                 setIsEditing(false);
-                setFormData({
-                  full_name: initialData?.full_name || "",
-                  email: initialData?.email || "",
-                  mobile: initialData?.mobile || "",
-                  college: initialData?.college || "",
-                  register_number: initialData?.register_number || "",
-                  department: initialData?.department || "",
-                  year_of_study: initialData?.year_of_study || "",
-                });
+                setFormData(initialValues);
               }}
               className="border border-[#D9D9DF] bg-white text-eventrix-black px-6 py-2.5 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-gray-100 transition-colors cursor-pointer"
             >
