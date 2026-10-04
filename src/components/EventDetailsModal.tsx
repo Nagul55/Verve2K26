@@ -20,6 +20,8 @@ export interface SubEvent {
   rules?: string;
   prize_pool?: string;
   contact_info?: string;
+  coordinatorDetails?: Array<{ name?: string; phone?: string; email?: string }>;
+  coordinatorNames?: string[];
   image_url?: string;
   poster_url?: string;
   banner_url?: string;
@@ -29,6 +31,9 @@ interface EventDetailsModalProps {
   event: SubEvent | null;
   onClose: () => void;
 }
+
+import { getFileIcon, formatFileSize } from "@/components/ui/EventrixResourceUploader";
+import { Paperclip, Download, Eye } from "lucide-react";
 
 export function parseEventData(event: SubEvent) {
   const description = event.description || "";
@@ -40,8 +45,23 @@ export function parseEventData(event: SubEvent) {
     teamSizeHeader = teamSizeMatch[1].trim();
   }
 
-  // Remove [Team Size: ...] tag from clean description
-  let cleanDesc = description.replace(/\[Team Size:\s*[^\]]+\]/gi, '').trim();
+  // Extract event resources JSON if present
+  let eventResourcesList: any[] = (event as any).resources || [];
+  const resourcesMatch = description.match(/\[EVENT_RESOURCES:\s*({[\s\S]*?}|\[[\s\S]*?\])\]/i);
+  if (resourcesMatch) {
+    try {
+      const parsedRes = JSON.parse(resourcesMatch[1]);
+      if (Array.isArray(parsedRes) && parsedRes.length > 0) {
+        eventResourcesList = parsedRes;
+      }
+    } catch (e) {}
+  }
+
+  // Remove tags from clean description
+  let cleanDesc = description
+    .replace(/\[Team Size:\s*[^\]]+\]/gi, '')
+    .replace(/\[EVENT_RESOURCES:\s*({[\s\S]*?}|\[[\s\S]*?\])\]/gi, '')
+    .trim();
 
   let rulesSection: string[] = [];
   let prizesSection: string | null = null;
@@ -140,6 +160,7 @@ export function parseEventData(event: SubEvent) {
     rules: rulesSection.length > 0 ? rulesSection : null,
     prizes: prizesSection || null,
     contact: contactSection,
+    resources: eventResourcesList,
     teamSizeText
   };
 }
@@ -321,39 +342,97 @@ export function EventDetailsModal({
           )}
 
           {/* Contact Information */}
-          {parsed.contact && (parsed.contact.name || parsed.contact.phone || parsed.contact.email || parsed.contact.raw) && (
-            <div className="space-y-2 pt-4 border-t border-[#D9D9DF]">
+          {(() => {
+            const coords = event.coordinatorDetails && event.coordinatorDetails.length > 0
+              ? event.coordinatorDetails
+              : parsed.contact && (parsed.contact.name || parsed.contact.phone || parsed.contact.email || parsed.contact.raw)
+              ? [parsed.contact]
+              : [];
+
+            if (coords.length === 0) return null;
+
+            return (
+              <div className="space-y-2 pt-4 border-t border-[#D9D9DF]">
+                <h3 className="text-xs font-bold text-eventrix-black uppercase tracking-widest flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-eventrix-lavender" /> Event Coordinator Contact
+                </h3>
+                <div className="space-y-2">
+                  {coords.map((c: any, i: number) => (
+                    <div key={i} className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-medium bg-[#F8F8FC] p-3 rounded-md border border-[#EBEBF0]">
+                      {c.name && (
+                        <div>
+                          <span className="text-[10px] font-bold text-eventrix-muted uppercase block">Coordinator</span>
+                          <span className="text-eventrix-black font-semibold">{c.name}</span>
+                        </div>
+                      )}
+                      {c.phone && (
+                        <div>
+                          <span className="text-[10px] font-bold text-eventrix-muted uppercase block">Phone</span>
+                          <a href={`tel:${c.phone}`} className="text-eventrix-black hover:text-eventrix-lavender font-semibold underline decoration-dotted">
+                            {c.phone}
+                          </a>
+                        </div>
+                      )}
+                      {c.email && (
+                        <div>
+                          <span className="text-[10px] font-bold text-eventrix-muted uppercase block">Email</span>
+                          <a href={`mailto:${c.email}`} className="text-eventrix-black hover:text-eventrix-lavender font-semibold underline decoration-dotted truncate block">
+                            {c.email}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Event Resources & Attachments */}
+          {parsed.resources && parsed.resources.length > 0 && (
+            <div className="space-y-3 pt-4 border-t border-[#D9D9DF]">
               <h3 className="text-xs font-bold text-eventrix-black uppercase tracking-widest flex items-center gap-2">
-                <Phone className="w-4 h-4 text-eventrix-lavender" /> Contact Information
+                <Paperclip className="w-4 h-4 text-eventrix-lavender" /> Event Resources & Attachments
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-medium bg-[#F8F8FC] p-3 rounded-md border border-[#EBEBF0]">
-                {parsed.contact.name && (
-                  <div>
-                    <span className="text-[10px] font-bold text-eventrix-muted uppercase block">Contact Person</span>
-                    <span className="text-eventrix-black font-semibold">{parsed.contact.name}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {parsed.resources.map((res: any, idx: number) => (
+                  <div
+                    key={res.id || idx}
+                    className="flex items-center justify-between gap-2 p-3 bg-white border border-[#EBEBF0] rounded-xl shadow-sm hover:border-eventrix-lavender transition-all"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-[#F8F8FC] border border-[#D9D9DF] flex items-center justify-center shrink-0">
+                        {getFileIcon(res.original_name || res.file_name, res.file_type)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-eventrix-black truncate" title={res.original_name || res.file_name}>
+                          {res.original_name || res.file_name}
+                        </p>
+                        <p className="text-[10px] font-semibold text-eventrix-muted uppercase tracking-wider">
+                          {formatFileSize(res.file_size)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      <a
+                        href={res.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-[#F8F8FC] text-eventrix-black hover:bg-eventrix-lavender transition-colors flex items-center gap-1 border border-[#D9D9DF]"
+                      >
+                        <Eye className="w-3 h-3" /> View
+                      </a>
+                      <a
+                        href={res.file_url}
+                        download
+                        className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-eventrix-black text-white hover:bg-eventrix-lavender hover:text-black transition-colors flex items-center gap-1"
+                      >
+                        <Download className="w-3 h-3" /> Download
+                      </a>
+                    </div>
                   </div>
-                )}
-                {parsed.contact.phone && (
-                  <div>
-                    <span className="text-[10px] font-bold text-eventrix-muted uppercase block">Phone</span>
-                    <a href={`tel:${parsed.contact.phone}`} className="text-eventrix-black hover:text-eventrix-lavender font-semibold underline decoration-dotted">
-                      {parsed.contact.phone}
-                    </a>
-                  </div>
-                )}
-                {parsed.contact.email && (
-                  <div>
-                    <span className="text-[10px] font-bold text-eventrix-muted uppercase block">Email</span>
-                    <a href={`mailto:${parsed.contact.email}`} className="text-eventrix-black hover:text-eventrix-lavender font-semibold underline decoration-dotted">
-                      {parsed.contact.email}
-                    </a>
-                  </div>
-                )}
-                {!parsed.contact.name && !parsed.contact.phone && !parsed.contact.email && parsed.contact.raw && (
-                  <div className="col-span-full">
-                    <span className="text-eventrix-black font-semibold">{parsed.contact.raw}</span>
-                  </div>
-                )}
+                ))}
               </div>
             </div>
           )}

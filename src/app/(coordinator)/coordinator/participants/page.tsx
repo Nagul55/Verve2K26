@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Users, Search, CheckCircle2, Clock, Filter, UserCheck, RefreshCw, Mail, Phone, Building2 } from "lucide-react";
 import { getCoordinatorParticipants } from "@/actions/event.actions";
+import { EventrixSelect } from "@/components/ui/EventrixSelect";
 
 export default function CoordinatorParticipantsPage() {
   const [participants, setParticipants] = useState<any[]>([]);
@@ -112,19 +113,17 @@ export default function CoordinatorParticipantsPage() {
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2 bg-[#F8F8FC] border border-[#D9D9DF] px-3 py-2 rounded-md">
-            <Filter className="w-4 h-4 text-eventrix-muted" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent text-xs font-bold text-eventrix-black focus:outline-none uppercase tracking-wide"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="PRESENT">Checked-In Only ({presentCount})</option>
-              <option value="PENDING">Pending Only</option>
-            </select>
-          </div>
+        <div className="flex items-center gap-3 w-full md:w-auto min-w-[200px]">
+          <EventrixSelect
+            value={statusFilter}
+            onChange={(val) => setStatusFilter(val)}
+            options={[
+              { value: "ALL", label: "All Statuses" },
+              { value: "PRESENT", label: `Checked-In Only (${presentCount})` },
+              { value: "PENDING", label: "Pending Only" },
+            ]}
+            size="sm"
+          />
         </div>
       </div>
 

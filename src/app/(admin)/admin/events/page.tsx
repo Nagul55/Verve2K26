@@ -23,9 +23,9 @@ export default async function AdminEventsPage() {
         </Link>
       </div>
 
-      <div className="bg-white border border-[#D9D9DF] rounded-md overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold text-xs uppercase tracking-widest">
+      <div className="bg-white border border-[#D9D9DF] rounded-md overflow-x-auto shadow-sm">
+        <table className="w-full text-left text-sm min-w-[800px]">
+          <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold text-xs uppercase tracking-widest whitespace-nowrap">
             <tr>
               <th className="px-6 py-4">Fest Name</th>
               <th className="px-6 py-4">Description</th>

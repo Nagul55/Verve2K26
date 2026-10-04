@@ -8,6 +8,7 @@ import {
   Mail, 
   ShieldAlert, 
   CheckCircle2, 
+  XCircle, 
   AlertCircle, 
   Trash2, 
   Key, 
@@ -23,13 +24,16 @@ import {
 import { 
   getCoordinators, 
   createCoordinator, 
-  updateCoordinatorAssignment, 
+  updateCoordinatorAssignments, 
   deleteCoordinator 
 } from "@/actions/auth.actions";
-import { getSubEvents, approveAndPermitSubEvent } from "@/actions/event.actions";
+import { getSubEvents, approveSubEvent, rejectSubEvent } from "@/actions/event.actions";
 import { toast } from "sonner";
 import { useFormDraft } from "@/hooks/useFormDraft";
 import { UserAvatar } from "@/components/UserAvatar";
+import { CoordinatorEventSelector } from "@/components/CoordinatorEventSelector";
+import { SubeventCoordinatorSelector } from "@/components/SubeventCoordinatorSelector";
+import { EventrixSelect } from "@/components/ui/EventrixSelect";
 
 export default function CoordinatorsPage() {
   const [activeTab, setActiveTab] = useState<"manage" | "add">("manage");
@@ -54,8 +58,8 @@ export default function CoordinatorsPage() {
     excludeKeys: ["password", "confirmPassword"]
   });
 
-  // Track selected coordinator for event permission approvals
-  const [permitAssignments, setPermitAssignments] = useState<Record<string, string>>({});
+  // Track selected coordinator IDs per subevent for approval
+  const [permitAssignments, setPermitAssignments] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     loadData();
@@ -66,6 +70,16 @@ export default function CoordinatorsPage() {
     setCoordinators(coordsData);
     const eventsData = await getSubEvents(undefined, true);
     setSubEvents(eventsData);
+
+    // Initialize permitAssignments from existing coordinator mappings
+    const initialPermits: Record<string, string[]> = {};
+    eventsData.forEach((ev: any) => {
+      const assigned = coordsData
+        .filter((c: any) => (c.subEventIds || []).includes(ev.id))
+        .map((c: any) => c.id);
+      initialPermits[ev.id] = assigned;
+    });
+    setPermitAssignments(initialPermits);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -143,13 +157,13 @@ export default function CoordinatorsPage() {
     }
   };
 
-  const handleUpdateAssignment = (coordinatorId: string, subEventId: string) => {
+  const handleUpdateAssignments = async (coordinatorId: string, selectedSubEventIds: string[]) => {
     startTransition(async () => {
-      const res = await updateCoordinatorAssignment(coordinatorId, subEventId);
+      const res = await updateCoordinatorAssignments(coordinatorId, selectedSubEventIds);
       if (res.error) {
         toast.error(res.error);
       } else {
-        toast.success("Coordinator event permission updated successfully!");
+        toast.success("Coordinator event permissions updated successfully!");
         await loadData();
       }
     });
@@ -170,21 +184,38 @@ export default function CoordinatorsPage() {
   };
 
   const handlePermitAndApprove = (subEventId: string) => {
-    const selectedCoordId = permitAssignments[subEventId] || "";
+    const selectedCoordIds = permitAssignments[subEventId] || [];
+
+    if (selectedCoordIds.length === 0) {
+      toast.error("Assign at least one coordinator before approving this event.");
+      return;
+    }
     
     startTransition(async () => {
-      const res = await approveAndPermitSubEvent(subEventId, selectedCoordId);
+      const res = await approveSubEvent(subEventId, selectedCoordIds);
       if (res.error) {
         toast.error(res.error);
       } else {
-        toast.success("Event permitted and approved successfully!");
+        toast.success("Event permitted and approved to LIVE successfully!");
         await loadData();
       }
     });
   };
 
-  // Filter requested/pending events
-  const pendingRequests = subEvents.filter(e => e.status !== 'Approved');
+  const handleReject = (subEventId: string) => {
+    startTransition(async () => {
+      const res = await rejectSubEvent(subEventId);
+      if (res.error) {
+        toast.error(res.error);
+      } else {
+        toast.success("Event rejected successfully.");
+        await loadData();
+      }
+    });
+  };
+
+  // Filter requested/pending/draft events for approval section
+  const approvalQueue = subEvents.filter(e => e.status !== 'LIVE');
 
   return (
     <div className="space-y-8 pb-12">
@@ -199,7 +230,7 @@ export default function CoordinatorsPage() {
             COORDINATOR CONTROL CENTER
           </h1>
           <p className="text-eventrix-muted font-medium text-sm mt-1">
-            Review event creation requests, grant permissions, and manage coordinator accounts.
+            Review event creation requests, grant multi-coordinator permissions, and approve live events.
           </p>
         </div>
 
@@ -215,9 +246,9 @@ export default function CoordinatorsPage() {
           >
             <Users className="w-4 h-4" />
             Manage Coordinators & Requests
-            {pendingRequests.length > 0 && (
+            {approvalQueue.length > 0 && (
               <span className="bg-amber-400 text-black text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                {pendingRequests.length}
+                {approvalQueue.length}
               </span>
             )}
           </button>
@@ -240,7 +271,7 @@ export default function CoordinatorsPage() {
       {activeTab === "manage" && (
         <div className="space-y-10">
           
-          {/* SECTION 1: Event Requests & Permits */}
+          {/* SECTION 1: Event Requests & Approval Queue */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
@@ -248,94 +279,120 @@ export default function CoordinatorsPage() {
                   <Sparkles className="w-5 h-5 text-eventrix-lavender" /> Event Permission & Approval Requests
                 </h2>
                 <p className="text-xs text-eventrix-muted font-medium">
-                  Review sub-events submitted by coordinators. Grant permissions and approve them live.
+                  Assign one or multiple coordinators and approve events for students.
                 </p>
               </div>
               <span className="text-xs font-bold bg-purple-100 text-purple-800 px-3 py-1 rounded-full border border-purple-200">
-                {pendingRequests.length} Pending Approval
+                {approvalQueue.length} Pending / Draft
               </span>
             </div>
 
-            <div className="bg-white border border-[#D9D9DF] rounded-md overflow-hidden shadow-sm">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold text-xs uppercase tracking-widest">
+            <div className="bg-white border border-[#D9D9DF] rounded-md overflow-x-auto shadow-sm">
+              <table className="w-full text-left text-sm min-w-[1100px]">
+                <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold text-xs uppercase tracking-widest whitespace-nowrap">
                   <tr>
                     <th className="px-6 py-4">Event Title</th>
                     <th className="px-6 py-4">Category</th>
                     <th className="px-6 py-4">Format</th>
                     <th className="px-6 py-4">Date & Time</th>
                     <th className="px-6 py-4">Venue</th>
-                    <th className="px-6 py-4">Permit To Coordinator</th>
+                    <th className="px-6 py-4">Assigned Coordinators</th>
                     <th className="px-6 py-4 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#D9D9DF]">
-                  {pendingRequests.map((event) => (
-                    <tr key={event.id} className="hover:bg-[#F8F8FC] transition-colors bg-amber-50/30">
-                      <td className="px-6 py-4 font-bold text-eventrix-black">
-                        <div>
-                          <p className="text-base">{event.title}</p>
-                          <span className="text-[10px] text-amber-700 font-bold uppercase tracking-wider bg-amber-100 px-2 py-0.5 rounded inline-block mt-1">
-                            Pending Approval
+                  {approvalQueue.map((event) => {
+                    const assignedIds = permitAssignments[event.id] || [];
+                    const isDraft = event.status === 'DRAFT' || !event.status;
+                    const isPendingApp = event.status === 'PENDING_APPROVAL';
+                    const isRejected = event.status === 'REJECTED';
+
+                    return (
+                      <tr key={event.id} className="hover:bg-[#F8F8FC] transition-colors bg-amber-50/20">
+                        <td className="px-6 py-4 font-bold text-eventrix-black">
+                          <div>
+                            <p className="text-base">{event.title}</p>
+                            {isDraft && (
+                              <span className="text-[10px] text-gray-700 font-bold uppercase tracking-wider bg-gray-200 px-2 py-0.5 rounded inline-block mt-1">
+                                DRAFT (No Coordinator)
+                              </span>
+                            )}
+                            {isPendingApp && (
+                              <span className="text-[10px] text-amber-800 font-bold uppercase tracking-wider bg-amber-100 px-2 py-0.5 rounded inline-block mt-1">
+                                PENDING APPROVAL
+                              </span>
+                            )}
+                            {isRejected && (
+                              <span className="text-[10px] text-red-800 font-bold uppercase tracking-wider bg-red-100 px-2 py-0.5 rounded inline-block mt-1">
+                                REJECTED
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest ${
+                            event.category === 'Technical' 
+                              ? 'bg-purple-100 text-purple-800 border border-purple-200' 
+                              : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          }`}>
+                            {event.category}
                           </span>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest ${
-                          event.category === 'Technical' 
-                            ? 'bg-purple-100 text-purple-800 border border-purple-200' 
-                            : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                        }`}>
-                          {event.category}
-                        </span>
-                      </td>
+                        <td className="px-6 py-4 font-medium text-eventrix-muted text-xs">
+                          {event.participation_type || 'Individual'}
+                        </td>
 
-                      <td className="px-6 py-4 font-medium text-eventrix-muted text-xs">
-                        {event.participation_type || 'Individual'}
-                      </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-1.5 text-eventrix-black font-medium text-xs">
+                            <Calendar className="w-3.5 h-3.5 text-eventrix-muted" /> {event.date}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-eventrix-muted font-medium text-xs mt-1">
+                            <Clock className="w-3.5 h-3.5" /> {event.time}
+                          </div>
+                        </td>
 
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5 text-eventrix-black font-medium text-xs">
-                          <Calendar className="w-3.5 h-3.5 text-eventrix-muted" /> {event.date}
-                        </div>
-                        <div className="flex items-center gap-1.5 text-eventrix-muted font-medium text-xs mt-1">
-                          <Clock className="w-3.5 h-3.5" /> {event.time}
-                        </div>
-                      </td>
+                        <td className="px-6 py-4 text-eventrix-black text-xs font-medium">
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-eventrix-muted" /> {event.location}
+                          </div>
+                        </td>
 
-                      <td className="px-6 py-4 text-eventrix-black text-xs font-medium">
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-eventrix-muted" /> {event.location}
-                        </div>
-                      </td>
+                        <td className="px-6 py-4">
+                          <SubeventCoordinatorSelector
+                            subEventId={event.id}
+                            coordinators={coordinators}
+                            selectedCoordinatorIds={assignedIds}
+                            onChange={(subId, selectedIds) => {
+                              setPermitAssignments(prev => ({ ...prev, [subId]: selectedIds }));
+                            }}
+                          />
+                        </td>
 
-                      <td className="px-6 py-4">
-                        <select
-                          value={permitAssignments[event.id] || ""}
-                          onChange={(e) => setPermitAssignments(prev => ({ ...prev, [event.id]: e.target.value }))}
-                          className="border border-[#D9D9DF] rounded px-3 py-1.5 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender text-xs font-medium w-full max-w-[200px]"
-                        >
-                          <option value="">Keep current / Unassigned</option>
-                          {coordinators.map(c => (
-                            <option key={c.id} value={c.id}>{c.fullName} ({c.email})</option>
-                          ))}
-                        </select>
-                      </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleReject(event.id)}
+                              disabled={isPending}
+                              className="text-red-600 hover:bg-red-50 px-3 py-1.5 rounded font-bold text-xs uppercase tracking-wider transition-colors border border-red-200 cursor-pointer disabled:opacity-50"
+                            >
+                              Reject
+                            </button>
+                            <button
+                              onClick={() => handlePermitAndApprove(event.id)}
+                              disabled={isPending}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded font-bold text-xs uppercase tracking-wider transition-colors shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                            >
+                              <CheckCircle2 className="w-4 h-4" /> Permit & Approve
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
 
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => handlePermitAndApprove(event.id)}
-                          disabled={isPending}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded font-bold text-xs uppercase tracking-wider transition-colors shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                        >
-                          <CheckCircle2 className="w-4 h-4" /> Permit & Approve
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-
-                  {pendingRequests.length === 0 && (
+                  {approvalQueue.length === 0 && (
                     <tr>
                       <td colSpan={7} className="px-6 py-10 text-center text-eventrix-muted font-bold text-sm">
                         <div className="flex flex-col items-center justify-center gap-2">
@@ -350,24 +407,24 @@ export default function CoordinatorsPage() {
             </div>
           </div>
 
-          {/* SECTION 2: Existing Coordinators Roster */}
+          {/* SECTION 2: Existing Coordinators Roster & Multi-Event Permissions */}
           <div className="space-y-4">
             <div>
               <h2 className="text-lg font-bold text-eventrix-black uppercase tracking-wider flex items-center gap-2">
-                <Users className="w-5 h-5 text-eventrix-lavender" /> Existing Coordinators & Assigned Event Access
+                <Users className="w-5 h-5 text-eventrix-lavender" /> Existing Coordinators & Multi-Event Access
               </h2>
               <p className="text-xs text-eventrix-muted font-medium">
-                View all registered event coordinators and change their assigned sub-event permissions in real-time.
+                Assign one or multiple sub-events to each coordinator. Changes update permissions and status in real-time.
               </p>
             </div>
 
-            <div className="bg-white border border-[#D9D9DF] rounded-md overflow-hidden shadow-sm">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold text-xs uppercase tracking-widest">
+            <div className="bg-white border border-[#D9D9DF] rounded-md overflow-x-auto shadow-sm">
+              <table className="w-full text-left text-sm min-w-[1000px]">
+                <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold text-xs uppercase tracking-widest whitespace-nowrap">
                   <tr>
                     <th className="px-6 py-4">Coordinator Name</th>
                     <th className="px-6 py-4">Email Address</th>
-                    <th className="px-6 py-4">Assigned Permitted Event</th>
+                    <th className="px-6 py-4">Assigned Permitted Events</th>
                     <th className="px-6 py-4">Role Status</th>
                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
@@ -394,19 +451,14 @@ export default function CoordinatorsPage() {
                       </td>
 
                       <td className="px-6 py-4">
-                        <select
-                          value={coord.subEventId || ""}
-                          onChange={(e) => handleUpdateAssignment(coord.id, e.target.value)}
-                          disabled={isPending}
-                          className="border border-[#D9D9DF] rounded px-3 py-1.5 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender font-semibold text-xs text-eventrix-black w-full max-w-[220px]"
-                        >
-                          <option value="">Unassigned (No event permitted)</option>
-                          {subEvents.map(ev => (
-                            <option key={ev.id} value={ev.id}>
-                              {ev.title} ({ev.category})
-                            </option>
-                          ))}
-                        </select>
+                        <CoordinatorEventSelector
+                          coordinatorId={coord.id}
+                          coordinatorName={coord.fullName}
+                          assignedSubEventIds={coord.subEventIds || []}
+                          allSubEvents={subEvents}
+                          onSave={handleUpdateAssignments}
+                          isPending={isPending}
+                        />
                       </td>
 
                       <td className="px-6 py-4">
@@ -513,22 +565,18 @@ export default function CoordinatorsPage() {
                 </div>
 
                 {/* Gender */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
-                    Gender <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleChange}
-                    required
-                    className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium cursor-pointer"
-                  >
-                    <option value="" disabled>Select Gender</option>
-                    <option value="MALE">Male</option>
-                    <option value="FEMALE">Female</option>
-                  </select>
-                </div>
+                <EventrixSelect
+                  label="Gender"
+                  name="gender"
+                  required
+                  placeholder="Select Gender"
+                  value={formData.gender}
+                  onChange={(val) => setFormData((prev) => ({ ...prev, gender: val }))}
+                  options={[
+                    { value: "MALE", label: "Male" },
+                    { value: "FEMALE", label: "Female" },
+                  ]}
+                />
 
                 {/* College / Institution Name */}
                 <div className="space-y-2 md:col-span-2">
@@ -563,24 +611,20 @@ export default function CoordinatorsPage() {
                 </div>
 
                 {/* Year of Study */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
-                    Year of Study <span className="text-red-500">*</span>
-                  </label>
-                  <select 
-                    name="yearOfStudy" 
-                    value={formData.yearOfStudy} 
-                    onChange={handleChange} 
-                    required 
-                    className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium cursor-pointer" 
-                  >
-                    <option value="1st Year">1st Year</option>
-                    <option value="2nd Year">2nd Year</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
-                    <option value="PG / Other">PG / Other</option>
-                  </select>
-                </div>
+                <EventrixSelect
+                  label="Year of Study"
+                  name="yearOfStudy"
+                  required
+                  value={formData.yearOfStudy}
+                  onChange={(val) => setFormData((prev) => ({ ...prev, yearOfStudy: val }))}
+                  options={[
+                    { value: "1st Year", label: "1st Year" },
+                    { value: "2nd Year", label: "2nd Year" },
+                    { value: "3rd Year", label: "3rd Year" },
+                    { value: "4th Year", label: "4th Year" },
+                    { value: "PG / Other", label: "PG / Other" },
+                  ]}
+                />
 
                 {/* Password */}
                 <div className="space-y-2">

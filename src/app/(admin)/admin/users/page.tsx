@@ -21,6 +21,7 @@ import {
 import { getAllUsersAdmin, deleteUserAccount } from "@/actions/auth.actions";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
+import { EventrixSelect } from "@/components/ui/EventrixSelect";
 
 interface SystemUser {
   id: string;
@@ -180,19 +181,17 @@ export default function AdminUsersPage() {
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2 bg-[#F8F8FC] border border-[#D9D9DF] px-3 py-2 rounded-md">
-            <Filter className="w-4 h-4 text-eventrix-muted" />
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value as any)}
-              className="bg-transparent text-xs font-bold text-eventrix-black focus:outline-none uppercase tracking-wide cursor-pointer"
-            >
-              <option value="ALL">All Roles ({users.length})</option>
-              <option value="student">Students ({studentCount})</option>
-              <option value="coordinator">Coordinators ({coordinatorCount})</option>
-            </select>
-          </div>
+        <div className="flex items-center gap-3 w-full md:w-auto min-w-[200px]">
+          <EventrixSelect
+            value={roleFilter}
+            onChange={(val) => setRoleFilter(val as any)}
+            options={[
+              { value: "ALL", label: `All Roles (${users.length})` },
+              { value: "student", label: `Students (${studentCount})` },
+              { value: "coordinator", label: `Coordinators (${coordinatorCount})` },
+            ]}
+            size="sm"
+          />
 
           {(searchQuery || roleFilter !== "ALL") && (
             <button
@@ -206,10 +205,9 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white border border-[#D9D9DF] rounded-md overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold text-xs uppercase tracking-widest">
+      <div className="bg-white border border-[#D9D9DF] rounded-md overflow-x-auto shadow-sm">
+        <table className="w-full text-left text-sm min-w-[1000px]">
+          <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold text-xs uppercase tracking-widest whitespace-nowrap">
               <tr>
                 <th className="px-6 py-4">User</th>
                 <th className="px-6 py-4">Role</th>
@@ -311,7 +309,6 @@ export default function AdminUsersPage() {
               )}
             </tbody>
           </table>
-        </div>
 
         {/* Footer info */}
         <div className="px-6 py-4 bg-[#F8F8FC] border-t border-[#D9D9DF] flex justify-between items-center text-xs font-medium text-eventrix-muted">

@@ -39,17 +39,60 @@ export async function getSubEvents(festId?: string, includePending: boolean = fa
   const adminClient = getAdminClient();
   let query = adminClient.from('sub_events').select('*');
   if (festId) query = query.eq('fest_id', festId);
-  if (!includePending) {
-    query = query.eq('status', 'Approved');
-  }
   
   const { data, error } = await query;
-  if (error) return [];
-  return data;
+  if (error || !data) return [];
+
+  // Query coordinators from Supabase Auth users
+  const { data: authData } = await adminClient.auth.admin.listUsers();
+  const eventCoordMap: Record<string, string[]> = {};
+  const eventCoordDetails: Record<string, Array<{ name: string; phone: string; email: string }>> = {};
+
+  if (authData?.users) {
+    authData.users.forEach(u => {
+      if (u.app_metadata?.role === 'coordinator') {
+        const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
+          ? u.app_metadata.coordinating_event_ids
+          : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
+        ids.forEach(id => {
+          if (!eventCoordMap[id]) eventCoordMap[id] = [];
+          if (!eventCoordDetails[id]) eventCoordDetails[id] = [];
+          const name = u.user_metadata?.full_name || u.email || 'Coordinator';
+          const phone = u.user_metadata?.mobile || u.user_metadata?.phone || u.phone || '';
+          const email = u.email || '';
+          eventCoordMap[id].push(name);
+          eventCoordDetails[id].push({ name, phone, email });
+        });
+      }
+    });
+  }
+
+  // Student Query (includePending === false): ONLY return LIVE events with >= 1 coordinator assigned!
+  if (!includePending) {
+    return data
+      .filter(e => e.status === 'LIVE' && (eventCoordMap[e.id]?.length || 0) > 0)
+      .map(e => ({
+        ...e,
+        coordinatorNames: eventCoordMap[e.id] || [],
+        coordinatorDetails: eventCoordDetails[e.id] || []
+      }));
+  }
+
+  // Admin Query (includePending === true): Attach coordinator info & count
+  return data.map(e => ({
+    ...e,
+    coordinatorNames: eventCoordMap[e.id] || [],
+    coordinatorDetails: eventCoordDetails[e.id] || [],
+    coordinatorCount: eventCoordMap[e.id]?.length || 0
+  }));
 }
 
 export async function createSubEvent(subEventData: any) {
   const adminClient = getAdminClient();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const isCoordinator = user?.app_metadata?.role === 'coordinator';
   
   // Format candidate/team requirements into description if present
   let formattedDesc = subEventData.description || '';
@@ -67,13 +110,14 @@ export async function createSubEvent(subEventData: any) {
   if (subEventData.prize_pool && subEventData.prize_pool.trim() && !formattedDesc.includes('PRIZES:')) {
     formattedDesc += `\n\nPRIZES:\n${subEventData.prize_pool.trim()}`;
   }
-  if (subEventData.contact_info && subEventData.contact_info.trim() && !formattedDesc.includes('CONTACT:')) {
-    formattedDesc += `\n\nCONTACT: ${subEventData.contact_info.trim()}`;
+
+  if (subEventData.resources && Array.isArray(subEventData.resources) && subEventData.resources.length > 0 && !formattedDesc.includes('[EVENT_RESOURCES:')) {
+    formattedDesc += `\n\n[EVENT_RESOURCES: ${JSON.stringify(subEventData.resources)}]`;
   }
 
   // Only pass columns that exist in the Supabase sub_events table schema
   const cleanPayload: any = {
-    fest_id: subEventData.fest_id || '00000000-0000-0000-0000-000000000001',
+    fest_id: subEventData.fest_id || '5a567e01-9c0f-47aa-8960-c09dd88afae5',
     title: subEventData.title,
     description: formattedDesc,
     category: subEventData.category || 'Technical',
@@ -83,18 +127,71 @@ export async function createSubEvent(subEventData: any) {
     date: subEventData.date || 'TBD',
     time: subEventData.time || 'TBD',
     location: subEventData.location,
-    capacity: typeof subEventData.capacity === 'number' ? subEventData.capacity : parseInt(subEventData.capacity || '100')
+    capacity: typeof subEventData.capacity === 'number' ? subEventData.capacity : parseInt(subEventData.capacity || '100'),
+    status: isCoordinator ? 'PENDING_APPROVAL' : 'DRAFT'
   };
 
-  const { error } = await adminClient.from('sub_events').insert(cleanPayload);
+  const { data, error } = await adminClient.from('sub_events').insert(cleanPayload).select('id').single();
+
+  if (!error && data?.id && isCoordinator && user) {
+    // Automatically bind the new sub-event ID to the authenticated coordinator
+    const { updateCoordinatorAssignments } = await import("./auth.actions");
+    const existingIds: string[] = Array.isArray(user.app_metadata?.coordinating_event_ids)
+      ? user.app_metadata.coordinating_event_ids
+      : user.app_metadata?.coordinating_event_id ? [user.app_metadata.coordinating_event_id] : [];
+    if (!existingIds.includes(data.id)) {
+      await updateCoordinatorAssignments(user.id, [...existingIds, data.id]);
+    }
+  }
+
   return { success: !error, error: error?.message };
 }
 
-export async function approveSubEvent(subEventId: string) {
+export async function approveSubEvent(subEventId: string, coordinatorIds?: string[]) {
   const adminClient = getAdminClient();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // If coordinatorIds were supplied during approval, assign them to subevent
+  if (coordinatorIds && Array.isArray(coordinatorIds) && coordinatorIds.length > 0) {
+    const { updateCoordinatorAssignments } = await import("./auth.actions");
+    for (const cId of coordinatorIds) {
+      const { data: userData } = await adminClient.auth.admin.getUserById(cId);
+      if (userData?.user) {
+        const existingIds: string[] = Array.isArray(userData.user.app_metadata?.coordinating_event_ids)
+          ? userData.user.app_metadata.coordinating_event_ids
+          : userData.user.app_metadata?.coordinating_event_id ? [userData.user.app_metadata.coordinating_event_id] : [];
+        if (!existingIds.includes(subEventId)) {
+          await updateCoordinatorAssignments(cId, [...existingIds, subEventId]);
+        }
+      }
+    }
+  }
+
+  // Server-side Rule Validation: Check coordinator count for this event
+  const { data: authData } = await adminClient.auth.admin.listUsers();
+  const assignedCoords = (authData?.users || []).filter(u => {
+    if (u.app_metadata?.role !== 'coordinator') return false;
+    const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
+      ? u.app_metadata.coordinating_event_ids
+      : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
+    return ids.includes(subEventId);
+  });
+
+  if (assignedCoords.length === 0) {
+    return {
+      success: false,
+      error: "Assign at least one coordinator before approving this event."
+    };
+  }
+
   const { error } = await adminClient
     .from('sub_events')
-    .update({ status: 'Approved' })
+    .update({
+      status: 'LIVE',
+      approved_by: user?.id || null,
+      approved_at: new Date().toISOString()
+    })
     .eq('id', subEventId);
 
   revalidatePath('/admin/sub-events');
@@ -105,35 +202,201 @@ export async function approveSubEvent(subEventId: string) {
 }
 
 export async function approveAndPermitSubEvent(subEventId: string, coordinatorId?: string) {
+  const coordIds = coordinatorId && coordinatorId.trim() ? [coordinatorId] : [];
+  return approveSubEvent(subEventId, coordIds);
+}
+
+export async function rejectSubEvent(subEventId: string) {
   const adminClient = getAdminClient();
-  
-  // 1. Update sub_event status to Approved
   const { error } = await adminClient
     .from('sub_events')
-    .update({ status: 'Approved' })
+    .update({ status: 'REJECTED' })
     .eq('id', subEventId);
 
-  if (error) return { success: false, error: error.message };
-
-  // 2. If coordinatorId is specified, grant permission to that coordinator
-  if (coordinatorId && coordinatorId.trim() !== '') {
-    const { error: userError } = await adminClient.auth.admin.updateUserById(coordinatorId, {
-      app_metadata: { role: 'coordinator', coordinating_event_id: subEventId }
-    });
-    if (userError) return { success: false, error: userError.message };
-  }
-
-  revalidatePath('/admin/coordinators');
   revalidatePath('/admin/sub-events');
+  revalidatePath('/admin/coordinators');
   revalidatePath('/coordinator/events');
   revalidatePath('/events');
-  return { success: true };
+  return { success: !error, error: error?.message };
 }
 
 export async function deleteSubEvent(subEventId: string) {
   const adminClient = getAdminClient();
   const { error } = await adminClient.from('sub_events').delete().eq('id', subEventId);
   return { success: !error, error: error?.message };
+}
+
+export async function getSubEventById(subEventId: string) {
+  const adminClient = getAdminClient();
+  const { data, error } = await adminClient.from('sub_events').select('*').eq('id', subEventId).single();
+  if (error || !data) return null;
+
+  let desc = data.description || '';
+  let resources: any[] = [];
+  let rules = '';
+  let prize_pool = '';
+  let contact_info = '';
+
+  // Parse resources
+  const resMatch = desc.match(/\[EVENT_RESOURCES:\s*(\[[\s\S]*?\])\]/);
+  if (resMatch) {
+    try {
+      resources = JSON.parse(resMatch[1]);
+    } catch (err) {
+      console.error("Failed to parse event resources JSON:", err);
+    }
+    desc = desc.replace(/\[EVENT_RESOURCES:\s*\[[\s\S]*?\]\]/, '').trim();
+  }
+
+  // Parse contact info
+  const contactMatch = desc.match(/\n\nCONTACT:\s*([\s\S]*?)(?=\n\n|$)/);
+  if (contactMatch) {
+    contact_info = contactMatch[1].trim();
+    desc = desc.replace(/\n\nCONTACT:\s*[\s\S]*?(?=\n\n|$)/, '').trim();
+  }
+
+  // Parse prizes
+  const prizeMatch = desc.match(/\n\nPRIZES:\n([\s\S]*?)(?=\n\nRULES & GUIDELINES:|$)/);
+  if (prizeMatch) {
+    prize_pool = prizeMatch[1].trim();
+    desc = desc.replace(/\n\nPRIZES:\n[\s\S]*?(?=\n\nRULES & GUIDELINES:|$)/, '').trim();
+  }
+
+  // Parse rules
+  const rulesMatch = desc.match(/\n\nRULES & GUIDELINES:\n([\s\S]*?)$/);
+  if (rulesMatch) {
+    rules = rulesMatch[1].trim();
+    desc = desc.replace(/\n\nRULES & GUIDELINES:\n[\s\S]*?$/, '').trim();
+  }
+
+  // Parse team size tag
+  const teamMatch = desc.match(/^\[Team Size:\s*\d+\s*to\s*\d+\s*Members\]\n\n?/);
+  if (teamMatch) {
+    desc = desc.replace(/^\[Team Size:\s*\d+\s*to\s*\d+\s*Members\]\n\n?/, '').trim();
+  }
+
+  // Fetch coordinator details for this event
+  const { data: authData } = await adminClient.auth.admin.listUsers();
+  const coordinatorDetails: Array<{ id: string; name: string; phone: string; email: string }> = [];
+
+  if (authData?.users) {
+    authData.users.forEach(u => {
+      if (u.app_metadata?.role === 'coordinator') {
+        const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
+          ? u.app_metadata.coordinating_event_ids
+          : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
+        if (ids.includes(subEventId)) {
+          coordinatorDetails.push({
+            id: u.id,
+            name: u.user_metadata?.full_name || u.email || 'Coordinator',
+            phone: u.user_metadata?.mobile || u.user_metadata?.phone || u.phone || '',
+            email: u.email || ''
+          });
+        }
+      }
+    });
+  }
+
+  return {
+    ...data,
+    cleanDescription: desc,
+    rules,
+    prize_pool,
+    contact_info,
+    resources,
+    coordinatorDetails
+  };
+}
+
+export async function updateSubEvent(subEventId: string, subEventData: any) {
+  const adminClient = getAdminClient();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Unauthorized. Please log in." };
+  }
+
+  const role = user.app_metadata?.role;
+  const isCoordinator = role === 'coordinator';
+  const isAdmin = role === 'admin';
+
+  if (isCoordinator) {
+    const existingIds: string[] = Array.isArray(user.app_metadata?.coordinating_event_ids)
+      ? user.app_metadata.coordinating_event_ids
+      : user.app_metadata?.coordinating_event_id ? [user.app_metadata.coordinating_event_id] : [];
+    if (!existingIds.includes(subEventId)) {
+      return { success: false, error: "Unauthorized: You can only edit sub-events assigned to you." };
+    }
+  } else if (!isAdmin) {
+    return { success: false, error: "Unauthorized access." };
+  }
+
+  // Fetch current event to check status
+  const { data: currentEvent } = await adminClient
+    .from('sub_events')
+    .select('status')
+    .eq('id', subEventId)
+    .single();
+
+  // Format candidate/team requirements into description
+  let formattedDesc = subEventData.description || '';
+  if (subEventData.participation_type === 'Team' && (subEventData.min_candidates || subEventData.max_candidates)) {
+    const minC = subEventData.min_candidates || 1;
+    const maxC = subEventData.max_candidates || 1;
+    if (!formattedDesc.includes('[Team Size:')) {
+      formattedDesc = `[Team Size: ${minC} to ${maxC} Members]\n\n` + formattedDesc;
+    }
+  }
+
+  if (subEventData.rules && subEventData.rules.trim()) {
+    formattedDesc += `\n\nRULES & GUIDELINES:\n${subEventData.rules.trim()}`;
+  }
+  if (subEventData.prize_pool && subEventData.prize_pool.trim()) {
+    formattedDesc += `\n\nPRIZES:\n${subEventData.prize_pool.trim()}`;
+  }
+  if (subEventData.contact_info && subEventData.contact_info.trim()) {
+    formattedDesc += `\n\nCONTACT: ${subEventData.contact_info.trim()}`;
+  }
+  if (subEventData.resources && Array.isArray(subEventData.resources) && subEventData.resources.length > 0) {
+    formattedDesc += `\n\n[EVENT_RESOURCES: ${JSON.stringify(subEventData.resources)}]`;
+  }
+
+  // Determine updated status according to requirement #23
+  // If coordinator edits a LIVE event, it returns to PENDING_APPROVAL for Admin review.
+  let newStatus = currentEvent?.status || 'DRAFT';
+  if (isCoordinator && currentEvent?.status === 'LIVE') {
+    newStatus = 'PENDING_APPROVAL';
+  } else if (subEventData.status) {
+    newStatus = subEventData.status;
+  }
+
+  const updatePayload: any = {
+    title: subEventData.title,
+    description: formattedDesc,
+    category: subEventData.category || 'Technical',
+    participation_type: subEventData.participation_type || 'Individual',
+    min_candidates: subEventData.min_candidates ? parseInt(subEventData.min_candidates) : 1,
+    max_candidates: subEventData.max_candidates ? parseInt(subEventData.max_candidates) : 1,
+    date: subEventData.date || 'TBD',
+    time: subEventData.time || 'TBD',
+    location: subEventData.location,
+    capacity: typeof subEventData.capacity === 'number' ? subEventData.capacity : parseInt(subEventData.capacity || '100'),
+    status: newStatus
+  };
+
+  const { error } = await adminClient.from('sub_events').update(updatePayload).eq('id', subEventId);
+
+  revalidatePath('/admin/sub-events');
+  revalidatePath('/coordinator/events');
+  revalidatePath('/events');
+  revalidatePath('/dashboard');
+
+  return { 
+    success: !error, 
+    error: error?.message,
+    statusChangedToPending: isCoordinator && currentEvent?.status === 'LIVE'
+  };
 }
 
 // REGISTRATIONS
@@ -564,4 +827,43 @@ export async function getSubEventRegistrationCounts() {
     });
   }
   return counts;
+}
+
+export async function getSubEventsWithCoordinators(festId?: string) {
+  const adminClient = getAdminClient();
+  const fests = await getFests();
+  const targetFest = (festId ? fests.find(f => f.id === festId) : null) || fests.find(f => f.name.toLowerCase().includes('verve')) || fests[0];
+
+  if (!targetFest) return { fest: null, subEvents: [] };
+
+  const { data: subEvents } = await adminClient
+    .from('sub_events')
+    .select('*')
+    .eq('fest_id', targetFest.id)
+    .order('category', { ascending: false })
+    .order('title', { ascending: true });
+
+  const { data: authData } = await adminClient.auth.admin.listUsers();
+  const coordinatorMap = new Map<string, string>();
+
+  if (authData?.users) {
+    authData.users.forEach(u => {
+      const coordEventId = u.app_metadata?.coordinating_event_id;
+      if (coordEventId) {
+        const name = u.user_metadata?.full_name || u.email || 'Coordinator';
+        coordinatorMap.set(coordEventId, name);
+      }
+    });
+  }
+
+  const enrichedSubEvents = (subEvents || []).map(event => ({
+    ...event,
+    parentFestName: targetFest.name,
+    coordinatorName: coordinatorMap.get(event.id) || "Unassigned"
+  }));
+
+  return {
+    fest: targetFest,
+    subEvents: enrichedSubEvents
+  };
 }

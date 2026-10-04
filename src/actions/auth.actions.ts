@@ -219,13 +219,18 @@ export async function getCoordinators() {
   // Filter users who have role = coordinator
   return data.users.filter(u => u.app_metadata?.role === 'coordinator').map(u => {
     const profile = partMap.get(u.id) || {};
+    const subEventIds: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
+      ? u.app_metadata.coordinating_event_ids
+      : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
+
     return {
       id: u.id,
       email: u.email,
       role: 'coordinator',
       gender: profile.gender || u.user_metadata?.gender || 'MALE',
       fullName: u.user_metadata?.full_name || profile.full_name || 'Coordinator',
-      subEventId: u.app_metadata?.coordinating_event_id || null
+      subEventId: subEventIds[0] || null,
+      subEventIds: subEventIds
     };
   });
 }
@@ -268,12 +273,13 @@ export async function createCoordinator(formData: FormData) {
   }
 
   const adminClient = getAdminClient();
+  const initialSubEventIds = subEventId ? [subEventId] : [];
   
   const { data, error } = await adminClient.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
-    app_metadata: { role: 'coordinator', coordinating_event_id: subEventId || null },
+    app_metadata: { role: 'coordinator', coordinating_event_ids: initialSubEventIds, coordinating_event_id: subEventId || null },
     user_metadata: { full_name: fullName, gender: gender }
   });
   
@@ -302,12 +308,52 @@ export async function createCoordinator(formData: FormData) {
   return { success: true };
 }
 
-export async function updateCoordinatorAssignment(coordinatorId: string, subEventId: string) {
+export async function updateCoordinatorAssignments(coordinatorId: string, subEventIds: string[]) {
   const adminClient = getAdminClient();
   const { error } = await adminClient.auth.admin.updateUserById(coordinatorId, {
-    app_metadata: { role: 'coordinator', coordinating_event_id: subEventId }
+    app_metadata: {
+      role: 'coordinator',
+      coordinating_event_ids: subEventIds,
+      coordinating_event_id: subEventIds[0] || null
+    }
   });
-  return { success: !error, error: error?.message };
+
+  if (error) return { success: false, error: error.message };
+
+  // Recalculate event status transitions for all subevents
+  const { data: authData } = await adminClient.auth.admin.listUsers();
+  const eventCoordCounts: Record<string, number> = {};
+
+  if (authData?.users) {
+    authData.users.forEach(u => {
+      if (u.app_metadata?.role === 'coordinator') {
+        const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
+          ? u.app_metadata.coordinating_event_ids
+          : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
+        ids.forEach(id => {
+          eventCoordCounts[id] = (eventCoordCounts[id] || 0) + 1;
+        });
+      }
+    });
+  }
+
+  const { data: subEvents } = await adminClient.from('sub_events').select('id, status');
+  if (subEvents) {
+    for (const ev of subEvents) {
+      const count = eventCoordCounts[ev.id] || 0;
+      if (count > 0 && ev.status === 'DRAFT') {
+        await adminClient.from('sub_events').update({ status: 'PENDING_APPROVAL' }).eq('id', ev.id);
+      } else if (count === 0 && ev.status === 'PENDING_APPROVAL') {
+        await adminClient.from('sub_events').update({ status: 'DRAFT' }).eq('id', ev.id);
+      }
+    }
+  }
+
+  return { success: true };
+}
+
+export async function updateCoordinatorAssignment(coordinatorId: string, subEventId: string) {
+  return updateCoordinatorAssignments(coordinatorId, subEventId ? [subEventId] : []);
 }
 
 export async function deleteCoordinator(coordinatorId: string) {

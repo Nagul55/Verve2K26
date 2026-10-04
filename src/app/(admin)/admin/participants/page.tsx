@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { getAdminParticipants } from "@/actions/event.actions";
 import { UserAvatar } from "@/components/UserAvatar";
+import { EventrixSelect } from "@/components/ui/EventrixSelect";
 
 interface SubEventInfo {
   id: string;
@@ -181,21 +182,22 @@ export default function AdminParticipantsPage() {
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
             
-            <div className="flex items-center bg-eventrix-black rounded-md shadow-[4px_4px_0px_0px_#A78BFA] hover:bg-eventrix-lavender group transition-colors">
-              <select 
+            <div className="flex items-center gap-2">
+              <EventrixSelect
                 value={exportEventId}
-                onChange={(e) => setExportEventId(e.target.value)}
-                className="bg-transparent text-white font-bold text-xs px-4 py-3 outline-none border-r border-white/20 uppercase tracking-wider group-hover:text-black cursor-pointer appearance-none max-w-[200px]"
-              >
-                <option value="ALL" className="bg-white text-black">Master Report (All)</option>
-                {allSubEvents.map(ev => (
-                  <option key={ev.id} value={ev.id} className="bg-white text-black">{ev.title}</option>
-                ))}
-              </select>
+                onChange={(val) => setExportEventId(val)}
+                options={[
+                  { value: "ALL", label: "Master Report (All)" },
+                  ...allSubEvents.map((ev) => ({ value: ev.id, label: ev.title })),
+                ]}
+                searchable
+                size="sm"
+                className="w-48"
+              />
               <a
                 href={exportEventId === "ALL" ? "/api/admin/export" : `/api/admin/export?sub_event_id=${exportEventId}`}
                 download
-                className="text-white px-4 py-3 font-bold text-sm tracking-wide uppercase group-hover:text-black flex items-center gap-2"
+                className="bg-eventrix-black text-white px-4 py-2.5 rounded-xl font-bold text-xs tracking-wide uppercase hover:bg-eventrix-lavender hover:text-black transition-colors flex items-center gap-2 shrink-0 shadow-sm"
               >
                 <Download className="w-4 h-4" /> Export CSV
               </a>
@@ -265,47 +267,41 @@ export default function AdminParticipantsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2 bg-[#F8F8FC] border border-[#D9D9DF] px-3 py-2 rounded-md">
-            <Filter className="w-4 h-4 text-eventrix-muted" />
-            <select
-              value={selectedDept}
-              onChange={(e) => setSelectedDept(e.target.value)}
-              className="bg-transparent text-xs font-bold text-eventrix-black focus:outline-none uppercase tracking-wide"
-            >
-              <option value="ALL">All Departments ({departments.length})</option>
-              {departments.map(d => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-          </div>
+          <EventrixSelect
+            value={selectedDept}
+            onChange={(val) => setSelectedDept(val)}
+            options={[
+              { value: "ALL", label: `All Depts (${departments.length})` },
+              ...departments.map((d) => ({ value: d, label: d })),
+            ]}
+            searchable
+            size="sm"
+            className="w-48"
+          />
 
-          <div className="flex items-center gap-2 bg-[#F8F8FC] border border-[#D9D9DF] px-3 py-2 rounded-md">
-            <Building2 className="w-4 h-4 text-eventrix-muted" />
-            <select
-              value={selectedCollege}
-              onChange={(e) => setSelectedCollege(e.target.value)}
-              className="bg-transparent text-xs font-bold text-eventrix-black focus:outline-none uppercase tracking-wide"
-            >
-              <option value="ALL">All Colleges ({colleges.length})</option>
-              {colleges.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
+          <EventrixSelect
+            value={selectedCollege}
+            onChange={(val) => setSelectedCollege(val)}
+            options={[
+              { value: "ALL", label: `All Colleges (${colleges.length})` },
+              ...colleges.map((c) => ({ value: c, label: c })),
+            ]}
+            searchable
+            size="sm"
+            className="w-48"
+          />
 
-          <div className="flex items-center gap-2 bg-[#F8F8FC] border border-[#D9D9DF] px-3 py-2 rounded-md">
-            <Ticket className="w-4 h-4 text-eventrix-muted" />
-            <select
-              value={selectedFilterEvent}
-              onChange={(e) => setSelectedFilterEvent(e.target.value)}
-              className="bg-transparent text-xs font-bold text-eventrix-black focus:outline-none uppercase tracking-wide max-w-[150px]"
-            >
-              <option value="ALL">All Events</option>
-              {allSubEvents.map(ev => (
-                <option key={ev.id} value={ev.id}>{ev.title}</option>
-              ))}
-            </select>
-          </div>
+          <EventrixSelect
+            value={selectedFilterEvent}
+            onChange={(val) => setSelectedFilterEvent(val)}
+            options={[
+              { value: "ALL", label: "All Events" },
+              ...allSubEvents.map((ev) => ({ value: ev.id, label: ev.title })),
+            ]}
+            searchable
+            size="sm"
+            className="w-44"
+          />
 
           {(searchQuery || selectedDept !== "ALL" || selectedCollege !== "ALL" || selectedFilterEvent !== "ALL") && (
             <button
@@ -319,19 +315,18 @@ export default function AdminParticipantsPage() {
       </div>
 
       {/* Participants Table */}
-      <div className="bg-white border border-[#D9D9DF] rounded-md overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold text-xs uppercase tracking-widest">
-              <tr>
-                <th className="px-6 py-4">Participant</th>
-                <th className="px-6 py-4">Register No.</th>
-                <th className="px-6 py-4">Contact Info</th>
-                <th className="px-6 py-4">College & Dept</th>
-                <th className="px-6 py-4">Enrolled Events</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
+      <div className="bg-white border border-[#D9D9DF] rounded-md overflow-x-auto shadow-sm">
+        <table className="w-full text-left text-sm min-w-[1100px]">
+          <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold text-xs uppercase tracking-widest whitespace-nowrap">
+            <tr>
+              <th className="px-6 py-4">Participant</th>
+              <th className="px-6 py-4">Register No.</th>
+              <th className="px-6 py-4">Contact Info</th>
+              <th className="px-6 py-4">College & Dept</th>
+              <th className="px-6 py-4">Enrolled Events</th>
+              <th className="px-6 py-4 text-right">Actions</th>
+            </tr>
+          </thead>
             <tbody className="divide-y divide-[#D9D9DF]">
               {loading ? (
                 <tr>
@@ -434,7 +429,6 @@ export default function AdminParticipantsPage() {
               )}
             </tbody>
           </table>
-        </div>
 
         {/* Footer info */}
         <div className="px-6 py-4 bg-[#F8F8FC] border-t border-[#D9D9DF] flex justify-between items-center text-xs font-medium text-eventrix-muted">

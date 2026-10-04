@@ -6,6 +6,7 @@ import { signup } from "@/actions/auth.actions";
 import { Eye, EyeOff, User, Mail, Phone, Building2, GraduationCap, Calendar, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormDraft } from '@/hooks/useFormDraft';
+import { EventrixSelect } from '@/components/ui/EventrixSelect';
 
 export default function SignupPage() {
   const { formData, setFormData, resetForm } = useFormDraft({
@@ -197,24 +198,18 @@ export default function SignupPage() {
             </div>
 
             {/* Gender Select */}
-            <div className="space-y-1">
-              <label className="text-xs font-extrabold text-gray-900 block">
-                Gender <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <select
-                  name="gender"
-                  required
-                  value={formData.gender}
-                  onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
-                  className="w-full bg-white/90 text-gray-950 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm cursor-pointer"
-                >
-                  <option value="" disabled>Select Gender</option>
-                  <option value="MALE">Male</option>
-                  <option value="FEMALE">Female</option>
-                </select>
-              </div>
-            </div>
+            <EventrixSelect
+              label="Gender"
+              name="gender"
+              required
+              placeholder="Select Gender"
+              value={formData.gender}
+              onChange={(val) => setFormData((prev) => ({ ...prev, gender: val }))}
+              options={[
+                { value: "MALE", label: "Male" },
+                { value: "FEMALE", label: "Female" },
+              ]}
+            />
 
             {/* College Name */}
             <div className="space-y-1">
@@ -257,27 +252,20 @@ export default function SignupPage() {
               </div>
 
               {/* Year of Study Dropdown */}
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-gray-900 block">
-                  Year of Study <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    name="yearOfStudy"
-                    required
-                    value={formData.yearOfStudy}
-                    onChange={(e) => setFormData(prev => ({ ...prev, yearOfStudy: e.target.value }))}
-                    className="w-full bg-white text-gray-950 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm appearance-none cursor-pointer"
-                  >
-                    <option value="1st Year">1st Year</option>
-                    <option value="2nd Year">2nd Year</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
-                    <option value="PG / Other">PG / Other</option>
-                  </select>
-                  <Calendar className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-              </div>
+              <EventrixSelect
+                label="Year of Study"
+                name="yearOfStudy"
+                required
+                value={formData.yearOfStudy}
+                onChange={(val) => setFormData((prev) => ({ ...prev, yearOfStudy: val }))}
+                options={[
+                  { value: "1st Year", label: "1st Year" },
+                  { value: "2nd Year", label: "2nd Year" },
+                  { value: "3rd Year", label: "3rd Year" },
+                  { value: "4th Year", label: "4th Year" },
+                  { value: "PG / Other", label: "PG / Other" },
+                ]}
+              />
             </div>
 
             {/* Grid 3: Password & Confirm Password */}

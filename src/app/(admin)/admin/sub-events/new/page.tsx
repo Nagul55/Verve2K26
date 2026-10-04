@@ -22,6 +22,10 @@ import Link from "next/link";
 import { createSubEvent } from "@/actions/event.actions";
 import { toast } from "sonner";
 import { useFormDraft } from "@/hooks/useFormDraft";
+import { EventrixSelect } from "@/components/ui/EventrixSelect";
+import { EventrixTextarea } from "@/components/ui/EventrixTextarea";
+
+import EventrixResourceUploader, { EventResourceItem } from "@/components/ui/EventrixResourceUploader";
 
 function AdminSubEventForm() {
   const router = useRouter();
@@ -29,6 +33,7 @@ function AdminSubEventForm() {
   const festId = searchParams.get('fest_id') || '00000000-0000-0000-0000-000000000001';
   
   const [isPending, startTransition] = useTransition();
+  const [resources, setResources] = useState<EventResourceItem[]>([]);
 
   const { formData, setFormData, resetForm } = useFormDraft({
     key: "eventrix_sub_event_form_draft",
@@ -90,7 +95,8 @@ function AdminSubEventForm() {
         rules: formData.rules,
         prize_pool: formData.prize_pool,
         fee: formData.fee,
-        contact_info: formData.contact_info
+        contact_info: formData.contact_info,
+        resources: resources
       });
 
       if (error) {
@@ -98,6 +104,7 @@ function AdminSubEventForm() {
       } else {
         toast.success("Sub-Event created successfully!");
         resetForm();
+        setResources([]);
         setTimeout(() => {
           router.push(`/admin/sub-events?fest_id=${festId}`);
           router.refresh();
@@ -107,7 +114,7 @@ function AdminSubEventForm() {
   };
 
   return (
-    <div className="max-w-4xl space-y-10 pb-16">
+    <div className="max-w-4xl mx-auto space-y-10 pb-16">
       
       {/* Header */}
       <div className="flex flex-col gap-4">
@@ -152,46 +159,40 @@ function AdminSubEventForm() {
                 />
               </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
-                  Event Description <span className="text-red-500">*</span>
-                </label>
-                <textarea 
-                  name="description" 
-                  value={formData.description} 
-                  onChange={handleChange} 
-                  required 
-                  rows={3} 
-                  placeholder="Describe the objective, format, and overview of this activity..." 
-                  className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium resize-none" 
+              <div className="md:col-span-2">
+                <EventrixTextarea
+                  label="Event Description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  required
+                  rows={4}
+                  minHeight="120px"
+                  placeholder="Describe the objective, format, and overview of this activity..."
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Category</label>
-                <select 
-                  name="category" 
-                  value={formData.category} 
-                  onChange={handleChange} 
-                  className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium"
-                >
-                  <option value="Technical">Technical</option>
-                  <option value="Non-Technical">Non-Technical</option>
-                </select>
-              </div>
+              <EventrixSelect
+                label="Category"
+                name="category"
+                value={formData.category}
+                onChange={(val) => setFormData((prev) => ({ ...prev, category: val }))}
+                options={[
+                  { value: "Technical", label: "Technical", description: "Technical sub-events and competitions" },
+                  { value: "Non-Technical", label: "Non-Technical", description: "Cultural, creative, and non-technical activities" },
+                ]}
+              />
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Participation Format</label>
-                <select 
-                  name="participation_type" 
-                  value={formData.participation_type} 
-                  onChange={handleChange} 
-                  className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium"
-                >
-                  <option value="Individual">Individual Entry</option>
-                  <option value="Team">Team Participation</option>
-                </select>
-              </div>
+              <EventrixSelect
+                label="Participation Format"
+                name="participation_type"
+                value={formData.participation_type}
+                onChange={(val) => setFormData((prev) => ({ ...prev, participation_type: val }))}
+                options={[
+                  { value: "Individual", label: "Individual Entry", description: "One participant per registration" },
+                  { value: "Team", label: "Team Participation", description: "Multiple participants per team" },
+                ]}
+              />
             </div>
           </div>
 
@@ -310,35 +311,41 @@ function AdminSubEventForm() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest flex items-center gap-1">
-                  <FileText className="w-3.5 h-3.5" /> Rules & Instructions
-                </label>
-                <textarea 
-                  name="rules" 
-                  value={formData.rules} 
-                  onChange={handleChange} 
-                  rows={3} 
-                  placeholder="e.g. Bring valid college ID card. Laptops required. Max 2 rounds..." 
-                  className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium resize-none" 
-                />
-              </div>
+              <EventrixTextarea
+                label={
+                  <span className="flex items-center gap-1.5 text-eventrix-muted">
+                    <FileText className="w-3.5 h-3.5" /> Rules & Instructions
+                  </span>
+                }
+                name="rules"
+                value={formData.rules}
+                onChange={handleChange}
+                rows={8}
+                minHeight="260px"
+                helperText="Add rules, guidelines, eligibility conditions, judging criteria, or other instructions for participants."
+                placeholder={`1. Participants must report 15 minutes prior to event start time.
+2. College ID card is mandatory for verification.
+3. Plagiarism or copying another participant's work will result in immediate disqualification.
+4. The decisions of the event judges and coordinators will be final.`}
+                className="col-span-1 md:col-span-2"
+              />
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest flex items-center gap-1">
-                  <Trophy className="w-3.5 h-3.5" /> Prize Pool & Cash Awards
-                </label>
-                <textarea 
-                  name="prize_pool" 
-                  value={formData.prize_pool} 
-                  onChange={handleChange} 
-                  rows={3} 
-                  placeholder="e.g. 1st Prize: ₹5,000 | 2nd Prize: ₹3,000 + Certificates for all" 
-                  className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium resize-none" 
-                />
-              </div>
+              <EventrixTextarea
+                label={
+                  <span className="flex items-center gap-1.5 text-eventrix-muted">
+                    <Trophy className="w-3.5 h-3.5" /> Prize Pool & Cash Awards
+                  </span>
+                }
+                name="prize_pool"
+                value={formData.prize_pool}
+                onChange={handleChange}
+                rows={4}
+                minHeight="140px"
+                placeholder="e.g. 1st Prize: ₹5,000 | 2nd Prize: ₹3,000 + Certificates for all participants"
+                className="col-span-1 md:col-span-2"
+              />
 
-              <div className="space-y-2">
+              <div className="space-y-2 col-span-1 md:col-span-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest flex items-center gap-1">
                   <IndianRupee className="w-3.5 h-3.5" /> Entry Pass / Fee
                 </label>
@@ -350,20 +357,16 @@ function AdminSubEventForm() {
                   className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
                 />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest flex items-center gap-1">
-                  <PhoneCall className="w-3.5 h-3.5" /> Coordinator Contact Person
-                </label>
-                <input 
-                  name="contact_info" 
-                  value={formData.contact_info} 
-                  onChange={handleChange} 
-                  placeholder="e.g. Imran (+91 9876543210)" 
-                  className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
-                />
-              </div>
             </div>
+          </div>
+
+          {/* Section 5: Event Resources & Attachments */}
+          <div className="pt-2">
+            <EventrixResourceUploader
+              subEventId={formData.title ? formData.title.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'new'}
+              resources={resources}
+              onChange={setResources}
+            />
           </div>
 
           {/* Submit Action */}

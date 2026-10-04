@@ -5,6 +5,7 @@ import { Users, Plus } from "lucide-react";
 import { getSubEvents } from "@/actions/event.actions";
 import { createTeam } from "@/actions/team.actions";
 import { toast } from "sonner";
+import { EventrixSelect } from "@/components/ui/EventrixSelect";
 
 export default function TeamsPage() {
   const [events, setEvents] = useState<any[]>([]);
@@ -56,20 +57,16 @@ export default function TeamsPage() {
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Select Event</label>
-            <select 
-              value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
-              className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white transition-colors text-sm font-medium"
-              required
-            >
-              <option value="">-- Choose an Event --</option>
-              {events.map(event => (
-                <option key={event.id} value={event.id}>{event.title}</option>
-              ))}
-            </select>
-          </div>
+          <EventrixSelect
+            label="Select Event"
+            name="selectedEventId"
+            required
+            placeholder="-- Choose an Event --"
+            value={selectedEventId}
+            onChange={(val) => setSelectedEventId(val)}
+            options={events.map((event) => ({ value: event.id, label: event.title }))}
+            searchable
+          />
 
           <div className="space-y-2">
             <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Team Name</label>

@@ -67,15 +67,17 @@ export default async function CoordinatorEventsPage({ searchParams }: { searchPa
   const selectedFest = fests.find(f => f.id === festId);
   const subEvents = await getSubEvents(festId, true);
 
-  // Get coordinator assigned sub-event ID & role
+  // Get coordinator assigned sub-event IDs & role
   const userRole = user?.app_metadata?.role || 'coordinator';
-  const assignedEventId = user?.app_metadata?.coordinating_event_id;
+  const assignedEventIds: string[] = Array.isArray(user?.app_metadata?.coordinating_event_ids)
+    ? user.app_metadata.coordinating_event_ids
+    : user?.app_metadata?.coordinating_event_id ? [user.app_metadata.coordinating_event_id] : [];
 
-  // Filter sub-events so coordinator ONLY sees the event assigned to them by Admin
+  // Filter sub-events so coordinator ONLY sees events assigned to them by Admin
   const visibleSubEvents = (subEvents || []).filter((event) => {
     if (userRole === 'admin') return true;
-    if (!assignedEventId) return false;
-    return event.id === assignedEventId;
+    if (assignedEventIds.length === 0) return false;
+    return assignedEventIds.includes(event.id);
   });
 
   return (
@@ -110,9 +112,9 @@ export default async function CoordinatorEventsPage({ searchParams }: { searchPa
         </div>
       </div>
 
-      <div className="bg-white border border-[#D9D9DF] rounded-md overflow-hidden shadow-sm">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold text-xs uppercase tracking-widest">
+      <div className="bg-white border border-[#D9D9DF] rounded-md overflow-x-auto shadow-sm">
+        <table className="w-full text-left text-sm min-w-[1050px]">
+          <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold text-xs uppercase tracking-widest whitespace-nowrap">
             <tr>
               <th className="px-6 py-4">Title</th>
               <th className="px-6 py-4">Category</th>
@@ -125,8 +127,7 @@ export default async function CoordinatorEventsPage({ searchParams }: { searchPa
           </thead>
           <tbody className="divide-y divide-[#D9D9DF]">
             {visibleSubEvents.map((event) => {
-              const isAssigned = assignedEventId && assignedEventId === event.id;
-              const isApproved = event.status === 'Approved' || !event.status;
+              const isAssigned = assignedEventIds.includes(event.id);
 
               return (
                 <tr key={event.id} className="hover:bg-[#F8F8FC] transition-colors bg-purple-50/30">
@@ -169,19 +170,34 @@ export default async function CoordinatorEventsPage({ searchParams }: { searchPa
                   </td>
 
                   <td className="px-6 py-4">
-                    {isApproved ? (
+                    {event.status === 'LIVE' ? (
                       <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" /> Live
                       </span>
-                    ) : (
+                    ) : event.status === 'PENDING_APPROVAL' ? (
                       <span className="bg-amber-100 text-amber-800 border border-amber-300 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" /> Pending Admin Approval
+                      </span>
+                    ) : event.status === 'REJECTED' ? (
+                      <span className="bg-red-100 text-red-800 border border-red-300 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> Rejected
+                      </span>
+                    ) : (
+                      <span className="bg-gray-100 text-gray-700 border border-gray-300 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1">
+                        Draft
                       </span>
                     )}
                   </td>
 
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-3">
+                      <Link
+                        href={`/coordinator/events/${event.id}/edit`}
+                        title="Edit Sub-Event"
+                        className="text-eventrix-black hover:text-eventrix-lavender font-bold text-xs uppercase tracking-wider border border-[#D9D9DF] px-2.5 py-1 rounded bg-white hover:border-eventrix-black transition-colors"
+                      >
+                        Edit
+                      </Link>
                       <Link 
                         href="/coordinator/participants" 
                         className="text-xs font-bold text-eventrix-lavender hover:text-eventrix-black uppercase tracking-wider transition-colors flex items-center gap-1"
@@ -206,8 +222,8 @@ export default async function CoordinatorEventsPage({ searchParams }: { searchPa
             {visibleSubEvents.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-6 py-12 text-center text-eventrix-muted font-bold text-sm">
-                  {assignedEventId ? (
-                    <span>No sub-events found for your assigned event ID.</span>
+                  {assignedEventIds.length > 0 ? (
+                    <span>No sub-events found matching your assigned event permissions.</span>
                   ) : (
                     <span className="text-amber-700 font-semibold">
                       You have not been granted permission to manage any sub-event by the Admin yet. Please contact your administrator.
