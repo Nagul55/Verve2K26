@@ -92,26 +92,30 @@ export default function AdminParticipantsPage() {
     return events;
   };
 
-  // Extract unique departments & colleges for filters
+  // Extract unique departments & colleges for filters (only for event-registered participants)
+  const registeredParticipants = useMemo(() => {
+    return participants.filter(p => getParticipantEvents(p).length > 0);
+  }, [participants]);
+
   const departments = useMemo(() => {
     const set = new Set<string>();
-    participants.forEach(p => {
+    registeredParticipants.forEach(p => {
       if (p.department) set.add(p.department);
     });
     return Array.from(set).sort();
-  }, [participants]);
+  }, [registeredParticipants]);
 
   const colleges = useMemo(() => {
     const set = new Set<string>();
-    participants.forEach(p => {
+    registeredParticipants.forEach(p => {
       if (p.college) set.add(p.college);
     });
     return Array.from(set).sort();
-  }, [participants]);
+  }, [registeredParticipants]);
 
   // Filtered list
   const filteredParticipants = useMemo(() => {
-    return participants.filter(p => {
+    return registeredParticipants.filter(p => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch = !q || 
         (p.full_name && p.full_name.toLowerCase().includes(q)) ||
@@ -129,12 +133,12 @@ export default function AdminParticipantsPage() {
 
       return matchesSearch && matchesDept && matchesCollege && matchesEvent;
     });
-  }, [participants, searchQuery, selectedDept, selectedCollege, selectedFilterEvent]);
+  }, [registeredParticipants, searchQuery, selectedDept, selectedCollege, selectedFilterEvent]);
 
   // Compute metric stats
   const totalRegistrations = useMemo(() => {
-    return participants.reduce((acc, p) => acc + getParticipantEvents(p).length, 0);
-  }, [participants]);
+    return registeredParticipants.reduce((acc, p) => acc + getParticipantEvents(p).length, 0);
+  }, [registeredParticipants]);
 
   // Extract all unique sub-events that have participants
   const allSubEvents = useMemo(() => {
@@ -207,8 +211,8 @@ export default function AdminParticipantsPage() {
               <Users className="w-5 h-5" />
             </div>
           </div>
-          <p className="text-3xl font-anton text-eventrix-black">{participants.length}</p>
-          <p className="text-xs text-eventrix-muted mt-1 font-medium">Registered on system</p>
+          <p className="text-3xl font-anton text-eventrix-black">{registeredParticipants.length}</p>
+          <p className="text-xs text-eventrix-muted mt-1 font-medium">Event-enrolled students</p>
         </div>
 
         <div className="bg-white border border-[#D9D9DF] p-6 rounded-md shadow-sm">
@@ -430,7 +434,7 @@ export default function AdminParticipantsPage() {
 
         {/* Footer info */}
         <div className="px-6 py-4 bg-[#F8F8FC] border-t border-[#D9D9DF] flex justify-between items-center text-xs font-medium text-eventrix-muted">
-          <span>Showing {filteredParticipants.length} of {participants.length} participants</span>
+          <span>Showing {filteredParticipants.length} of {registeredParticipants.length} event participants</span>
           <span>Verve26 Admin System</span>
         </div>
       </div>

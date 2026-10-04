@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, Users, Settings, ShieldCheck } from "lucide-react";
+import { Home, Calendar, Users, Settings, ShieldCheck, UserCheck } from "lucide-react";
 import { EventrixLogo } from "@/components/EventrixLogo";
 import { LogoutButton } from "@/components/LogoutButton";
 
@@ -15,6 +15,7 @@ export function AdminSidebar() {
     { name: "Manage Events", href: "/admin/events", icon: Calendar },
     { name: "Coordinators", href: "/admin/coordinators", icon: Users },
     { name: "Participants", href: "/admin/participants", icon: Users },
+    { name: "Users", href: "/admin/users", icon: UserCheck },
     { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
 

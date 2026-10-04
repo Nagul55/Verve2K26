@@ -140,3 +140,72 @@ export async function deleteCoordinator(coordinatorId: string) {
   const { error } = await adminClient.auth.admin.deleteUser(coordinatorId);
   return { success: !error, error: error?.message };
 }
+
+export async function deleteUserAccount(userId: string) {
+  try {
+    const adminClient = getAdminClient();
+
+    // 1. Delete associated registrations & attendance records
+    await adminClient.from('attendance').delete().eq('participant_id', userId);
+    await adminClient.from('event_registrations').delete().eq('participant_id', userId);
+    await adminClient.from('registrations').delete().eq('participant_id', userId);
+
+    // 2. Delete from participants profile table
+    await adminClient.from('participants').delete().eq('participant_id', userId);
+
+    // 3. Delete from Supabase Auth (auth.users)
+    const { error } = await adminClient.auth.admin.deleteUser(userId);
+
+    if (error) {
+      console.error("Auth deleteUser error:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Error deleting user account:", err);
+    return { success: false, error: err.message || "Failed to remove user account" };
+  }
+}
+
+export async function getAllUsersAdmin() {
+  try {
+    const adminClient = getAdminClient();
+    const { data: authData, error: authError } = await adminClient.auth.admin.listUsers();
+
+    if (authError || !authData.users) {
+      console.error("Error listing users:", authError);
+      return [];
+    }
+
+    // Also fetch participants table details to enrich user profiles
+    const { data: partData } = await adminClient.from('participants').select('*');
+    const partMap = new Map<string, any>();
+    if (partData) {
+      partData.forEach(p => partMap.set(p.participant_id, p));
+    }
+
+    return authData.users.map(u => {
+      const role = u.app_metadata?.role || 'student';
+      const profile = partMap.get(u.id) || {};
+
+      return {
+        id: u.id,
+        email: u.email || '',
+        role: role,
+        fullName: u.user_metadata?.full_name || profile.full_name || 'User',
+        college: profile.college || 'N/A',
+        department: profile.department || 'N/A',
+        yearOfStudy: profile.year_of_study || '',
+        registerNumber: profile.register_number || 'N/A',
+        mobile: profile.mobile || '',
+        createdAt: u.created_at,
+        lastSignInAt: u.last_sign_in_at || null,
+        coordinatingEventId: u.app_metadata?.coordinating_event_id || null,
+      };
+    });
+  } catch (err) {
+    console.error("Error in getAllUsersAdmin:", err);
+    return [];
+  }
+}

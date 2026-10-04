@@ -29,6 +29,7 @@ export function MobileNav({ role = 'student' }: { role?: string }) {
       { name: "Manage Events", href: "/admin/events", icon: Calendar },
       { name: "Coordinators", href: "/admin/coordinators", icon: Users },
       { name: "Participants", href: "/admin/participants", icon: Users },
+      { name: "Users", href: "/admin/users", icon: Users },
       { name: "Settings", href: "/admin/settings", icon: Settings },
     ];
   } else if (role === 'coordinator') {
