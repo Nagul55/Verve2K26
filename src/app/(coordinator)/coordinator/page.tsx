@@ -80,16 +80,21 @@ export default async function CoordinatorDashboard() {
   return (
     <>
       {/* Coordinator Hero Banner */}
-      <div className="relative w-full h-[200px] md:h-[250px] bg-eventrix-black text-eventrix-white overflow-hidden rounded-md flex flex-col justify-end p-6 md:p-10 group">
+      <div className="relative w-full min-h-[220px] md:h-[260px] bg-eventrix-black text-eventrix-white overflow-hidden rounded-xl flex flex-col justify-end p-6 md:p-10 group shadow-xl border border-white/10">
         <div className="absolute top-0 right-0 w-[50%] h-full pointer-events-none opacity-20">
           <div className="absolute top-0 right-0 w-full h-full bg-eventrix-lavender" style={{ clipPath: "polygon(20% 0, 100% 0, 100% 100%, 0% 100%)" }}></div>
         </div>
         
-        <div className="relative z-10">
-          <span className="text-[10px] md:text-xs font-bold text-eventrix-lavender uppercase tracking-widest mb-1 md:mb-2 block">
+        <div className="relative z-10 flex flex-col justify-end">
+          <img 
+            src="/assets/Eventrix logo.svg" 
+            alt="Eventrix Logo" 
+            className="h-8 sm:h-10 md:h-12 w-auto mb-3.5 object-contain self-start"
+          />
+          <span className="text-[10px] md:text-xs font-bold text-eventrix-lavender uppercase tracking-widest mb-1 md:mb-1.5 block">
             Welcome back, {user?.user_metadata?.full_name || 'Coordinator'}
           </span>
-          <h1 className="font-anton text-4xl sm:text-5xl md:text-[70px] leading-[0.85] tracking-wide mb-1 md:mb-2 uppercase text-eventrix-lavender">
+          <h1 className="font-anton text-4xl sm:text-5xl md:text-[64px] leading-[0.85] tracking-wide mb-2 uppercase text-eventrix-lavender">
             COORDINATOR PORTAL
           </h1>
           <p className="text-eventrix-white/70 font-medium max-w-xl text-xs md:text-base">

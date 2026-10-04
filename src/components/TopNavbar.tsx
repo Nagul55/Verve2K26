@@ -49,13 +49,13 @@ export async function TopNavbar() {
           />
         </div>
         
-        <div className="flex items-center gap-3 md:gap-4 border-l border-[#D9D9DF] pl-4 md:pl-6 h-10">
+        <div className="flex items-center gap-2 border-l border-[#D9D9DF] pl-3 sm:pl-4 h-9 sm:h-10">
           <img
             src="/images/user-avatar.png"
             alt="User Profile"
-            className="w-9 h-9 rounded-full object-cover shrink-0 border border-[#D9D9DF]"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover shrink-0 border border-[#D9D9DF]"
           />
-          <div className="hidden sm:block mr-2 max-w-[120px] lg:max-w-[200px] truncate">
+          <div className="hidden sm:block ml-0.5 max-w-[120px] lg:max-w-[200px] truncate">
             <p className="font-bold text-eventrix-black text-xs uppercase tracking-wide truncate">{profile.full_name}</p>
             {(profile.department || profile.year_of_study) && (
               <p className="text-[10px] text-eventrix-muted mt-0.5 truncate">{profile.year_of_study} {profile.department}</p>

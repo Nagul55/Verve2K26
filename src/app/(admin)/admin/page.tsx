@@ -173,19 +173,24 @@ export default async function AdminDashboard() {
   return (
     <div className="space-y-8 pb-12">
       {/* Admin Hero Banner */}
-      <div className="relative w-full h-[220px] bg-eventrix-black text-eventrix-white overflow-hidden rounded-xl flex flex-col justify-end p-8 shadow-xl">
+      <div className="relative w-full min-h-[220px] md:h-[260px] bg-eventrix-black text-eventrix-white overflow-hidden rounded-xl flex flex-col justify-end p-6 md:p-10 shadow-xl border border-white/10">
         <div className="absolute top-0 right-0 w-[60%] h-full pointer-events-none opacity-20">
           <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-r from-eventrix-lavender to-blue-500" style={{ clipPath: "polygon(20% 0, 100% 0, 100% 100%, 0% 100%)" }}></div>
         </div>
         
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-2 text-eventrix-lavender font-bold text-xs tracking-widest uppercase">
+        <div className="relative z-10 flex flex-col justify-end">
+          <img 
+            src="/assets/Eventrix logo.svg" 
+            alt="Eventrix Logo" 
+            className="h-8 sm:h-10 md:h-12 w-auto mb-3.5 object-contain self-start"
+          />
+          <div className="flex items-center gap-2 mb-1.5 text-eventrix-lavender font-bold text-xs tracking-widest uppercase">
             <ShieldCheck className="w-4 h-4" /> System Health: Excellent
           </div>
-          <h1 className="font-anton text-5xl md:text-[60px] leading-[0.85] tracking-wide mb-2 uppercase text-white">
+          <h1 className="font-anton text-4xl sm:text-5xl md:text-[64px] leading-[0.85] tracking-wide mb-2 uppercase text-white">
             ADMIN PORTAL
           </h1>
-          <p className="text-eventrix-white/70 font-medium max-w-xl text-sm">
+          <p className="text-eventrix-white/70 font-medium max-w-xl text-xs md:text-base">
             Overview of Verve26 event operations, participant registrations, and pending approvals.
           </p>
         </div>
