@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 import { useFormDraft } from "@/hooks/useFormDraft";
 
-export function SettingsProfileForm({ initialData, userId, showAcademic = true, showMobile = true }: { initialData: any, userId: string, showAcademic?: boolean, showMobile?: boolean }) {
+export function SettingsProfileForm({ initialData, userId, showAcademic = true }: { initialData: any, userId: string, showAcademic?: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
@@ -37,36 +37,13 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true, 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (showMobile && formData.mobile && formData.mobile.length !== 10) {
+    if (formData.mobile && formData.mobile.length !== 10) {
       toast.error("10 digits required");
       return;
     }
 
-    const payload: any = {
-      full_name: formData.full_name,
-      email: formData.email,
-    };
-
-    if (showMobile) {
-      payload.mobile = formData.mobile;
-    } else {
-      payload.mobile = "";
-    }
-
-    if (showAcademic) {
-      payload.college = formData.college;
-      payload.register_number = formData.register_number;
-      payload.department = formData.department;
-      payload.year_of_study = formData.year_of_study;
-    } else {
-      payload.college = "";
-      payload.register_number = "";
-      payload.department = "";
-      payload.year_of_study = "";
-    }
-
     startTransition(async () => {
-      const { success, error } = await updateProfile(userId, payload);
+      const { success, error } = await updateProfile(userId, formData);
       if (error) {
         toast.error(error);
       } else {
@@ -136,12 +113,10 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true, 
               <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Email Address</label>
               <input name="email" value={formData.email} onChange={handleChange} required type="email" disabled={!isEditing} className={inputClass} placeholder={isEditing ? "john.doe@example.com" : "-"} />
             </div>
-            {showMobile && (
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Mobile Number</label>
-                <input name="mobile" type="tel" maxLength={10} inputMode="numeric" pattern="[0-9]{10}" title="10 digits required" onInvalid={(e) => e.currentTarget.setCustomValidity('10 digits required')} onInput={(e) => e.currentTarget.setCustomValidity('')} value={formData.mobile} onChange={handleChange} disabled={!isEditing} className={inputClass} placeholder={isEditing ? "Your Phone Number" : "-"} />
-              </div>
-            )}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Mobile Number</label>
+              <input name="mobile" type="tel" maxLength={10} inputMode="numeric" pattern="[0-9]{10}" title="10 digits required" onInvalid={(e) => e.currentTarget.setCustomValidity('10 digits required')} onInput={(e) => e.currentTarget.setCustomValidity('')} value={formData.mobile} onChange={handleChange} disabled={!isEditing} className={inputClass} placeholder={isEditing ? "Your Phone Number" : "-"} />
+            </div>
           </div>
         </div>
 

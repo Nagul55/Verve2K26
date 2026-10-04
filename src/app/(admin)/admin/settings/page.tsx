@@ -1,5 +1,5 @@
 import React from "react";
-import { SettingsProfileForm } from "@/components/SettingsProfileForm";
+import { AdminProfileForm } from "@/components/AdminProfileForm";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminSettingsPage() {
@@ -16,17 +16,13 @@ export default async function AdminSettingsPage() {
     .single();
   profile = data;
 
-  const initialData = profile || {
-    full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
-    email: user.email || '',
-    mobile: '',
-    college: '',
-    department: '',
-    year_of_study: ''
+  const initialData = {
+    full_name: profile?.full_name || user.user_metadata?.full_name || "Admin",
+    email: profile?.email || user.email || "admin@eventrix.com",
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <div>
         <h1 className="font-anton text-[40px] text-eventrix-black leading-none uppercase tracking-wide mb-2">
           Admin Settings
@@ -36,9 +32,7 @@ export default async function AdminSettingsPage() {
         </p>
       </div>
 
-      <div className="bg-white border border-[#D9D9DF] p-8 rounded-md max-w-3xl">
-        <SettingsProfileForm initialData={initialData} userId={user.id} showAcademic={false} showMobile={false} />
-      </div>
+      <AdminProfileForm initialData={initialData} userId={user.id} />
     </div>
   );
 }

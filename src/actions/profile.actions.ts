@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
 
 const getAdminClient = () => {
   return createSupabaseClient(
@@ -14,7 +16,7 @@ export async function updateProfile(userId: string, data: any) {
     return { error: "Invalid user session. Please sign in." };
   }
 
-  if (data?.mobile && String(data.mobile).trim().length > 0 && !/^\d{10}$/.test(String(data.mobile).trim())) {
+  if (data?.mobile && !/^\d{10}$/.test(String(data.mobile).trim())) {
     return { error: "10 digits required" };
   }
 
@@ -25,27 +27,11 @@ export async function updateProfile(userId: string, data: any) {
   if (authErr || !authData?.user) {
     return { error: authErr?.message || "User account not found." };
   }
-
-  // Update Auth user_metadata (full_name) and email if changed
-  const authUpdates: any = {};
-  if (data.full_name) {
-    authUpdates.user_metadata = { ...authData.user.user_metadata, full_name: data.full_name };
-  }
-  if (data.email && data.email !== authData.user.email) {
-    authUpdates.email = data.email;
-  }
   
-  if (Object.keys(authUpdates).length > 0) {
-    const { error: updateAuthErr } = await adminClient.auth.admin.updateUserById(userId, authUpdates);
-    if (updateAuthErr) {
-      console.error("Error updating auth user:", updateAuthErr);
-    }
-  }
-
   // We use upsert in case the participant stub wasn't properly created during signup
   const { error } = await adminClient.from('participants').upsert({
     participant_id: userId,
-    email: data.email || authData.user.email,
+    email: authData.user.email,
     ...data
   }, {
     onConflict: 'participant_id'
@@ -54,6 +40,81 @@ export async function updateProfile(userId: string, data: any) {
   if (error) {
     return { error: error.message };
   }
+
+  return { success: true };
+}
+
+export async function updateAdminProfile(userId: string, data: { full_name: string; email: string }) {
+  const supabase = await createClient();
+  const { data: { user: sessionUser } } = await supabase.auth.getUser();
+
+  if (!sessionUser || sessionUser.id !== userId) {
+    return { error: "Unauthorized session. Please sign in again." };
+  }
+
+  const full_name = (data.full_name || "").trim();
+  const email = (data.email || "").trim().toLowerCase();
+
+  if (!full_name || full_name.length < 2) {
+    return { error: "Full Name is required." };
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    return { error: "Please enter a valid email address." };
+  }
+
+  const adminClient = getAdminClient();
+
+  // Get existing user from Auth
+  const { data: authData, error: authErr } = await adminClient.auth.admin.getUserById(userId);
+  if (authErr || !authData?.user) {
+    return { error: authErr?.message || "User account not found." };
+  }
+
+  // Check email uniqueness if email changed
+  if (email !== authData.user.email?.toLowerCase()) {
+    const { data: existingPart } = await adminClient
+      .from('participants')
+      .select('participant_id')
+      .eq('email', email)
+      .neq('participant_id', userId)
+      .maybeSingle();
+
+    if (existingPart) {
+      return { error: "Email address is already in use by another account." };
+    }
+  }
+
+  // 1. Update Supabase Auth User email and metadata
+  const { error: updateAuthErr } = await adminClient.auth.admin.updateUserById(userId, {
+    email: email,
+    user_metadata: {
+      ...authData.user.user_metadata,
+      full_name: full_name,
+    },
+  });
+
+  if (updateAuthErr) {
+    return { error: updateAuthErr.message };
+  }
+
+  // 2. Update existing row in participants table (DO NOT create new row or change ID)
+  const { error: dbErr } = await adminClient.from('participants').upsert(
+    {
+      participant_id: userId,
+      full_name: full_name,
+      email: email,
+    },
+    { onConflict: 'participant_id' }
+  );
+
+  if (dbErr) {
+    return { error: dbErr.message };
+  }
+
+  revalidatePath('/admin/settings');
+  revalidatePath('/', 'layout');
 
   return { success: true };
 }
