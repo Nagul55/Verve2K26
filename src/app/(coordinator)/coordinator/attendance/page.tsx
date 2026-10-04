@@ -40,10 +40,23 @@ export default async function CoordinatorAttendancePage() {
   const partMap = new Map<string, any>();
   (participantsData || []).forEach(p => partMap.set(p.participant_id, p));
 
-  const logs = rawLogs.map(log => ({
-    ...log,
-    participants: partMap.get(log.participant_id) || null
-  }));
+  // Purge any orphan dummy attendance entries from DB that don't match any real participant
+  const validParticipantIds = new Set((participantsData || []).map(p => p.participant_id));
+  const orphanAttendanceIds = rawLogs
+    .filter(log => !log.participant_id || !validParticipantIds.has(log.participant_id))
+    .map(log => log.attendance_id);
+
+  if (orphanAttendanceIds.length > 0) {
+    await adminClient.from('attendance').delete().in('attendance_id', orphanAttendanceIds);
+  }
+
+  // Filter logs to include ONLY valid registered participants
+  const logs = rawLogs
+    .filter(log => log.participant_id && validParticipantIds.has(log.participant_id))
+    .map(log => ({
+      ...log,
+      participants: partMap.get(log.participant_id)
+    }));
 
   return (
     <div className="space-y-8 pb-12">
@@ -91,7 +104,7 @@ export default async function CoordinatorAttendancePage() {
                 const shortId = `LOG-${log.attendance_id ? log.attendance_id.split('-')[0].toUpperCase() : '001'}`;
                 
                 return (
-                  <tr key={log.attendance_id || Math.random()} className="hover:bg-[#F8F8FC] transition-colors">
+                  <tr key={log.attendance_id} className="hover:bg-[#F8F8FC] transition-colors">
                     <td className="px-6 py-4 font-mono font-bold text-xs text-eventrix-lavender">{shortId}</td>
                     <td className="px-6 py-4 font-bold text-eventrix-black">
                       {log.participants?.full_name || log.participants?.email || 'Registered Participant'}
