@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { Save, AlertTriangle, CheckCircle, Edit2, X } from "lucide-react";
+import { toast } from "sonner";
+import { Save, Edit2, X } from "lucide-react";
 import { updateProfile } from "@/actions/profile.actions";
 import { useRouter } from "next/navigation";
 
 export function SettingsProfileForm({ initialData, userId, showAcademic = true }: { initialData: any, userId: string, showAcademic?: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [statusMsg, setStatusMsg] = useState({ text: "", type: "" });
   const [isEditing, setIsEditing] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -27,14 +27,13 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setStatusMsg({ text: "", type: "" });
 
     startTransition(async () => {
       const { success, error } = await updateProfile(userId, formData);
       if (error) {
-        setStatusMsg({ text: error, type: "error" });
+        toast.error(error);
       } else {
-        setStatusMsg({ text: "Profile updated successfully!", type: "success" });
+        toast.success("Profile updated successfully!");
         setIsEditing(false);
         router.refresh();
       }
@@ -75,7 +74,6 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
                   department: initialData?.department || "",
                   year_of_study: initialData?.year_of_study || "",
                 });
-                setStatusMsg({ text: "", type: "" });
               }}
               className="border border-[#D9D9DF] bg-white text-eventrix-black px-6 py-2.5 rounded-md font-bold text-sm tracking-wide uppercase hover:bg-gray-100 transition-colors cursor-pointer"
             >
@@ -141,13 +139,6 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
           </div>
         )}
       </div>
-
-      {statusMsg.text && (
-        <div className={`p-4 rounded-md border-2 font-bold flex gap-3 ${statusMsg.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
-          {statusMsg.type === 'error' ? <AlertTriangle className="w-5 h-5 shrink-0" /> : <CheckCircle className="w-5 h-5 shrink-0" />}
-          <p>{statusMsg.text}</p>
-        </div>
-      )}
     </form>
   );
 }

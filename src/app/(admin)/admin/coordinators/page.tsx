@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useTransition } from "react";
+import { toast } from "sonner";
 import { 
   Plus, 
   Users, 
@@ -33,7 +34,6 @@ export default function CoordinatorsPage() {
   const [coordinators, setCoordinators] = useState<any[]>([]);
   const [subEvents, setSubEvents] = useState<any[]>([]);
   const [isPending, startTransition] = useTransition();
-  const [status, setStatus] = useState({ text: "", type: "" });
 
   // Add Coordinator form state
   const [formData, setFormData] = useState({
@@ -67,7 +67,6 @@ export default function CoordinatorsPage() {
 
   const handleCreateCoordinator = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setStatus({ text: "", type: "" });
     
     if (
       !formData.fullName.trim() ||
@@ -79,12 +78,12 @@ export default function CoordinatorsPage() {
       !formData.password.trim() ||
       !formData.confirmPassword.trim()
     ) {
-      setStatus({ text: "All fields are required. Please complete all fields to create a coordinator.", type: "error" });
+      toast.error("All fields are required. Please complete all fields to create a coordinator.");
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setStatus({ text: "Passwords do not match. Please ensure Password and Confirm Password are identical.", type: "error" });
+      toast.error("Passwords do not match. Please ensure Password and Confirm Password are identical.");
       return;
     }
 
@@ -102,9 +101,9 @@ export default function CoordinatorsPage() {
       const res = await createCoordinator(data);
       
       if (res.error) {
-        setStatus({ text: res.error, type: "error" });
+        toast.error(res.error);
       } else {
-        setStatus({ text: "Coordinator account created successfully!", type: "success" });
+        toast.success("Coordinator account created successfully!");
         setFormData({
           fullName: "",
           mobile: "",
@@ -124,9 +123,9 @@ export default function CoordinatorsPage() {
     startTransition(async () => {
       const res = await updateCoordinatorAssignment(coordinatorId, subEventId);
       if (res.error) {
-        setStatus({ text: res.error, type: "error" });
+        toast.error(res.error);
       } else {
-        setStatus({ text: "Coordinator event permission updated successfully!", type: "success" });
+        toast.success("Coordinator event permission updated successfully!");
         await loadData();
       }
     });
@@ -138,9 +137,9 @@ export default function CoordinatorsPage() {
     startTransition(async () => {
       const res = await deleteCoordinator(coordinatorId);
       if (res.error) {
-        setStatus({ text: res.error, type: "error" });
+        toast.error(res.error);
       } else {
-        setStatus({ text: "Coordinator removed successfully!", type: "success" });
+        toast.success(`Coordinator account for ${name} removed from system`);
         await loadData();
       }
     });
@@ -152,9 +151,9 @@ export default function CoordinatorsPage() {
     startTransition(async () => {
       const res = await approveAndPermitSubEvent(subEventId, selectedCoordId);
       if (res.error) {
-        setStatus({ text: res.error, type: "error" });
+        toast.error(res.error);
       } else {
-        setStatus({ text: "Event permitted and approved successfully!", type: "success" });
+        toast.success("Event permitted and approved successfully!");
         await loadData();
       }
     });
@@ -183,7 +182,7 @@ export default function CoordinatorsPage() {
         {/* Tab Navigation Buttons */}
         <div className="flex bg-[#F8F8FC] p-1.5 rounded-lg border border-[#D9D9DF] gap-1">
           <button
-            onClick={() => { setActiveTab("manage"); setStatus({ text: "", type: "" }); }}
+            onClick={() => setActiveTab("manage")}
             className={`px-5 py-2.5 rounded-md font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === "manage"
                 ? "bg-eventrix-black text-white shadow-sm"
@@ -200,7 +199,7 @@ export default function CoordinatorsPage() {
           </button>
 
           <button
-            onClick={() => { setActiveTab("add"); setStatus({ text: "", type: "" }); }}
+            onClick={() => setActiveTab("add")}
             className={`px-5 py-2.5 rounded-md font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === "add"
                 ? "bg-eventrix-black text-white shadow-sm"
@@ -212,19 +211,6 @@ export default function CoordinatorsPage() {
           </button>
         </div>
       </div>
-
-      {/* Alert Banner */}
-      {status.text && (
-        <div className={`p-4 rounded-md text-sm font-bold flex items-center justify-between border ${
-          status.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'
-        }`}>
-          <div className="flex items-center gap-2.5">
-            {status.type === 'error' ? <ShieldAlert className="w-5 h-5 shrink-0" /> : <ShieldCheck className="w-5 h-5 shrink-0" />}
-            <span>{status.text}</span>
-          </div>
-          <button onClick={() => setStatus({ text: "", type: "" })} className="text-xs uppercase hover:underline">Dismiss</button>
-        </div>
-      )}
 
       {/* TAB 1: MANAGE EXISTING COORDINATORS & REQUESTS */}
       {activeTab === "manage" && (

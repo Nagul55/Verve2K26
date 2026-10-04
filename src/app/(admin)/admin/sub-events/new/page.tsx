@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useTransition, Suspense } from "react";
+import { toast } from "sonner";
 import { 
   PlusCircle, 
   Calendar, 
@@ -27,7 +28,6 @@ function AdminSubEventForm() {
   const festId = searchParams.get('fest_id') || '00000000-0000-0000-0000-000000000001';
   
   const [isPending, startTransition] = useTransition();
-  const [statusMsg, setStatusMsg] = useState({ text: "", type: "" });
 
   const [formData, setFormData] = useState({
     title: "",
@@ -64,10 +64,9 @@ function AdminSubEventForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setStatusMsg({ text: "", type: "" });
 
     if (!formData.title.trim() || !formData.description.trim() || !formData.location.trim()) {
-      setStatusMsg({ text: "Please fill out all required fields.", type: "error" });
+      toast.error("Please fill out all required fields.");
       return;
     }
 
@@ -91,9 +90,9 @@ function AdminSubEventForm() {
       });
 
       if (error) {
-        setStatusMsg({ text: error, type: "error" });
+        toast.error(error);
       } else {
-        setStatusMsg({ text: "Sub-Event created successfully!", type: "success" });
+        toast.success("Sub-Event created successfully!");
         setTimeout(() => {
           router.push(`/admin/sub-events?fest_id=${festId}`);
           router.refresh();
@@ -361,16 +360,6 @@ function AdminSubEventForm() {
               </div>
             </div>
           </div>
-
-          {/* Error / Success Status Notice */}
-          {statusMsg.text && (
-            <div className={`p-4 rounded-md text-sm font-bold flex items-center gap-3 ${
-              statusMsg.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'
-            }`}>
-              {statusMsg.type === 'error' ? <AlertCircle className="w-5 h-5 shrink-0" /> : <CheckCircle2 className="w-5 h-5 shrink-0" />}
-              <span>{statusMsg.text}</span>
-            </div>
-          )}
 
           {/* Submit Action */}
           <div className="pt-6 border-t border-[#D9D9DF]">

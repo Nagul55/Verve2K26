@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { signup } from "@/actions/auth.actions";
 import { Eye, EyeOff, User, Mail, AlertCircle, Phone, Building2, GraduationCap, Calendar, Lock } from 'lucide-react';
+import { toast } from "sonner";
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('');
@@ -17,10 +18,8 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
 
   const clientAction = async (formData: FormData) => {
-    setErrorMsg('');
     const fullNameStr = (formData.get('fullName') as string) || '';
     const mobileStr = (formData.get('mobile') as string) || '';
     const emailStr = (formData.get('email') as string) || '';
@@ -40,12 +39,12 @@ export default function SignupPage() {
       !passwordStr.trim() ||
       !confirmPasswordStr.trim()
     ) {
-      setErrorMsg('All fields are required. Please fill in all fields to create your account.');
+      toast.error('All fields are required. Please fill in all fields to create your account.');
       return;
     }
 
     if (passwordStr !== confirmPasswordStr) {
-      setErrorMsg('Passwords do not match. Please ensure Password and Confirm Password are identical.');
+      toast.error('Passwords do not match. Please ensure Password and Confirm Password are identical.');
       return;
     }
 
@@ -55,13 +54,13 @@ export default function SignupPage() {
       const res = await signup(formData);
       
       if (res?.error) {
-        setErrorMsg(res.error);
+        toast.error(res.error);
         setIsLoading(false);
       } else if (res?.success && res?.redirectTo) {
         window.location.href = res.redirectTo;
       }
     } catch (err: any) {
-      setErrorMsg("An unexpected error occurred during sign up.");
+      toast.error("An unexpected error occurred during sign up.");
       setIsLoading(false);
     }
   };
@@ -105,14 +104,6 @@ export default function SignupPage() {
               Fill all required fields below to create your account.
             </p>
           </div>
-
-          {/* Error Alert */}
-          {errorMsg && (
-            <div className="mb-5 p-4 rounded-xl bg-red-50/95 border border-red-200 text-red-700 text-xs sm:text-sm flex items-center gap-2.5 animate-fadeIn font-bold">
-              <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
 
           {/* Form Inputs */}
           <form action={clientAction} className="space-y-4">

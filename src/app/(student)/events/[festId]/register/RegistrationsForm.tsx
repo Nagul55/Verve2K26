@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Check, Calendar, MapPin, Clock, AlertTriangle } from "lucide-react";
 import { registerForEvents } from "@/actions/event.actions";
 import { useRouter } from "next/navigation";
@@ -9,7 +10,6 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
   const router = useRouter();
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
-  const [statusMsg, setStatusMsg] = useState("");
   const [showTeamStep, setShowTeamStep] = useState(false);
   const [teamNames, setTeamNames] = useState<Record<string, string>>({});
   const [teamMembers, setTeamMembers] = useState<Record<string, string[]>>({});
@@ -43,13 +43,12 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
       // Validate all team names are provided
       for (const event of teamEvents) {
         if (!teamNames[event.id]?.trim()) {
-          setStatusMsg(`Please provide a team name for ${event.title}`);
+          toast.error(`Please provide a team name for ${event.title}`);
           return;
         }
       }
     }
 
-    setStatusMsg("");
     startTransition(async () => {
       try {
         // Convert string[] back to comma separated for the backend action
@@ -65,12 +64,13 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
           showTeamStep ? membersStrMap : undefined
         );
         if (res.success) {
+          toast.success("Successfully registered for events!");
           router.push("/registrations");
         } else {
-          setStatusMsg(`Error: ${res.error}`);
+          toast.error(res.error || "Registration failed");
         }
       } catch (err: any) {
-        setStatusMsg(`Error: Something went wrong. ${err.message || 'Please try again.'}`);
+        toast.error(`Error: Something went wrong. ${err.message || 'Please try again.'}`);
       }
     });
   };
@@ -250,7 +250,7 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
             </div>
 
             {/* Rules Check */}
-            {(!meetsTechRule || !meetsNonTechRule) && !statusMsg && (
+            {(!meetsTechRule || !meetsNonTechRule) && (
               <div className="mb-6 p-3 bg-red-50 border border-red-100 rounded-sm flex gap-3 text-red-600 text-xs font-medium">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <div className="space-y-1">
@@ -259,17 +259,6 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
                     {!meetsTechRule && <li>Select at least {fest?.min_technical} Technical event.</li>}
                     {!meetsNonTechRule && <li>Select at least {fest?.min_non_technical} Non-Technical event.</li>}
                   </ul>
-                </div>
-              </div>
-            )}
-
-            {statusMsg && (
-              <div className={`mb-6 p-3 rounded-sm flex gap-3 text-xs font-medium ${statusMsg.includes("Error")
-                  ? "bg-red-50 border border-red-100 text-red-600"
-                  : "bg-green-50 border border-green-100 text-green-700"
-                }`}>
-                <div className="space-y-1">
-                  <p className="font-bold">{statusMsg}</p>
                 </div>
               </div>
             )}

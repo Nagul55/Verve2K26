@@ -1,27 +1,32 @@
 "use client";
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from "next/navigation";
 import { login } from "@/actions/auth.actions";
-import { Eye, EyeOff, Mail, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Mail } from 'lucide-react';
+import { toast } from "sonner";
 
 function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get('registered') === 'true';
 
+  useEffect(() => {
+    if (justRegistered) {
+      toast.success("Account created successfully! Please log in.");
+    }
+  }, [justRegistered]);
+
   const clientAction = async (formData: FormData) => {
-    setErrorMsg('');
     const emailStr = formData.get('email') as string;
     const passwordStr = formData.get('password') as string;
 
     if (!emailStr?.trim() || !passwordStr?.trim()) {
-      setErrorMsg('Please enter both email and password.');
+      toast.error('Please enter both email and password.');
       return;
     }
 
@@ -31,13 +36,13 @@ function LoginForm() {
       const res = await login(formData);
       
       if (res?.error) {
-        setErrorMsg(res.error);
+        toast.error(res.error);
         setIsLoading(false);
       } else if (res?.success && res?.redirectTo) {
         window.location.href = res.redirectTo;
       }
     } catch (err: any) {
-      setErrorMsg("An unexpected error occurred during sign in.");
+      toast.error("An unexpected error occurred during sign in.");
       setIsLoading(false);
     }
   };
@@ -82,21 +87,6 @@ function LoginForm() {
               Please enter your details to sign in.
             </p>
           </div>
-
-          {/* Error or Success Alerts */}
-          {errorMsg && (
-            <div className="mb-5 p-4 rounded-xl bg-red-50/95 border border-red-200 text-red-700 text-xs sm:text-sm flex items-center gap-2.5 animate-fadeIn">
-              <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
-
-          {justRegistered && !errorMsg && (
-            <div className="mb-5 p-4 rounded-xl bg-emerald-50/95 border border-emerald-200 text-emerald-700 text-xs sm:text-sm flex items-center gap-2.5 animate-fadeIn">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Account created successfully! Please log in.</span>
-            </div>
-          )}
 
           {/* Form Inputs */}
           <form action={clientAction} className="space-y-5">
