@@ -129,7 +129,7 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
                               currentEmails[index] = e.target.value;
                               setTeamMembers(prev => ({...prev, [event.id]: currentEmails}));
                             }}
-                            placeholder={`Member ${index + 2} Email Address`}
+                            placeholder={`Member ${index + 2} Email (john.doe@example.com)`}
                             className="w-full border border-[#D9D9DF] rounded-md px-4 py-2.5 bg-white focus:outline-none focus:border-eventrix-lavender text-sm"
                           />
                         ))}

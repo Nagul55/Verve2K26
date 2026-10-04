@@ -489,7 +489,7 @@ export default function CoordinatorsPage() {
                     value={formData.email} 
                     onChange={handleChange} 
                     required 
-                    placeholder="Personal Mail" 
+                    placeholder="john.doe@example.com" 
                     className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
                   />
                 </div>

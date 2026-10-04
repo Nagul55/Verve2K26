@@ -105,7 +105,7 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Email Address</label>
-              <input name="email" value={formData.email} onChange={handleChange} required type="email" disabled={!isEditing} className={inputClass} placeholder={isEditing ? "Personal Mail" : "-"} />
+              <input name="email" value={formData.email} onChange={handleChange} required type="email" disabled={!isEditing} className={inputClass} placeholder={isEditing ? "john.doe@example.com" : "-"} />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Mobile Number</label>

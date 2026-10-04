@@ -131,7 +131,7 @@ export function RegistrationForm() {
             </div>
             <div className="space-y-2">
               <Label>Email Address</Label>
-              <Input type="email" placeholder="john@college.edu" {...register('email')} />
+              <Input type="email" placeholder="john.doe@example.com" {...register('email')} />
               {errors.email && <span className="text-xs text-destructive">{errors.email.message}</span>}
             </div>
             <div className="space-y-2">
