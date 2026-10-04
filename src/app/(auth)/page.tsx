@@ -112,8 +112,8 @@ function LoginForm() {
                   name="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="imran110585@gmail.com"
-                  className="w-full bg-white/90 text-gray-950 placeholder-gray-500 px-4 py-3.5 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-sm font-bold transition-all shadow-sm"
+                  placeholder="Personal Mail"
+                  className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-4 py-3.5 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-sm font-bold transition-all shadow-sm"
                 />
                 <Mail className="w-4 h-4 text-gray-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
