@@ -205,32 +205,6 @@ export default function ScannerClient({ assignedEventId }: { assignedEventId: st
             </div>
           )}
         </div>
-
-        {/* Manual Lookup */}
-        <div className="border border-[#D9D9DF] bg-[#F8F8FC] p-6 rounded-md shadow-sm">
-          <h3 className="font-bold text-sm text-eventrix-black mb-3 flex items-center gap-2 uppercase tracking-wide">
-            <Search className="w-4 h-4 text-eventrix-lavender" /> Manual Participant Lookup
-          </h3>
-          
-          <form onSubmit={handleManualSearch} className="space-y-3">
-            <div className="flex gap-2">
-              <input 
-                type="text" 
-                value={manualQuery}
-                onChange={(e) => setManualQuery(e.target.value)}
-                placeholder="Enter Register No or Email" 
-                className="flex-1 border border-[#D9D9DF] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-eventrix-lavender bg-white font-medium"
-              />
-              <button 
-                type="submit"
-                className="bg-eventrix-black text-white px-4 py-2 rounded-md font-bold text-xs uppercase tracking-wider hover:bg-eventrix-lavender hover:text-black transition-colors shrink-0"
-              >
-                Search
-              </button>
-            </div>
-          </form>
-        </div>
-
       </div>
     </div>
   );
