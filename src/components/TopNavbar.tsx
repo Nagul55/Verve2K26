@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Bell, Settings } from "lucide-react";
+import { Search, Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { MobileNav } from "./MobileNav";
@@ -41,10 +41,13 @@ export async function TopNavbar() {
         </div>
       </div>
       <div className="flex items-center gap-4 md:gap-6 ml-auto shrink-0">
-        <button className="relative text-eventrix-black hover:text-eventrix-lavender transition-colors">
-          <Bell className="w-5 h-5 stroke-[1.5]" />
-          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-eventrix-lavender rounded-full border-[2px] border-eventrix-bg"></span>
-        </button>
+        <div className="flex items-center shrink-0">
+          <img
+            src="/assets/sona-logo.png"
+            alt="Sona College of Technology"
+            className="h-7 md:h-9 w-auto object-contain"
+          />
+        </div>
         
         <div className="flex items-center gap-3 md:gap-4 border-l border-[#D9D9DF] pl-4 md:pl-6 h-10">
           <div className="flex items-center justify-center w-9 h-9 rounded-full bg-eventrix-lavender/20 text-eventrix-lavender font-bold text-xs shrink-0">
