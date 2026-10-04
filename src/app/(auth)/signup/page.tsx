@@ -88,10 +88,10 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen w-screen bg-white flex flex-col lg:flex-row overflow-x-hidden font-sans select-none relative">
+    <div className="min-h-dvh w-full bg-white flex flex-col lg:flex-row overflow-x-hidden font-sans select-none relative">
       
       {/* MOBILE & TABLET BACKGROUND AVATAR IMAGE */}
-      <div className="lg:hidden absolute inset-0 z-0">
+      <div className="lg:hidden fixed inset-0 z-0">
         <img
           src="/images/mobile-hero-bg.png"
           alt="Eventrix Mobile Hero Background"
@@ -101,10 +101,10 @@ export default function SignupPage() {
       </div>
 
       {/* LEFT SECTION - Form (55% Width on Desktop) */}
-      <div className="w-full lg:w-[55%] min-h-screen py-8 p-4 sm:p-8 lg:p-10 xl:p-12 flex flex-col justify-center z-10 relative overflow-y-auto">
+      <div className="w-full lg:w-[55%] min-h-dvh lg:min-h-screen pt-6 pb-12 px-4 sm:px-8 sm:py-10 lg:p-10 xl:p-12 flex flex-col justify-start lg:justify-center z-10 relative">
         
         {/* Glassmorphic Card Container */}
-        <div className="max-w-xl lg:max-w-xl w-full mx-auto bg-white/95 lg:bg-transparent backdrop-blur-2xl lg:backdrop-blur-none p-6 sm:p-8 md:p-10 lg:p-0 rounded-3xl lg:rounded-none shadow-2xl lg:shadow-none border border-white/70 lg:border-none transition-all">
+        <div className="max-w-xl lg:max-w-xl w-full mx-auto bg-white/95 lg:bg-transparent backdrop-blur-2xl lg:backdrop-blur-none p-5 sm:p-8 md:p-10 lg:p-0 rounded-3xl lg:rounded-none shadow-2xl lg:shadow-none border border-white/70 lg:border-none transition-all">
           
           {/* Header Title with Logo Directly Beside "Join" */}
           <div className="mb-5 sm:mb-6">
@@ -356,7 +356,7 @@ export default function SignupPage() {
           </div>
 
           {/* Footer Metadata */}
-          <div className="pt-6 text-xs text-gray-800 lg:text-gray-400 text-center sm:text-left font-extrabold">
+          <div className="pt-6 pb-8 lg:pb-0 text-xs text-gray-800 lg:text-gray-400 text-center sm:text-left font-extrabold mb-[env(safe-area-inset-bottom)]">
             Eventrix Platform © 2026. All rights reserved.
           </div>
         </div>
