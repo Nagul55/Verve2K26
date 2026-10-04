@@ -42,6 +42,8 @@ CREATE TABLE IF NOT EXISTS public.sub_events (
   capacity integer DEFAULT 50,
   image_type text,
   status text DEFAULT 'Pending',
+  approved_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  approved_at timestamp with time zone,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

@@ -95,10 +95,8 @@ export default function AdminParticipantsPage() {
     return events;
   };
 
-  // Extract unique departments & colleges for filters (only for event-registered participants)
-  const registeredParticipants = useMemo(() => {
-    return participants.filter(p => getParticipantEvents(p).length > 0);
-  }, [participants]);
+  // Extract unique departments & colleges for filters
+  const registeredParticipants = participants;
 
   const departments = useMemo(() => {
     const set = new Set<string>();

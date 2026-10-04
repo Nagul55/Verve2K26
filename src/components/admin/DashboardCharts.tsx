@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, GraduationCap, Building2, Calendar, Award } from 'lucide-react';
 
 interface DemographicItem {
@@ -12,7 +12,6 @@ interface DemographicItem {
 
 interface DashboardChartsProps {
   trendsData?: { name: string; registrations: number }[];
-  popularityData?: { name: string; value: number }[];
   growthRate?: string;
   yearData?: DemographicItem[];
   deptData?: DemographicItem[];
@@ -21,7 +20,6 @@ interface DashboardChartsProps {
 
 export function DashboardCharts({ 
   trendsData = [], 
-  popularityData = [],
   growthRate = "+0%",
   yearData = [],
   deptData = [],
@@ -39,10 +37,10 @@ export function DashboardCharts({
 
   return (
     <div className="space-y-6">
-      {/* Upper Charts Row: Registration Trends & Event Popularity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Upper Charts Row: Registration Trends */}
+      <div className="w-full">
         {/* Main Registration Chart */}
-        <div className="lg:col-span-2 border border-[#D9D9DF] bg-white p-6 rounded-md shadow-sm">
+        <div className="border border-[#D9D9DF] bg-white p-6 rounded-md shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h3 className="text-lg font-bold text-eventrix-black font-anton tracking-wide">REGISTRATION TRENDS</h3>
@@ -80,27 +78,6 @@ export function DashboardCharts({
                 />
                 <Area type="monotone" dataKey="registrations" stroke="#A78BFA" strokeWidth={3} fillOpacity={1} fill="url(#colorReg)" />
               </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Category Distribution Chart */}
-        <div className="border border-[#D9D9DF] bg-white p-6 rounded-md shadow-sm">
-          <h3 className="text-lg font-bold text-eventrix-black font-anton tracking-wide mb-1">EVENT POPULARITY</h3>
-          <p className="text-[10px] font-bold text-eventrix-muted uppercase tracking-widest mb-6">By Category</p>
-          
-          <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={popularityData} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
-                <XAxis type="number" hide allowDecimals={false} />
-                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} width={80} />
-                <Tooltip 
-                  cursor={{ fill: 'transparent' }}
-                  contentStyle={{ backgroundColor: '#080A12', border: 'none', borderRadius: '4px', color: '#fff' }}
-                />
-                <Bar dataKey="value" fill="#080A12" radius={[0, 4, 4, 0]} barSize={24} />
-              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>

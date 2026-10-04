@@ -50,7 +50,7 @@ export default async function AdminSubEventsPage({ searchParams }: { searchParam
           </thead>
           <tbody className="divide-y divide-[#D9D9DF]">
             {(subEvents || []).map((event) => {
-              const isApproved = event.status === 'Approved' || !event.status;
+              const isApproved = event.status === 'LIVE';
 
               return (
                 <tr key={event.id} className="hover:bg-[#F8F8FC] transition-colors">

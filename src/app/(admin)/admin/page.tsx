@@ -99,24 +99,7 @@ export default async function AdminDashboard() {
 
   const trendsData = last7DaysData.map(d => ({ name: d.name, registrations: d.registrations }));
 
-  // CATEGORY POPULARITY CHART DATA
-  const categoryCounts: Record<string, number> = {
-    'Technical': 0,
-    'Non-Technical': 0,
-    'Workshops': 0,
-  };
 
-  allParticipants.forEach(p => {
-    const evs = getParticipantEvents(p);
-    evs.forEach(ev => {
-      const cat = ev.category || 'Technical';
-      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-    });
-  });
-
-  const popularityData = Object.entries(categoryCounts)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value);
 
   // DEMOGRAPHICS CALCULATIONS (Year of Study, Department, College) - Computes ONLY from Student accounts
   const studentParticipants = allParticipants.filter(p => (p.role || 'student').toLowerCase() === 'student');
@@ -216,7 +199,6 @@ export default async function AdminDashboard() {
       {/* Charts & Demographics Section */}
       <DashboardCharts 
         trendsData={trendsData} 
-        popularityData={popularityData} 
         growthRate={growthRate} 
         yearData={yearData}
         deptData={deptData}

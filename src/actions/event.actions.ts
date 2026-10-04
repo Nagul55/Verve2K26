@@ -12,6 +12,25 @@ const getAdminClient = () => {
   );
 };
 
+async function getAllAuthUsers(adminClient: any) {
+  let allUsers: any[] = [];
+  let page = 1;
+  const perPage = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage });
+    if (error || !data?.users || data.users.length === 0) {
+      hasMore = false;
+    } else {
+      allUsers = allUsers.concat(data.users);
+      if (data.users.length < perPage) hasMore = false;
+      else page++;
+    }
+  }
+  return { data: { users: allUsers } };
+}
+
 // FESTS
 export async function getFests() {
   const adminClient = getAdminClient();
@@ -44,7 +63,7 @@ export async function getSubEvents(festId?: string, includePending: boolean = fa
   if (error || !data) return [];
 
   // Query coordinators from Supabase Auth users
-  const { data: authData } = await adminClient.auth.admin.listUsers();
+  const { data: authData } = await getAllAuthUsers(adminClient);
   const eventCoordMap: Record<string, string[]> = {};
   const eventCoordDetails: Record<string, Array<{ name: string; phone: string; email: string }>> = {};
 
@@ -169,7 +188,7 @@ export async function approveSubEvent(subEventId: string, coordinatorIds?: strin
   }
 
   // Server-side Rule Validation: Check coordinator count for this event
-  const { data: authData } = await adminClient.auth.admin.listUsers();
+  const { data: authData } = await getAllAuthUsers(adminClient);
   const assignedCoords = (authData?.users || []).filter(u => {
     if (u.app_metadata?.role !== 'coordinator') return false;
     const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
@@ -276,7 +295,7 @@ export async function getSubEventById(subEventId: string) {
   }
 
   // Fetch coordinator details for this event
-  const { data: authData } = await adminClient.auth.admin.listUsers();
+  const { data: authData } = await getAllAuthUsers(adminClient);
   const coordinatorDetails: Array<{ id: string; name: string; phone: string; email: string }> = [];
 
   if (authData?.users) {
@@ -657,14 +676,20 @@ export async function getParticipantRegistrations() {
 export async function getAdminParticipants() {
   const adminClient = getAdminClient();
 
-  const { data: authData } = await adminClient.auth.admin.listUsers();
+  const { data: authData } = await getAllAuthUsers(adminClient);
   const roleMap = new Map<string, string>();
+  const genderMap = new Map<string, string>();
   if (authData?.users) {
     authData.users.forEach(u => {
       const role = u.app_metadata?.role || 'student';
       roleMap.set(u.id, role);
+      
+      const gender = u.user_metadata?.gender || '';
+      genderMap.set(u.id, gender);
+      
       if (u.email) {
         roleMap.set(u.email.toLowerCase(), role);
+        genderMap.set(u.email.toLowerCase(), gender);
       }
     });
   }
@@ -705,13 +730,15 @@ export async function getAdminParticipants() {
     }
     return (rawData || []).map(p => ({
       ...p,
-      role: roleMap.get(p.participant_id) || (p.email ? roleMap.get(p.email.toLowerCase()) : null) || 'student'
+      role: roleMap.get(p.participant_id) || (p.email ? roleMap.get(p.email.toLowerCase()) : null) || 'student',
+      gender: genderMap.get(p.participant_id) || (p.email ? genderMap.get(p.email.toLowerCase()) : null) || ''
     }));
   }
 
   return (data || []).map(p => ({
     ...p,
-    role: roleMap.get(p.participant_id) || (p.email ? roleMap.get(p.email.toLowerCase()) : null) || 'student'
+    role: roleMap.get(p.participant_id) || (p.email ? roleMap.get(p.email.toLowerCase()) : null) || 'student',
+    gender: genderMap.get(p.participant_id) || (p.email ? genderMap.get(p.email.toLowerCase()) : null) || ''
   }));
 }
 

@@ -24,10 +24,7 @@ export default function ScannerClient({ assignedEventId }: { assignedEventId: st
   }, []);
 
   const startScanner = async () => {
-    if (!assignedEventId) {
-      toast.error("You are not assigned to any specific event. Cannot scan tickets.");
-      return;
-    }
+    // Removed restriction to allow admins (null assignedEventId) to scan tickets using the ticket's embedded event ID
 
     setScanning(true);
     setScanResult(null);
@@ -82,7 +79,15 @@ export default function ScannerClient({ assignedEventId }: { assignedEventId: st
 
   const verifyTicketApi = async (pid: string, qrEventId?: string) => {
     try {
-      if (qrEventId && qrEventId !== assignedEventId) {
+      const targetEventId = assignedEventId || qrEventId;
+
+      if (!targetEventId) {
+        toast.error("Ticket is missing event data, and you are not assigned to a specific event.");
+        setScanResult({ success: false, message: "Ticket missing event data." });
+        return;
+      }
+
+      if (assignedEventId && qrEventId && qrEventId !== assignedEventId) {
         const errMsg = "WRONG TICKET! This ticket is for a different event.";
         toast.error(errMsg);
         setScanResult({
@@ -95,7 +100,7 @@ export default function ScannerClient({ assignedEventId }: { assignedEventId: st
       const res = await fetch("/api/admin/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pid, event_id: assignedEventId })
+        body: JSON.stringify({ pid, event_id: targetEventId })
       });
       const data = await res.json();
       
@@ -148,8 +153,8 @@ export default function ScannerClient({ assignedEventId }: { assignedEventId: st
               <Scan className="w-5 h-5 stroke-[3]" /> Activate Scanner Camera
             </button>
             {!assignedEventId && (
-               <p className="text-red-400 mt-4 text-xs font-bold uppercase tracking-widest">
-                 No event assigned. Cannot scan.
+               <p className="text-emerald-400 mt-4 text-xs font-bold uppercase tracking-widest">
+                 Admin Mode: Scanning Any Event Ticket
                </p>
             )}
           </div>
