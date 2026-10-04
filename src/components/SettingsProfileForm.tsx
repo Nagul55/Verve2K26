@@ -101,15 +101,15 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
           <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2">
               <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Full Name</label>
-              <input name="full_name" value={formData.full_name} onChange={handleChange} required disabled={!isEditing} className={inputClass} />
+              <input name="full_name" value={formData.full_name} onChange={handleChange} required disabled={!isEditing} className={inputClass} placeholder={isEditing ? "Your Full Name" : "-"} />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Email Address</label>
-              <input name="email" value={formData.email} onChange={handleChange} required type="email" disabled={!isEditing} className={inputClass} />
+              <input name="email" value={formData.email} onChange={handleChange} required type="email" disabled={!isEditing} className={inputClass} placeholder={isEditing ? "Personal Mail" : "-"} />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Mobile Number</label>
-              <input name="mobile" value={formData.mobile} onChange={handleChange} disabled={!isEditing} className={inputClass} placeholder={isEditing ? "+91 9876543210" : "-"} />
+              <input name="mobile" value={formData.mobile} onChange={handleChange} disabled={!isEditing} className={inputClass} placeholder={isEditing ? "Your Phone Number" : "-"} />
             </div>
           </div>
         </div>
@@ -123,19 +123,19 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
             <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">College Name</label>
-                <input name="college" value={formData.college} onChange={handleChange} disabled={!isEditing} className={inputClass} placeholder={isEditing ? "e.g. Your College Name" : "-"} />
+                <input name="college" value={formData.college} onChange={handleChange} disabled={!isEditing} className={inputClass} placeholder={isEditing ? "College Name" : "-"} />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Register Number</label>
-                <input name="register_number" value={formData.register_number} onChange={handleChange} disabled={!isEditing} className={inputClass} placeholder={isEditing ? "e.g. 717822P..." : "-"} />
+                <input name="register_number" value={formData.register_number} onChange={handleChange} disabled={!isEditing} className={inputClass} placeholder={isEditing ? "Register / Roll Number" : "-"} />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Department</label>
-                <input name="department" value={formData.department} onChange={handleChange} placeholder={isEditing ? "e.g. B.Tech IT" : "-"} disabled={!isEditing} className={inputClass} />
+                <input name="department" value={formData.department} onChange={handleChange} placeholder={isEditing ? "e.g. B.Tech IT / CSE" : "-"} disabled={!isEditing} className={inputClass} />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Year of Study</label>
-                <input name="year_of_study" value={formData.year_of_study} onChange={handleChange} placeholder={isEditing ? "e.g. III Year" : "-"} disabled={!isEditing} className={inputClass} />
+                <input name="year_of_study" value={formData.year_of_study} onChange={handleChange} placeholder={isEditing ? "e.g. 1st Year / 3rd Year" : "-"} disabled={!isEditing} className={inputClass} />
               </div>
             </div>
           </div>

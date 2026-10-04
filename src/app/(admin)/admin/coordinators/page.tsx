@@ -44,8 +44,7 @@ export default function CoordinatorsPage() {
     department: "",
     yearOfStudy: "1st Year",
     password: "",
-    confirmPassword: "",
-    subEventId: ""
+    confirmPassword: ""
   });
 
   // Track selected coordinator for event permission approvals
@@ -99,7 +98,6 @@ export default function CoordinatorsPage() {
       data.append('yearOfStudy', formData.yearOfStudy);
       data.append('password', formData.password);
       data.append('confirmPassword', formData.confirmPassword);
-      data.append('subEventId', formData.subEventId);
       
       const res = await createCoordinator(data);
       
@@ -115,8 +113,7 @@ export default function CoordinatorsPage() {
           department: "",
           yearOfStudy: "1st Year",
           password: "",
-          confirmPassword: "",
-          subEventId: ""
+          confirmPassword: ""
         });
         await loadData();
       }
@@ -460,7 +457,7 @@ export default function CoordinatorsPage() {
                     value={formData.fullName} 
                     onChange={handleChange} 
                     required 
-                    placeholder="e.g. Imran Z" 
+                    placeholder="Your Full Name" 
                     className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
                   />
                 </div>
@@ -476,7 +473,7 @@ export default function CoordinatorsPage() {
                     value={formData.mobile} 
                     onChange={handleChange} 
                     required 
-                    placeholder="+91 9876543210" 
+                    placeholder="Your Phone Number" 
                     className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
                   />
                 </div>
@@ -492,7 +489,7 @@ export default function CoordinatorsPage() {
                     value={formData.email} 
                     onChange={handleChange} 
                     required 
-                    placeholder="coordinator@college.edu" 
+                    placeholder="Personal Mail" 
                     className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
                   />
                 </div>
@@ -508,7 +505,7 @@ export default function CoordinatorsPage() {
                     value={formData.college} 
                     onChange={handleChange} 
                     required 
-                    placeholder="e.g. SRM Institute of Science and Technology" 
+                    placeholder="College Name" 
                     className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
                   />
                 </div>
@@ -581,26 +578,6 @@ export default function CoordinatorsPage() {
                     minLength={6} 
                     className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
                   />
-                </div>
-
-                {/* Assign Sub Event Optional */}
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
-                    Assign Sub-Event Permission (Optional)
-                  </label>
-                  <select
-                    name="subEventId"
-                    value={formData.subEventId}
-                    onChange={handleChange}
-                    className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium cursor-pointer"
-                  >
-                    <option value="">No sub-event permitted initially</option>
-                    {subEvents.map(ev => (
-                      <option key={ev.id} value={ev.id}>
-                        {ev.title} ({ev.category})
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
               </div>
