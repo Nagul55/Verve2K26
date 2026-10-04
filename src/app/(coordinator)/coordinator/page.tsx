@@ -80,24 +80,24 @@ export default async function CoordinatorDashboard() {
   return (
     <>
       {/* Coordinator Hero Banner */}
-      <div className="relative w-full min-h-[220px] md:h-[260px] bg-eventrix-black text-eventrix-white overflow-hidden rounded-xl flex flex-col justify-end p-6 md:p-10 group shadow-xl border border-white/10">
+      <div className="relative w-full min-h-[165px] sm:min-h-[190px] md:h-[260px] bg-eventrix-black text-eventrix-white overflow-hidden rounded-xl flex flex-col justify-start md:justify-end p-4 sm:p-6 md:p-10 group shadow-xl border border-white/10">
         <div className="absolute top-0 right-0 w-[50%] h-full pointer-events-none opacity-20">
           <div className="absolute top-0 right-0 w-full h-full bg-eventrix-lavender" style={{ clipPath: "polygon(20% 0, 100% 0, 100% 100%, 0% 100%)" }}></div>
         </div>
         
-        <div className="relative z-10 flex flex-col justify-end">
+        <div className="relative z-10 flex flex-col justify-start md:justify-end">
           <img 
             src="/assets/Eventrix logo.svg" 
             alt="Eventrix Logo" 
-            className="h-8 sm:h-10 md:h-12 w-auto mb-3.5 object-contain self-start"
+            className="w-[85px] sm:w-[105px] md:w-[130px] h-auto mb-2 md:mb-3.5 object-contain self-start"
           />
-          <span className="text-[10px] md:text-xs font-bold text-eventrix-lavender uppercase tracking-widest mb-1 md:mb-1.5 block">
+          <span className="text-[11px] sm:text-xs md:text-sm font-bold text-eventrix-lavender uppercase tracking-widest mb-0.5 md:mb-1.5 block">
             Welcome back, {user?.user_metadata?.full_name || 'Coordinator'}
           </span>
-          <h1 className="font-anton text-4xl sm:text-5xl md:text-[64px] leading-[0.85] tracking-wide mb-2 uppercase text-eventrix-lavender">
+          <h1 className="font-anton text-3xl sm:text-4xl md:text-[64px] leading-[0.9] md:leading-[0.85] tracking-wide mb-1 md:mb-2 uppercase text-eventrix-lavender">
             COORDINATOR PORTAL
           </h1>
-          <p className="text-eventrix-white/70 font-medium max-w-xl text-xs md:text-base">
+          <p className="text-eventrix-white/75 font-medium max-w-xl text-[11px] sm:text-xs md:text-base leading-snug">
             Live attendance tracking, QR ticket scanning, and roster management for event coordinators.
           </p>
         </div>
