@@ -43,7 +43,7 @@ export async function TopNavbar() {
       <div className="flex items-center gap-4 md:gap-6 ml-auto shrink-0">
         <div className="flex items-center shrink-0">
           <img
-            src="/assets/sona-logo.png"
+            src="/images/sona-logo.png"
             alt="Sona College of Technology"
             className="h-7 md:h-9 w-auto object-contain"
           />
