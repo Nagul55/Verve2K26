@@ -64,29 +64,7 @@ export async function login(formData: FormData) {
         (u) => u.email?.toLowerCase() === 'admin@eventrix.com'
       );
 
-      if (existingAdmin) {
-        await adminClient.auth.admin.updateUserById(existingAdmin.id, {
-          password: password,
-          app_metadata: {
-            ...existingAdmin.app_metadata,
-            role: 'admin',
-          },
-          user_metadata: { full_name: existingAdmin.user_metadata?.full_name || 'Admin' },
-        });
-        await adminClient.from('participants').upsert(
-          {
-            participant_id: existingAdmin.id,
-            full_name: existingAdmin.user_metadata?.full_name || 'Admin',
-            email: 'admin@eventrix.com',
-            mobile: '',
-            college: '',
-            department: '',
-            year_of_study: '',
-            register_number: '',
-          },
-          { onConflict: 'participant_id' }
-        );
-      } else {
+      if (!existingAdmin) {
         const { data: newAdmin } = await adminClient.auth.admin.createUser({
           email: 'admin@eventrix.com',
           password: password,
@@ -110,15 +88,15 @@ export async function login(formData: FormData) {
             { onConflict: 'participant_id' }
           );
         }
-      }
 
-      // Retry sign in after provisioning/updating password
-      const retry = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      data = retry.data;
-      error = retry.error;
+        // Retry sign in after provisioning
+        const retry = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        data = retry.data;
+        error = retry.error;
+      }
     } catch (e) {
       console.error("Error auto-seeding admin account:", e);
     }
