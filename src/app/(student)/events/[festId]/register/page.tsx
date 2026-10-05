@@ -1,5 +1,5 @@
 import React from "react";
-import { getFests, getSubEvents } from "@/actions/event.actions";
+import { getFests, getSubEvents, getSubEventRegistrationCounts } from "@/actions/event.actions";
 import { RegistrationsForm } from "./RegistrationsForm";
 import { Database } from "lucide-react";
 
@@ -37,8 +37,9 @@ export default async function RegistrationsPage({ params }: { params: Promise<{ 
 
   const { getStudentRegisteredEventIds } = await import("@/actions/event.actions");
   const registeredIds = await getStudentRegisteredEventIds();
+  const registrationCounts = await getSubEventRegistrationCounts();
 
   return (
-    <RegistrationsForm fest={activeFest} events={events} initialRegisteredIds={registeredIds} />
+    <RegistrationsForm fest={activeFest} events={events} initialRegisteredIds={registeredIds} registrationCounts={registrationCounts} />
   );
 }

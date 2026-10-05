@@ -6,8 +6,9 @@ import { registerForEvents } from "@/actions/event.actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { parseEventData } from "@/components/EventDetailsModal";
+import { EventStatusBadge } from "@/components/EventStatusBadge";
 
-export function RegistrationsForm({ fest, events, initialRegisteredIds = [] }: { fest: any, events: any[], initialRegisteredIds?: string[] }) {
+export function RegistrationsForm({ fest, events, initialRegisteredIds = [], registrationCounts = {} }: { fest: any, events: any[], initialRegisteredIds?: string[], registrationCounts?: Record<string, number> }) {
   const router = useRouter();
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
@@ -15,8 +16,26 @@ export function RegistrationsForm({ fest, events, initialRegisteredIds = [] }: {
   const [teamNames, setTeamNames] = useState<Record<string, string>>({});
   const [teamMembers, setTeamMembers] = useState<Record<string, string[]>>({});
 
+  const isEventClosed = (event: any) => {
+    if (!event.date || !event.time) return false;
+    let eventDate = new Date(`${event.date}T${event.time}:00`);
+    if (isNaN(eventDate.getTime())) eventDate = new Date(`${event.date} ${event.time}`);
+    if (isNaN(eventDate.getTime())) return false;
+    return new Date(eventDate.getTime() - 24 * 60 * 60 * 1000).getTime() <= new Date().getTime();
+  };
+
+  const isEventSoldOut = (event: any) => {
+    const capacity = event.capacity || 0;
+    return capacity > 0 && (registrationCounts[event.id] || 0) >= capacity;
+  };
+
   const toggleSelection = (id: string) => {
     if (initialRegisteredIds.includes(id)) return;
+    const event = events.find(e => e.id === id);
+    if (event && (isEventClosed(event) || isEventSoldOut(event))) {
+      toast.error("This event is closed or fully booked.");
+      return;
+    }
     setSelectedEventIds(prev =>
       prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]
     );
@@ -166,20 +185,21 @@ export function RegistrationsForm({ fest, events, initialRegisteredIds = [] }: {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {events.filter(e => e.category === 'Technical').map(event => {
                     const isAlreadyReg = initialRegisteredIds.includes(event.id);
+                    const isDisabled = isAlreadyReg || isEventClosed(event) || isEventSoldOut(event);
                     return (
                     <div
                       key={event.id}
                       onClick={() => toggleSelection(event.id)}
                       className={`border p-4 md:p-5 rounded-md transition-all relative overflow-hidden group ${
-                        isAlreadyReg
-                          ? 'border-[#D9D9DF] bg-gray-50 opacity-60 cursor-not-allowed'
+                        isDisabled
+                          ? 'border-[#D9D9DF] bg-gray-50 opacity-70 cursor-not-allowed'
                           : selectedEventIds.includes(event.id)
                             ? 'border-eventrix-lavender bg-eventrix-lavender/5 shadow-[0_4px_12px_rgba(167,139,250,0.15)] cursor-pointer'
                             : 'border-[#D9D9DF] bg-eventrix-white hover:border-eventrix-black cursor-pointer'
                       }`}
                     >
                       <div className={`absolute top-4 right-4 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
-                        isAlreadyReg 
+                        isDisabled 
                           ? 'bg-gray-200 border-gray-300' 
                           : selectedEventIds.includes(event.id) 
                             ? 'bg-eventrix-lavender border-eventrix-lavender' 
@@ -197,6 +217,7 @@ export function RegistrationsForm({ fest, events, initialRegisteredIds = [] }: {
                         <div className="flex items-center gap-2"><Clock className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.time}</div>
                         <div className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.location}</div>
                       </div>
+                      <EventStatusBadge event={event} registrationCount={registrationCounts[event.id] || 0} />
                     </div>
                   )})}
                 </div>
@@ -214,20 +235,21 @@ export function RegistrationsForm({ fest, events, initialRegisteredIds = [] }: {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {events.filter(e => e.category === 'Non-Technical').map(event => {
                     const isAlreadyReg = initialRegisteredIds.includes(event.id);
+                    const isDisabled = isAlreadyReg || isEventClosed(event) || isEventSoldOut(event);
                     return (
                     <div
                       key={event.id}
                       onClick={() => toggleSelection(event.id)}
                       className={`border p-4 md:p-5 rounded-md transition-all relative overflow-hidden group ${
-                        isAlreadyReg
-                          ? 'border-[#D9D9DF] bg-gray-50 opacity-60 cursor-not-allowed'
+                        isDisabled
+                          ? 'border-[#D9D9DF] bg-gray-50 opacity-70 cursor-not-allowed'
                           : selectedEventIds.includes(event.id)
                             ? 'border-eventrix-lavender bg-eventrix-lavender/5 shadow-[0_4px_12px_rgba(167,139,250,0.15)] cursor-pointer'
                             : 'border-[#D9D9DF] bg-eventrix-white hover:border-eventrix-black cursor-pointer'
                       }`}
                     >
                       <div className={`absolute top-4 right-4 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
-                        isAlreadyReg 
+                        isDisabled 
                           ? 'bg-gray-200 border-gray-300' 
                           : selectedEventIds.includes(event.id) 
                             ? 'bg-eventrix-lavender border-eventrix-lavender' 
@@ -245,6 +267,7 @@ export function RegistrationsForm({ fest, events, initialRegisteredIds = [] }: {
                         <div className="flex items-center gap-2"><Clock className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.time}</div>
                         <div className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.location}</div>
                       </div>
+                      <EventStatusBadge event={event} registrationCount={registrationCounts[event.id] || 0} />
                     </div>
                   )})}
                 </div>
