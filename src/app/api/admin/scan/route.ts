@@ -89,6 +89,14 @@ export async function POST(req: Request) {
       }]);
 
     if (attendanceError) {
+      // Handle PostgreSQL unique constraint violation (code 23505) gracefully if a race condition occurs
+      if (
+        (attendanceError as any).code === '23505' || 
+        attendanceError.message?.toLowerCase().includes('unique') ||
+        attendanceError.message?.toLowerCase().includes('duplicate')
+      ) {
+        return NextResponse.json({ error: 'Warning: This ticket has already been USED. Participant is already checked in.' }, { status: 400 });
+      }
       console.error('Attendance Check-in Error:', attendanceError);
       throw new Error('Failed to record attendance accurately.');
     }

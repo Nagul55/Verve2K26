@@ -82,6 +82,30 @@ CREATE TABLE IF NOT EXISTS public.team_members (
     PRIMARY KEY (team_id, participant_id)
 );
 
+-- 8. Attendance Table
+CREATE TABLE IF NOT EXISTS public.attendance (
+    attendance_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    participant_id uuid REFERENCES public.participants(participant_id) ON DELETE CASCADE NOT NULL,
+    event_id uuid REFERENCES public.sub_events(id) ON DELETE CASCADE NOT NULL,
+    registration_id uuid REFERENCES public.registrations(id) ON DELETE CASCADE,
+    status text DEFAULT 'Present',
+    scanned_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    scanner_admin_id uuid REFERENCES auth.users(id),
+    source text DEFAULT 'QR_Scanner',
+    UNIQUE(participant_id, event_id)
+);
+
+-- ==========================================
+-- PERFORMANCE OPTIMIZATION INDEXES
+-- ==========================================
+CREATE INDEX IF NOT EXISTS idx_reg_sub_events_sub_event_id ON public.registration_sub_events(sub_event_id);
+CREATE INDEX IF NOT EXISTS idx_reg_sub_events_registration_id ON public.registration_sub_events(registration_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_attendance_participant_event ON public.attendance(participant_id, event_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_event_id ON public.attendance(event_id);
+CREATE INDEX IF NOT EXISTS idx_registrations_participant_id ON public.registrations(participant_id);
+CREATE INDEX IF NOT EXISTS idx_registrations_fest_id ON public.registrations(fest_id);
+CREATE INDEX IF NOT EXISTS idx_participants_email ON public.participants(email);
+
 -- ==========================================
 -- DUMMY DATA FOR VERVE26
 -- ==========================================

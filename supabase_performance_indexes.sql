@@ -8,8 +8,8 @@ CREATE INDEX IF NOT EXISTS idx_reg_sub_events_registration_id ON registration_su
 
 -- 2. Attendance
 -- Heavily queried during check-in to prevent duplicate scans.
--- The composite index ensures the QR scanner finds the specific record instantly.
-CREATE INDEX IF NOT EXISTS idx_attendance_participant_event ON attendance(participant_id, event_id);
+-- The unique composite index prevents race conditions and duplicate scans at DB level.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_attendance_participant_event ON attendance(participant_id, event_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_event_id ON attendance(event_id);
 
 -- 3. Registrations

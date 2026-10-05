@@ -45,8 +45,8 @@ export async function GET(req: Request) {
         year_of_study,
         section,
         created_at,
-        registrations (
-          registration_sub_events (
+        registrations!inner (
+          registration_sub_events!inner (
             sub_events (
               id,
               title,

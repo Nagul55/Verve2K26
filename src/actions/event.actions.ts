@@ -223,19 +223,15 @@ export async function approveSubEvent(subEventId: string, coordinatorIds?: strin
     }
   }
 
-  // Server-side Rule Validation: Check coordinator count for this event
+  // Server-side Rule Validation: Enforce that at least one coordinator MUST be assigned before approval
   const coords = await getCachedCoordinators();
-  const assignedCoords = coords.filter(c => c.event_ids.includes(subEventId) && (c.role === 'coordinator' || c.role === 'admin'));
+  const assignedCoords = coords.filter(c => c.event_ids.includes(subEventId));
 
-  // If no coordinator is assigned yet, assign the approving user so the event has a coordinator & appears live
-  if (assignedCoords.length === 0 && user) {
-    const { updateCoordinatorAssignments } = await import("./auth.actions");
-    const existingIds: string[] = Array.isArray(user.app_metadata?.coordinating_event_ids)
-      ? user.app_metadata.coordinating_event_ids
-      : user.app_metadata?.coordinating_event_id ? [user.app_metadata.coordinating_event_id] : [];
-    if (!existingIds.includes(subEventId)) {
-      await updateCoordinatorAssignments(user.id, [...existingIds, subEventId]);
-    }
+  if (assignedCoords.length === 0) {
+    return { 
+      success: false, 
+      error: "Coordinator required — Assign at least one coordinator before approving this event." 
+    };
   }
 
   const { error } = await adminClient
@@ -538,7 +534,9 @@ export async function registerForEvents(
       sub_event_id: subId
     }));
 
-    const { error: subError } = await adminClient.from('registration_sub_events').insert(subEventsData);
+    const { error: subError } = await adminClient
+      .from('registration_sub_events')
+      .upsert(subEventsData, { onConflict: 'registration_id,sub_event_id', ignoreDuplicates: true });
     if (subError) return { success: false, error: subError.message };
   }
 
@@ -709,33 +707,24 @@ export async function getParticipantRegistrations() {
 export async function getAdminParticipants() {
   const adminClient = getAdminClient();
 
-  const { data: authData } = await getAllAuthUsers(adminClient);
-  const roleMap = new Map<string, string>();
-  const genderMap = new Map<string, string>();
-  if (authData?.users) {
-    authData.users.forEach(u => {
-      const role = u.app_metadata?.role || 'student';
-      roleMap.set(u.id, role);
-      
-      const gender = u.user_metadata?.gender || '';
-      genderMap.set(u.id, gender);
-      
-      if (u.email) {
-        roleMap.set(u.email.toLowerCase(), role);
-        genderMap.set(u.email.toLowerCase(), gender);
-      }
-    });
-  }
-
   const { data, error } = await adminClient
     .from('participants')
     .select(`
-      *,
-      registrations (
+      participant_id,
+      full_name,
+      email,
+      mobile,
+      college,
+      register_number,
+      department,
+      year_of_study,
+      section,
+      created_at,
+      registrations!inner (
         id,
         fest_id,
         created_at,
-        registration_sub_events (
+        registration_sub_events!inner (
           sub_events (
             id,
             title,
@@ -749,29 +738,24 @@ export async function getAdminParticipants() {
     `)
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error("Error fetching admin participants with relations:", error);
-    // Fallback: fetch participants directly if join encounters issues
-    const { data: rawData, error: rawError } = await adminClient
-      .from('participants')
-      .select('*')
-      .order('created_at', { ascending: false });
-      
-    if (rawError) {
-      console.error("Error fetching raw participants:", rawError);
-      return [];
-    }
-    return (rawData || []).map(p => ({
-      ...p,
-      role: roleMap.get(p.participant_id) || (p.email ? roleMap.get(p.email.toLowerCase()) : null) || 'student',
-      gender: genderMap.get(p.participant_id) || (p.email ? genderMap.get(p.email.toLowerCase()) : null) || ''
-    }));
+  if (error || !data) {
+    console.error("Error fetching admin registered participants:", error);
+    return [];
   }
 
-  return (data || []).map(p => ({
+  // Ensure participants have at least one valid sub-event booking
+  const registeredParticipants = data.filter((p: any) => {
+    if (!p.registrations || p.registrations.length === 0) return false;
+    return p.registrations.some((reg: any) => 
+      reg.registration_sub_events && 
+      reg.registration_sub_events.length > 0 &&
+      reg.registration_sub_events.some((rse: any) => rse.sub_events)
+    );
+  });
+
+  return registeredParticipants.map((p: any) => ({
     ...p,
-    role: roleMap.get(p.participant_id) || (p.email ? roleMap.get(p.email.toLowerCase()) : null) || 'student',
-    gender: genderMap.get(p.participant_id) || (p.email ? genderMap.get(p.email.toLowerCase()) : null) || ''
+    id: p.participant_id
   }));
 }
 
@@ -780,10 +764,10 @@ export async function getCoordinatorParticipants() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const assignedEventId = user.app_metadata?.coordinating_event_id;
+  const { assignedEventIds } = await getCoordinatorAssignedEventIds(user.id);
   const adminClient = getAdminClient();
 
-  if (!assignedEventId) {
+  if (!assignedEventIds || assignedEventIds.length === 0) {
      return [];
   }
 
@@ -806,32 +790,38 @@ export async function getCoordinatorParticipants() {
         )
       )
     `)
-    .eq('sub_event_id', assignedEventId);
+    .in('sub_event_id', assignedEventIds);
 
   if (error || !data) {
     console.error("Error fetching coordinator participants:", error);
     return [];
   }
 
-  // Fetch attendance for this event
+  // Fetch attendance for assigned events
   const { data: attendanceData } = await adminClient
     .from('attendance')
-    .select('participant_id')
-    .eq('event_id', assignedEventId)
+    .select('participant_id, event_id')
+    .in('event_id', assignedEventIds)
     .eq('status', 'Present');
     
-  const presentParticipantIds = new Set(
-    (attendanceData || []).map(a => a.participant_id)
+  const presentParticipantSet = new Set(
+    (attendanceData || []).map(a => `${a.event_id}_${a.participant_id}`)
   );
 
   const participantsMap = new Map<string, any>();
   data.forEach((row: any) => {
     const p = row.registrations?.participants;
-    if (p && p.participant_id && !participantsMap.has(p.participant_id)) {
-       // We normalize the ID field so it matches what the frontend expects
-       p.id = p.participant_id;
-       p.isPresent = presentParticipantIds.has(p.participant_id);
-       participantsMap.set(p.participant_id, p);
+    const subEventId = row.sub_event_id;
+    if (p && p.participant_id) {
+       const key = `${subEventId}_${p.participant_id}`;
+       if (!participantsMap.has(key)) {
+         participantsMap.set(key, {
+           ...p,
+           id: p.participant_id,
+           subEventId: subEventId,
+           isPresent: presentParticipantSet.has(key)
+         });
+       }
     }
   });
 
