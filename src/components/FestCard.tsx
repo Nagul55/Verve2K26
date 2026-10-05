@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
+import Image from "next/image";
 
 interface FestCardProps {
   id: string;
@@ -20,7 +21,7 @@ export function FestCard({ id, name, description, minTech, minNonTech, imageUrl 
         <div className="h-44 relative overflow-hidden bg-eventrix-black flex items-center justify-center p-6 border-b-2 border-eventrix-black transition-colors">
           {imageUrl ? (
             <>
-              <img src={imageUrl} alt={name} className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay grayscale group-hover:grayscale-0 group-hover:opacity-80 transition-all duration-700 ease-out" />
+              <Image src={imageUrl} alt={name} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" className="object-cover opacity-60 mix-blend-overlay grayscale group-hover:grayscale-0 group-hover:opacity-80 transition-all duration-700 ease-out" />
               <div className="absolute inset-0 bg-gradient-to-t from-eventrix-black via-eventrix-black/40 to-transparent"></div>
             </>
           ) : (

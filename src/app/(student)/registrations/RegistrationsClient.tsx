@@ -20,7 +20,7 @@ export function RegistrationsClient({ festsMap }: { festsMap: Record<string, any
         const nonTechCount = events.filter(e => e.category === 'Non-Technical').length;
 
         return (
-          <div key={festName} className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div key={festName} className="flex flex-col gap-6 animate-in fade-in duration-500">
             {/* FEST CARD */}
             <div 
               onClick={() => toggleFest(festName)}

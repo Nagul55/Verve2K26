@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 import { HeroBanner } from "@/components/HeroBanner";
 import { ArrowRight } from "lucide-react";
@@ -17,7 +18,7 @@ const renderDynamicVisual = (imageUrl: string | null) => {
   return (
     <div className="absolute top-0 right-0 w-[45%] h-[65%] z-0 pointer-events-none overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-full bg-eventrix-light-lavender opacity-30"></div>
-      <img src={imageUrl} alt="Event background" className="absolute inset-0 w-full h-full object-cover grayscale mix-blend-multiply opacity-50 z-10" />
+      <Image src={imageUrl} alt="Event background" fill sizes="(max-width: 768px) 100vw, 33vw" priority className="object-cover grayscale mix-blend-multiply opacity-50 z-10" />
       <div className="absolute bottom-0 right-0 w-12 h-12 bg-eventrix-black z-20" style={{ clipPath: "polygon(100% 0, 100% 100%, 0% 100%)" }}></div>
     </div>
   );

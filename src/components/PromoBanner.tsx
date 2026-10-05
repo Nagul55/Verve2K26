@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 export function PromoBanner() {
   return (
@@ -10,10 +11,13 @@ export function PromoBanner() {
       </div>
       
       <div className="w-full md:w-[40%] relative z-0 shrink-0 hidden md:block overflow-hidden">
-        <img 
+        <Image 
           src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=80&grayscale" 
           alt="Students" 
-          className="absolute inset-0 w-full h-full object-cover grayscale contrast-[1.1] z-0 mix-blend-multiply opacity-80" 
+          fill
+          sizes="(max-width: 768px) 100vw, 40vw"
+          loading="lazy"
+          className="object-cover grayscale contrast-[1.1] z-0 mix-blend-multiply opacity-80" 
         />
         <div className="absolute top-0 right-0 w-[120%] h-[120%] bg-eventrix-lavender -rotate-[35deg] origin-bottom-right translate-x-12 translate-y-6 opacity-90 mix-blend-multiply z-10"></div>
       </div>

@@ -20,6 +20,9 @@ export function UserAvatar({
     <img
       src={avatarSrc}
       alt={alt}
+      width={36}
+      height={36}
+      loading="lazy"
       className={className}
       onError={(e) => {
         e.currentTarget.src = '/images/user-avatar.webp';

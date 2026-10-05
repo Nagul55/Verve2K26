@@ -92,6 +92,8 @@ export default async function CoordinatorDashboard() {
           <img 
             src="/assets/Eventrix logo.svg" 
             alt="Eventrix Logo" 
+            width={130}
+            height={45}
             className="w-[85px] sm:w-[105px] md:w-[130px] h-auto mb-2 md:mb-3.5 object-contain self-start"
           />
           <span className="text-[11px] sm:text-xs md:text-sm font-bold text-eventrix-lavender uppercase tracking-widest mb-0.5 md:mb-1.5 block">

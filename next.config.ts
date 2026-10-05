@@ -25,7 +25,19 @@ const nextConfig: NextConfig = {
     '*.ngrok.app',
     'branchlike-eli-legginged.ngrok-free.dev',
     'subgroup-unscathed-reggae.ngrok-free.dev'
-  ]
+  ],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.qrserver.com',
+      }
+    ],
+  },
 };
 
 export default nextConfig;

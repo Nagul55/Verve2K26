@@ -1,4 +1,5 @@
 import { EventrixLogo } from "@/components/EventrixLogo";
+import Image from "next/image";
 
 export function HeroBanner() {
   return (
@@ -18,10 +19,13 @@ export function HeroBanner() {
       {/* Center Image */}
       <div className="w-[45%] shrink-0 relative hidden lg:block overflow-hidden bg-eventrix-white">
         <div className="absolute inset-0 z-0">
-          <img 
+          <Image 
             src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=80&grayscale" 
             alt="Architecture" 
-            className="w-full h-full object-cover grayscale contrast-[1.15]"
+            fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            priority
+            className="object-cover grayscale contrast-[1.15]"
           />
         </div>
         {/* Lavender geometric overlay */}

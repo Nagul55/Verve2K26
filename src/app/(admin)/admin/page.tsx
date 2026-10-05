@@ -192,6 +192,8 @@ export default async function AdminDashboard() {
           <img 
             src="/assets/Eventrix logo.svg" 
             alt="Eventrix Logo" 
+            width={130}
+            height={45}
             className="w-[85px] sm:w-[105px] md:w-[130px] h-auto mb-2 md:mb-3.5 object-contain self-start"
           />
           <div className="flex items-center gap-2 mb-1 md:mb-1.5 text-eventrix-lavender font-bold text-[11px] sm:text-xs md:text-sm tracking-widest uppercase">
