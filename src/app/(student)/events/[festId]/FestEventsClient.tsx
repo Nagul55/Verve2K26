@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Calendar, Clock, MapPin, ArrowLeft, ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 import { EventDetailsModal, SubEvent, parseEventData } from "@/components/EventDetailsModal";
+import { EventStatusBadge } from "@/components/EventStatusBadge";
 
 interface FestEventsClientProps {
   fest: any;
@@ -93,6 +94,15 @@ export function FestEventsClient({
                     {parsed.cleanDescription}
                   </p>
 
+                  <div className="mb-4">
+                    <EventStatusBadge 
+                      date={event.date} 
+                      time={event.time} 
+                      capacity={event.capacity} 
+                      registeredCount={registrationCounts[event.id]} 
+                    />
+                  </div>
+
                   <div className="space-y-1.5 text-[10px] text-eventrix-black font-medium">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.date}
@@ -144,6 +154,15 @@ export function FestEventsClient({
                   <p className="text-xs text-eventrix-muted mb-4 line-clamp-2">
                     {parsed.cleanDescription}
                   </p>
+
+                  <div className="mb-4">
+                    <EventStatusBadge 
+                      date={event.date} 
+                      time={event.time} 
+                      capacity={event.capacity} 
+                      registeredCount={registrationCounts[event.id]} 
+                    />
+                  </div>
 
                   <div className="space-y-1.5 text-[10px] text-eventrix-black font-medium">
                     <div className="flex items-center gap-2">

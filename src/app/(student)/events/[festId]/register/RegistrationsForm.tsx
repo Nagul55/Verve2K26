@@ -6,8 +6,9 @@ import { registerForEvents } from "@/actions/event.actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { parseEventData } from "@/components/EventDetailsModal";
+import { EventStatusBadge } from "@/components/EventStatusBadge";
 
-export function RegistrationsForm({ fest, events, initialRegisteredIds = [] }: { fest: any, events: any[], initialRegisteredIds?: string[] }) {
+export function RegistrationsForm({ fest, events, initialRegisteredIds = [], registrationCounts = {} }: { fest: any, events: any[], initialRegisteredIds?: string[], registrationCounts?: Record<string, number> }) {
   const router = useRouter();
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
@@ -15,8 +16,42 @@ export function RegistrationsForm({ fest, events, initialRegisteredIds = [] }: {
   const [teamNames, setTeamNames] = useState<Record<string, string>>({});
   const [teamMembers, setTeamMembers] = useState<Record<string, string[]>>({});
 
+  const isEventUnavailable = (event: any) => {
+    // Check Sold Out
+    if (typeof event.capacity === 'number' && event.capacity > 0) {
+      const regCount = registrationCounts[event.id] || 0;
+      if (regCount >= event.capacity) return true;
+    }
+    // Check Closed (24 hrs before)
+    if (event.date) {
+      try {
+        let eventDateObj: Date;
+        if (event.time && event.time.includes("AM") || event.time.includes("PM")) {
+          const [timePart, modifier] = event.time.split(" ");
+          let [hours, minutes] = timePart.split(":");
+          let hrs = parseInt(hours, 10);
+          if (modifier === "PM" && hrs < 12) hrs += 12;
+          if (modifier === "AM" && hrs === 12) hrs = 0;
+          eventDateObj = new Date(`${event.date}T${hrs.toString().padStart(2, '0')}:${minutes}:00`);
+        } else if (event.time) {
+          eventDateObj = new Date(`${event.date}T${event.time}:00`);
+        } else {
+          eventDateObj = new Date(event.date);
+        }
+        const closureTime = new Date(eventDateObj.getTime() - 24 * 60 * 60 * 1000);
+        if (closureTime.getTime() - new Date().getTime() <= 0) return true;
+      } catch (e) {
+        // ignore date parse errors
+      }
+    }
+    return false;
+  };
+
   const toggleSelection = (id: string) => {
     if (initialRegisteredIds.includes(id)) return;
+    const event = events.find(e => e.id === id);
+    if (event && isEventUnavailable(event)) return; // prevent toggle if unavailable
+    
     setSelectedEventIds(prev =>
       prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]
     );
@@ -166,6 +201,7 @@ export function RegistrationsForm({ fest, events, initialRegisteredIds = [] }: {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {events.filter(e => e.category === 'Technical').map(event => {
                     const isAlreadyReg = initialRegisteredIds.includes(event.id);
+                    const isUnavailable = isEventUnavailable(event) && !isAlreadyReg;
                     return (
                     <div
                       key={event.id}
@@ -173,24 +209,38 @@ export function RegistrationsForm({ fest, events, initialRegisteredIds = [] }: {
                       className={`border p-4 md:p-5 rounded-md transition-all relative overflow-hidden group ${
                         isAlreadyReg
                           ? 'border-[#D9D9DF] bg-gray-50 opacity-60 cursor-not-allowed'
-                          : selectedEventIds.includes(event.id)
-                            ? 'border-eventrix-lavender bg-eventrix-lavender/5 shadow-[0_4px_12px_rgba(167,139,250,0.15)] cursor-pointer'
-                            : 'border-[#D9D9DF] bg-eventrix-white hover:border-eventrix-black cursor-pointer'
+                          : isUnavailable 
+                            ? 'border-red-100 bg-red-50/30 opacity-70 cursor-not-allowed'
+                            : selectedEventIds.includes(event.id)
+                              ? 'border-eventrix-lavender bg-eventrix-lavender/5 shadow-[0_4px_12px_rgba(167,139,250,0.15)] cursor-pointer'
+                              : 'border-[#D9D9DF] bg-eventrix-white hover:border-eventrix-black cursor-pointer'
                       }`}
                     >
                       <div className={`absolute top-4 right-4 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
                         isAlreadyReg 
                           ? 'bg-gray-200 border-gray-300' 
-                          : selectedEventIds.includes(event.id) 
-                            ? 'bg-eventrix-lavender border-eventrix-lavender' 
-                            : 'border-[#D9D9DF]'
+                          : isUnavailable
+                            ? 'bg-red-50 border-red-200'
+                            : selectedEventIds.includes(event.id) 
+                              ? 'bg-eventrix-lavender border-eventrix-lavender' 
+                              : 'border-[#D9D9DF]'
                       }`}>
                         {(isAlreadyReg || selectedEventIds.includes(event.id)) && <Check className={`w-3 h-3 stroke-[3] ${isAlreadyReg ? 'text-gray-400' : 'text-eventrix-black'}`} />}
+                        {isUnavailable && !isAlreadyReg && <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>}
                       </div>
 
                       <span className="text-[9px] md:text-[10px] font-bold text-eventrix-lavender uppercase mb-2 block tracking-widest">{event.category} - {event.participation_type}</span>
                       <h4 className="font-bold text-base md:text-lg text-eventrix-black mb-1">{event.title}</h4>
                       <p className="text-[11px] md:text-xs text-eventrix-muted mb-4 line-clamp-2">{parseEventData(event).cleanDescription}</p>
+
+                      <div className="mb-4">
+                        <EventStatusBadge 
+                          date={event.date} 
+                          time={event.time} 
+                          capacity={event.capacity} 
+                          registeredCount={registrationCounts[event.id]} 
+                        />
+                      </div>
 
                       <div className="space-y-1.5 text-[9px] md:text-[10px] text-eventrix-black font-medium">
                         <div className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.date}</div>
@@ -214,6 +264,7 @@ export function RegistrationsForm({ fest, events, initialRegisteredIds = [] }: {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {events.filter(e => e.category === 'Non-Technical').map(event => {
                     const isAlreadyReg = initialRegisteredIds.includes(event.id);
+                    const isUnavailable = isEventUnavailable(event) && !isAlreadyReg;
                     return (
                     <div
                       key={event.id}
@@ -221,24 +272,38 @@ export function RegistrationsForm({ fest, events, initialRegisteredIds = [] }: {
                       className={`border p-4 md:p-5 rounded-md transition-all relative overflow-hidden group ${
                         isAlreadyReg
                           ? 'border-[#D9D9DF] bg-gray-50 opacity-60 cursor-not-allowed'
-                          : selectedEventIds.includes(event.id)
-                            ? 'border-eventrix-lavender bg-eventrix-lavender/5 shadow-[0_4px_12px_rgba(167,139,250,0.15)] cursor-pointer'
-                            : 'border-[#D9D9DF] bg-eventrix-white hover:border-eventrix-black cursor-pointer'
+                          : isUnavailable 
+                            ? 'border-red-100 bg-red-50/30 opacity-70 cursor-not-allowed'
+                            : selectedEventIds.includes(event.id)
+                              ? 'border-eventrix-lavender bg-eventrix-lavender/5 shadow-[0_4px_12px_rgba(167,139,250,0.15)] cursor-pointer'
+                              : 'border-[#D9D9DF] bg-eventrix-white hover:border-eventrix-black cursor-pointer'
                       }`}
                     >
                       <div className={`absolute top-4 right-4 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
                         isAlreadyReg 
                           ? 'bg-gray-200 border-gray-300' 
-                          : selectedEventIds.includes(event.id) 
-                            ? 'bg-eventrix-lavender border-eventrix-lavender' 
-                            : 'border-[#D9D9DF]'
+                          : isUnavailable
+                            ? 'bg-red-50 border-red-200'
+                            : selectedEventIds.includes(event.id) 
+                              ? 'bg-eventrix-lavender border-eventrix-lavender' 
+                              : 'border-[#D9D9DF]'
                       }`}>
                         {(isAlreadyReg || selectedEventIds.includes(event.id)) && <Check className={`w-3 h-3 stroke-[3] ${isAlreadyReg ? 'text-gray-400' : 'text-eventrix-black'}`} />}
+                        {isUnavailable && !isAlreadyReg && <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>}
                       </div>
 
                       <span className="text-[9px] md:text-[10px] font-bold text-eventrix-lavender uppercase mb-2 block tracking-widest">{event.category} - {event.participation_type}</span>
                       <h4 className="font-bold text-base md:text-lg text-eventrix-black mb-1">{event.title}</h4>
                       <p className="text-[11px] md:text-xs text-eventrix-muted mb-4 line-clamp-2">{parseEventData(event).cleanDescription}</p>
+
+                      <div className="mb-4">
+                        <EventStatusBadge 
+                          date={event.date} 
+                          time={event.time} 
+                          capacity={event.capacity} 
+                          registeredCount={registrationCounts[event.id]} 
+                        />
+                      </div>
 
                       <div className="space-y-1.5 text-[9px] md:text-[10px] text-eventrix-black font-medium">
                         <div className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.date}</div>

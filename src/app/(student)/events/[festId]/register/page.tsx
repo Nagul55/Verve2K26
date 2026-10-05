@@ -35,10 +35,11 @@ export default async function RegistrationsPage({ params }: { params: Promise<{ 
     );
   }
 
-  const { getStudentRegisteredEventIds } = await import("@/actions/event.actions");
+  const { getStudentRegisteredEventIds, getSubEventRegistrationCounts } = await import("@/actions/event.actions");
   const registeredIds = await getStudentRegisteredEventIds();
+  const registrationCounts = await getSubEventRegistrationCounts();
 
   return (
-    <RegistrationsForm fest={activeFest} events={events} initialRegisteredIds={registeredIds} />
+    <RegistrationsForm fest={activeFest} events={events} initialRegisteredIds={registeredIds} registrationCounts={registrationCounts} />
   );
 }
