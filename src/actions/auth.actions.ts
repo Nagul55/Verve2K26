@@ -374,7 +374,7 @@ export async function updateCoordinatorAssignments(coordinatorId: string, subEve
       const count = eventCoordCounts[ev.id] || 0;
       if (count > 0 && ev.status === 'DRAFT') {
         await adminClient.from('sub_events').update({ status: 'PENDING_APPROVAL' }).eq('id', ev.id);
-      } else if (count === 0 && ev.status === 'PENDING_APPROVAL') {
+      } else if (count === 0 && (ev.status === 'PENDING_APPROVAL' || ev.status === 'LIVE')) {
         await adminClient.from('sub_events').update({ status: 'DRAFT' }).eq('id', ev.id);
       }
     }
@@ -382,6 +382,7 @@ export async function updateCoordinatorAssignments(coordinatorId: string, subEve
 
   try {
     (revalidateTag as any)('coordinators');
+    (revalidateTag as any)('fests');
     revalidatePath('/admin');
     revalidatePath('/admin/coordinators');
     revalidatePath('/admin/sub-events');

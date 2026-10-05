@@ -1169,8 +1169,14 @@ export async function getSubEventsWithCoordinators(festId?: string) {
 
   const enrichedSubEvents = (subEvents || []).map(event => {
     const names = eventCoordMap[event.id] || [];
+    const coordinatorCount = names.length;
+    const effectiveStatus = (event.status === 'LIVE' && coordinatorCount > 0)
+      ? 'LIVE'
+      : (event.status === 'LIVE' ? 'DRAFT' : (event.status || 'DRAFT'));
+
     return {
       ...event,
+      status: effectiveStatus,
       parentFestName: targetFest.name,
       coordinatorNames: names,
       coordinatorName: names.length > 0 ? names.join(', ') : "Unassigned"
