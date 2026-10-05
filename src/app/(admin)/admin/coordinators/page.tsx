@@ -32,7 +32,6 @@ import { toast } from "sonner";
 import { useFormDraft } from "@/hooks/useFormDraft";
 import { UserAvatar } from "@/components/UserAvatar";
 import { CoordinatorEventSelector } from "@/components/CoordinatorEventSelector";
-import { SubeventCoordinatorSelector } from "@/components/SubeventCoordinatorSelector";
 import { EventrixSelect } from "@/components/ui/EventrixSelect";
 
 export default function CoordinatorsPage() {
@@ -58,9 +57,6 @@ export default function CoordinatorsPage() {
     excludeKeys: ["password", "confirmPassword"]
   });
 
-  // Track selected coordinator IDs per subevent for approval
-  const [permitAssignments, setPermitAssignments] = useState<Record<string, string[]>>({});
-
   useEffect(() => {
     loadData();
   }, []);
@@ -70,16 +66,6 @@ export default function CoordinatorsPage() {
     setCoordinators(coordsData);
     const eventsData = await getSubEvents(undefined, true);
     setSubEvents(eventsData);
-
-    // Initialize permitAssignments from existing coordinator mappings
-    const initialPermits: Record<string, string[]> = {};
-    eventsData.forEach((ev: any) => {
-      const assigned = coordsData
-        .filter((c: any) => (c.subEventIds || []).includes(ev.id))
-        .map((c: any) => c.id);
-      initialPermits[ev.id] = assigned;
-    });
-    setPermitAssignments(initialPermits);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -184,15 +170,15 @@ export default function CoordinatorsPage() {
   };
 
   const handlePermitAndApprove = (subEventId: string) => {
-    const selectedCoordIds = permitAssignments[subEventId] || [];
+    const isAssigned = coordinators.some((c: any) => (c.subEventIds || []).includes(subEventId));
 
-    if (selectedCoordIds.length === 0) {
-      toast.error("Assign at least one coordinator before approving this event.");
+    if (!isAssigned) {
+      toast.error("Assign a coordinator before approving this event.");
       return;
     }
     
     startTransition(async () => {
-      const res = await approveSubEvent(subEventId, selectedCoordIds);
+      const res = await approveSubEvent(subEventId);
       if (res.error) {
         toast.error(res.error);
       } else {
@@ -296,13 +282,13 @@ export default function CoordinatorsPage() {
                     <th className="px-6 py-4">Format</th>
                     <th className="px-6 py-4">Date & Time</th>
                     <th className="px-6 py-4">Venue</th>
-                    <th className="px-6 py-4">Assigned Coordinators</th>
+                    <th className="px-6 py-4">Event Assignment</th>
                     <th className="px-6 py-4 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#D9D9DF]">
                   {approvalQueue.map((event) => {
-                    const assignedIds = permitAssignments[event.id] || [];
+                    const isAssigned = coordinators.some((c: any) => (c.subEventIds || []).includes(event.id));
                     const isDraft = event.status === 'DRAFT' || !event.status;
                     const isPendingApp = event.status === 'PENDING_APPROVAL';
                     const isRejected = event.status === 'REJECTED';
@@ -360,14 +346,17 @@ export default function CoordinatorsPage() {
                         </td>
 
                         <td className="px-6 py-4">
-                          <SubeventCoordinatorSelector
-                            subEventId={event.id}
-                            coordinators={coordinators}
-                            selectedCoordinatorIds={assignedIds}
-                            onChange={(subId, selectedIds) => {
-                              setPermitAssignments(prev => ({ ...prev, [subId]: selectedIds }));
-                            }}
-                          />
+                          {isAssigned ? (
+                            <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1 rounded text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 shadow-xs">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              Assigned
+                            </span>
+                          ) : (
+                            <span className="bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1 rounded text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5 shadow-xs">
+                              <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                              Not Assigned
+                            </span>
+                          )}
                         </td>
 
                         <td className="px-6 py-4 text-right">

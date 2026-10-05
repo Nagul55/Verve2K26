@@ -223,6 +223,13 @@ export async function approveSubEvent(subEventId: string, coordinatorIds?: strin
     }
   }
 
+  // Purge tag cache to ensure we get live coordinator list
+  try {
+    (revalidateTag as any)('coordinators');
+  } catch (e) {
+    // Ignore cache error in dev edge cases
+  }
+
   // Server-side Rule Validation: Enforce that at least one coordinator MUST be assigned before approval
   const coords = await getCachedCoordinators();
   const assignedCoords = coords.filter(c => c.event_ids.includes(subEventId));
@@ -243,11 +250,18 @@ export async function approveSubEvent(subEventId: string, coordinatorIds?: strin
     })
     .eq('id', subEventId);
 
-  revalidatePath('/admin');
-  revalidatePath('/admin/sub-events');
-  revalidatePath('/admin/coordinators');
-  revalidatePath('/coordinator/events');
-  revalidatePath('/events');
+  try {
+    (revalidateTag as any)('coordinators');
+    (revalidateTag as any)('fests');
+    revalidatePath('/admin');
+    revalidatePath('/admin/sub-events');
+    revalidatePath('/admin/coordinators');
+    revalidatePath('/coordinator/events');
+    revalidatePath('/events');
+  } catch (e) {
+    // Ignore cache revalidation edge cases
+  }
+
   return { success: !error, error: error?.message };
 }
 

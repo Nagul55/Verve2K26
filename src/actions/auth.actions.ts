@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 // Admin client to bypass email confirmations and set roles
@@ -377,6 +378,17 @@ export async function updateCoordinatorAssignments(coordinatorId: string, subEve
         await adminClient.from('sub_events').update({ status: 'DRAFT' }).eq('id', ev.id);
       }
     }
+  }
+
+  try {
+    (revalidateTag as any)('coordinators');
+    revalidatePath('/admin');
+    revalidatePath('/admin/coordinators');
+    revalidatePath('/admin/sub-events');
+    revalidatePath('/coordinator/events');
+    revalidatePath('/events');
+  } catch (e) {
+    console.warn("Revalidation warning in updateCoordinatorAssignments:", e);
   }
 
   return { success: true };
