@@ -105,7 +105,6 @@ export async function POST(req: Request) {
     const { data: regSubEvents, error: regError } = await supabaseAdmin
       .from('registration_sub_events')
       .select(`
-        id,
         sub_event_id,
         registration_id,
         sub_events (
