@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
+import { getCoordinatorAssignedEventIds } from '@/actions/event.actions';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 // Strongly configuring the backend: We use the SERVICE ROLE key to securely bypass RLS 
@@ -28,6 +29,13 @@ export async function POST(req: Request) {
     const role = user.app_metadata?.role;
     if (role !== 'admin' && role !== 'Super Admin' && role !== 'coordinator') {
       return NextResponse.json({ error: 'Access Denied: You do not have scanner privileges.' }, { status: 403 });
+    }
+
+    if (role === 'coordinator') {
+      const { assignedEventIds } = await getCoordinatorAssignedEventIds(user.id);
+      if (!assignedEventIds.includes(event_id)) {
+        return NextResponse.json({ error: 'Access Denied: You are not assigned to coordinate this event.' }, { status: 403 });
+      }
     }
 
     const secureAdminId = user.id;

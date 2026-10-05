@@ -13,8 +13,10 @@ export default async function CoordinatorLayout({ children }: { children: React.
   }
 
   const role = user.app_metadata?.role;
-  if (role !== 'coordinator' && role !== 'admin' && role !== 'Super Admin') {
-    // If not a coordinator or admin, redirect back to their dashboard
+  if (role === 'admin' || role === 'Super Admin') {
+    redirect('/admin');
+  }
+  if (role !== 'coordinator') {
     redirect('/dashboard');
   }
 

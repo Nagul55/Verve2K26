@@ -821,6 +821,259 @@ export async function getCoordinatorParticipants() {
   return Array.from(participantsMap.values());
 }
 
+export interface EventParticipant {
+  registrationId: string;
+  participantId: string;
+  fullName: string;
+  email: string;
+  registerNumber: string;
+  mobile: string;
+  college: string;
+  department: string;
+  yearOfStudy: string;
+  attendanceStatus: 'PRESENT' | 'PENDING';
+}
+
+export interface CoordinatorEventGroup {
+  event: {
+    id: string;
+    title: string;
+    category: string;
+    format: string;
+    event_date: string;
+    event_time: string;
+    venue: string;
+    status: string;
+  };
+  statistics: {
+    total: number;
+    present: number;
+    pending: number;
+  };
+  participants: EventParticipant[];
+}
+
+export async function getCoordinatorAssignedEventIds(userId: string): Promise<{ assignedEventIds: string[]; role: string }> {
+  const adminClient = getAdminClient();
+  const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(userId);
+  if (userError || !userData?.user) {
+    return { assignedEventIds: [], role: 'student' };
+  }
+
+  const user = userData.user;
+  const role = user.app_metadata?.role || 'coordinator';
+  const assignedEventData = user.app_metadata?.coordinating_event_ids || user.app_metadata?.coordinating_event_id;
+
+  let assignedEventIds: string[] = [];
+  if (Array.isArray(assignedEventData)) {
+    assignedEventIds = assignedEventData;
+  } else if (typeof assignedEventData === 'string') {
+    assignedEventIds = assignedEventData.split(',').map(id => id.trim()).filter(Boolean);
+  }
+
+  return { assignedEventIds, role };
+}
+
+export async function getCoordinatorEventsWithParticipants(): Promise<CoordinatorEventGroup[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { assignedEventIds, role } = await getCoordinatorAssignedEventIds(user.id);
+  const isAdmin = role === 'admin' || role === 'Super Admin';
+
+  const adminClient = getAdminClient();
+  let eventQuery = adminClient
+    .from('sub_events')
+    .select('id, title, category, participation_type, date, time, location, status')
+    .order('created_at', { ascending: false });
+
+  if (!isAdmin) {
+    if (assignedEventIds.length === 0) {
+      return [];
+    }
+    eventQuery = eventQuery.in('id', assignedEventIds);
+  }
+
+  const { data: events, error: eventsErr } = await eventQuery;
+  if (eventsErr || !events) {
+    console.error("Error fetching sub events for coordinator:", eventsErr);
+    return [];
+  }
+
+  const result: CoordinatorEventGroup[] = [];
+
+  for (const event of events) {
+    // Fetch registration rows for this sub_event
+    const { data: regData, error: regErr } = await adminClient
+      .from('registration_sub_events')
+      .select(`
+        sub_event_id,
+        registrations (
+          id,
+          participant_id,
+          participants (
+            participant_id,
+            full_name,
+            email,
+            register_number,
+            mobile,
+            college,
+            department,
+            year_of_study
+          )
+        )
+      `)
+      .eq('sub_event_id', event.id);
+
+    if (regErr) {
+      console.error(`Error fetching registrations for event ${event.id}:`, regErr);
+    }
+
+    // Fetch attendance for this specific event
+    const { data: attendanceData } = await adminClient
+      .from('attendance')
+      .select('participant_id')
+      .eq('event_id', event.id)
+      .eq('status', 'Present');
+
+    const presentSet = new Set((attendanceData || []).map(a => a.participant_id));
+
+    // Map participants for this event
+    const participants: EventParticipant[] = [];
+    const seenPartIds = new Set<string>();
+
+    (regData || []).forEach((row: any) => {
+      const reg = row.registrations;
+      const p = reg?.participants;
+      if (p && p.participant_id && !seenPartIds.has(p.participant_id)) {
+        seenPartIds.add(p.participant_id);
+        const isPresent = presentSet.has(p.participant_id);
+        participants.push({
+          registrationId: reg.id || '',
+          participantId: p.participant_id,
+          fullName: p.full_name || 'N/A',
+          email: p.email || 'N/A',
+          registerNumber: p.register_number || 'N/A',
+          mobile: p.mobile || 'N/A',
+          college: p.college || 'N/A',
+          department: p.department || 'N/A',
+          yearOfStudy: p.year_of_study || '',
+          attendanceStatus: isPresent ? 'PRESENT' : 'PENDING'
+        });
+      }
+    });
+
+    const presentCount = participants.filter(p => p.attendanceStatus === 'PRESENT').length;
+    const pendingCount = participants.filter(p => p.attendanceStatus === 'PENDING').length;
+
+    result.push({
+      event: {
+        id: event.id,
+        title: event.title || 'Untitled Event',
+        category: event.category || 'Technical',
+        format: event.participation_type || 'Individual',
+        event_date: event.date || '',
+        event_time: event.time || '',
+        venue: event.location || '',
+        status: event.status || 'LIVE'
+      },
+      statistics: {
+        total: participants.length,
+        present: presentCount,
+        pending: pendingCount
+      },
+      participants
+    });
+  }
+
+  return result;
+}
+
+export async function toggleParticipantAttendance(
+  eventId: string,
+  participantId: string,
+  targetStatus: 'PRESENT' | 'PENDING'
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'Unauthorized: User not authenticated' };
+  }
+
+  const { assignedEventIds, role } = await getCoordinatorAssignedEventIds(user.id);
+  const isAdmin = role === 'admin' || role === 'Super Admin';
+
+  if (!isAdmin && !assignedEventIds.includes(eventId)) {
+    return { success: false, error: 'Forbidden: You are not assigned to coordinate this event.' };
+  }
+
+  const adminClient = getAdminClient();
+
+  if (targetStatus === 'PRESENT') {
+    // Find registration ID
+    const { data: regSubEvent } = await adminClient
+      .from('registration_sub_events')
+      .select('sub_event_id, registrations(id, participant_id)')
+      .eq('sub_event_id', eventId);
+
+    let registrationId = null;
+    if (regSubEvent) {
+      const match = regSubEvent.find((r: any) => {
+        const reg = Array.isArray(r.registrations) ? r.registrations[0] : r.registrations;
+        return reg?.participant_id === participantId;
+      });
+      if (match) {
+        const reg = Array.isArray(match.registrations) ? match.registrations[0] : match.registrations;
+        registrationId = reg?.id || null;
+      }
+    }
+
+    const { data: existing } = await adminClient
+      .from('attendance')
+      .select('attendance_id')
+      .eq('event_id', eventId)
+      .eq('participant_id', participantId)
+      .maybeSingle();
+
+    if (!existing) {
+      const { error: insErr } = await adminClient
+        .from('attendance')
+        .insert([{
+          participant_id: participantId,
+          event_id: eventId,
+          registration_id: registrationId,
+          status: 'Present',
+          scanner_admin_id: user.id,
+          source: 'Manual_Coordinator'
+        }]);
+
+      if (insErr) {
+        console.error("Error marking attendance present:", insErr);
+        return { success: false, error: insErr.message || 'Failed to record attendance.' };
+      }
+    }
+  } else {
+    // Delete attendance record for this event and participant
+    const { error: delErr } = await adminClient
+      .from('attendance')
+      .delete()
+      .eq('event_id', eventId)
+      .eq('participant_id', participantId);
+
+    if (delErr) {
+      console.error("Error reverting attendance:", delErr);
+      return { success: false, error: delErr.message || 'Failed to revert attendance.' };
+    }
+  }
+
+  revalidatePath('/coordinator/participants');
+  revalidatePath('/coordinator/attendance');
+  revalidatePath('/admin');
+
+  return { success: true };
+}
+
 export async function getStudentRegisteredEventIds() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

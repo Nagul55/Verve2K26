@@ -2,6 +2,7 @@ import React from "react";
 import { CheckCircle2, ShieldCheck, Download, XCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { getCoordinatorAssignedEventIds } from "@/actions/event.actions";
 
 const getAdminClient = () => {
   return createSupabaseClient(
@@ -14,18 +15,8 @@ export default async function CoordinatorAttendancePage({ searchParams }: { sear
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Retrieve assigned event(s) for coordinator from user metadata
-  const assignedEventData = user?.app_metadata?.coordinating_event_ids || user?.app_metadata?.coordinating_event_id;
-  const isAdmin = user?.app_metadata?.role === 'admin' || user?.app_metadata?.role === 'Super Admin';
-  
-  let allowedEventIds: string[] = [];
-  if (assignedEventData) {
-    if (Array.isArray(assignedEventData)) {
-      allowedEventIds = assignedEventData;
-    } else if (typeof assignedEventData === 'string') {
-      allowedEventIds = assignedEventData.split(',').map(id => id.trim());
-    }
-  }
+  const { assignedEventIds: allowedEventIds, role } = user ? await getCoordinatorAssignedEventIds(user.id) : { assignedEventIds: [], role: 'coordinator' };
+  const isAdmin = role === 'admin' || role === 'Super Admin';
 
   const adminClient = getAdminClient();
 

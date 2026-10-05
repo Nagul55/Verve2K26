@@ -3,6 +3,7 @@ import { Users, Calendar, Ticket, ShieldCheck, QrCode, CheckCircle2, ArrowRight 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { getCoordinatorAssignedEventIds } from "@/actions/event.actions";
 
 const getAdminClient = () => {
   return createSupabaseClient(
@@ -15,34 +16,36 @@ export default async function CoordinatorDashboard() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Retrieve assigned event for coordinator from user metadata
-  const assignedEventId = user?.app_metadata?.coordinating_event_id;
+  const { assignedEventIds, role } = user ? await getCoordinatorAssignedEventIds(user.id) : { assignedEventIds: [], role: 'coordinator' };
+  const isAdmin = role === 'admin' || role === 'Super Admin';
   const adminClient = getAdminClient();
 
-  let assignedEvent: any = null;
+  let assignedEventTitle = "NO EVENTS ASSIGNED";
   let eventRegistrationsCount = 0;
   let attendanceCount = 0;
 
-  if (assignedEventId) {
-    const { data: event } = await adminClient.from('sub_events').select('*').eq('id', assignedEventId).single();
-    assignedEvent = event;
+  if (isAdmin) {
+    const { count: regCount } = await adminClient.from('registration_sub_events').select('*', { count: 'exact', head: true });
+    eventRegistrationsCount = regCount || 0;
+    const { count: attCount } = await adminClient.from('attendance').select('*', { count: 'exact', head: true });
+    attendanceCount = attCount || 0;
+    assignedEventTitle = "ALL EVENTS (ADMIN)";
+  } else if (assignedEventIds.length > 0) {
+    const { data: events } = await adminClient.from('sub_events').select('title').in('id', assignedEventIds);
+    if (events && events.length > 0) {
+      assignedEventTitle = events.map(e => e.title).join(', ');
+    }
 
     const { count: regCount } = await adminClient
       .from('registration_sub_events')
       .select('*', { count: 'exact', head: true })
-      .eq('sub_event_id', assignedEventId);
+      .in('sub_event_id', assignedEventIds);
     eventRegistrationsCount = regCount || 0;
 
     const { count: attCount } = await adminClient
       .from('attendance')
       .select('*', { count: 'exact', head: true })
-      .eq('event_id', assignedEventId);
-    attendanceCount = attCount || 0;
-  } else {
-    // If unassigned to specific event, fetch total overall sub-event count
-    const { count: regCount } = await adminClient.from('registration_sub_events').select('*', { count: 'exact', head: true });
-    eventRegistrationsCount = regCount || 0;
-    const { count: attCount } = await adminClient.from('attendance').select('*', { count: 'exact', head: true });
+      .in('event_id', assignedEventIds);
     attendanceCount = attCount || 0;
   }
 
@@ -52,10 +55,10 @@ export default async function CoordinatorDashboard() {
 
   const stats = [
     { 
-      label: "ASSIGNED EVENT", 
-      value: assignedEvent ? assignedEvent.title : "GENERAL", 
+      label: "ASSIGNED EVENT(S)", 
+      value: assignedEventTitle, 
       icon: Calendar,
-      subtext: assignedEvent ? assignedEvent.category : "All Sub-Events Access"
+      subtext: `${assignedEventIds.length} Event(s) Assigned`
     },
     { 
       label: "TOTAL ENROLLED", 

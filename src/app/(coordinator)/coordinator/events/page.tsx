@@ -1,5 +1,5 @@
 import React from "react";
-import { getFests, getSubEvents, deleteSubEvent } from "@/actions/event.actions";
+import { getFests, getSubEvents, deleteSubEvent, getCoordinatorAssignedEventIds } from "@/actions/event.actions";
 import { DeleteButton } from "@/components/DeleteButton";
 import { Calendar, Plus, MapPin, Clock, Users, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Download } from "lucide-react";
 import Link from "next/link";
@@ -67,15 +67,12 @@ export default async function CoordinatorEventsPage({ searchParams }: { searchPa
   const selectedFest = fests.find(f => f.id === festId);
   const subEvents = await getSubEvents(festId, true);
 
-  // Get coordinator assigned sub-event IDs & role
-  const userRole = user?.app_metadata?.role || 'coordinator';
-  const assignedEventIds: string[] = Array.isArray(user?.app_metadata?.coordinating_event_ids)
-    ? user.app_metadata.coordinating_event_ids
-    : user?.app_metadata?.coordinating_event_id ? [user.app_metadata.coordinating_event_id] : [];
+  // Get coordinator assigned sub-event IDs & role from live Supabase Auth record
+  const { assignedEventIds, role: userRole } = user ? await getCoordinatorAssignedEventIds(user.id) : { assignedEventIds: [], role: 'coordinator' };
 
   // Filter sub-events so coordinator ONLY sees events assigned to them by Admin
   const visibleSubEvents = (subEvents || []).filter((event) => {
-    if (userRole === 'admin') return true;
+    if (userRole === 'admin' || userRole === 'Super Admin') return true;
     if (assignedEventIds.length === 0) return false;
     return assignedEventIds.includes(event.id);
   });

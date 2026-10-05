@@ -5,11 +5,21 @@ import { QrCode, Scan, Search, CheckCircle2, XCircle, UserCheck } from "lucide-r
 import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
 
-export default function ScannerClient({ assignedEventId }: { assignedEventId: string | null }) {
+interface ScannerClientProps {
+  assignedEventId?: string | null;
+  assignedEventIds?: string[];
+  isAdmin?: boolean;
+}
+
+export default function ScannerClient({ assignedEventId, assignedEventIds = [], isAdmin = false }: ScannerClientProps) {
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
   const [manualQuery, setManualQuery] = useState("");
   const [lookupResult, setLookupResult] = useState<any>(null);
+
+  const validAssignedIds = assignedEventIds.length > 0 
+    ? assignedEventIds 
+    : (assignedEventId ? [assignedEventId] : []);
   
   // Store the scanner instance in a ref to properly clean it up on unmount
   const scannerRef = React.useRef<Html5Qrcode | null>(null);
@@ -24,8 +34,6 @@ export default function ScannerClient({ assignedEventId }: { assignedEventId: st
   }, []);
 
   const startScanner = async () => {
-    // Removed restriction to allow admins (null assignedEventId) to scan tickets using the ticket's embedded event ID
-
     setScanning(true);
     setScanResult(null);
     setLookupResult(null);
@@ -79,16 +87,16 @@ export default function ScannerClient({ assignedEventId }: { assignedEventId: st
 
   const verifyTicketApi = async (pid: string, qrEventId?: string) => {
     try {
-      const targetEventId = assignedEventId || qrEventId;
+      const targetEventId = qrEventId || (validAssignedIds.length === 1 ? validAssignedIds[0] : null);
 
       if (!targetEventId) {
-        toast.error("Ticket is missing event data, and you are not assigned to a specific event.");
+        toast.error("Ticket is missing event data.");
         setScanResult({ success: false, message: "Ticket missing event data." });
         return;
       }
 
-      if (assignedEventId && qrEventId && qrEventId !== assignedEventId) {
-        const errMsg = "WRONG TICKET! This ticket is for a different event.";
+      if (!isAdmin && validAssignedIds.length > 0 && qrEventId && !validAssignedIds.includes(qrEventId)) {
+        const errMsg = "WRONG TICKET! This ticket is for an event you are not coordinating.";
         toast.error(errMsg);
         setScanResult({
           success: false,

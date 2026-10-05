@@ -1,13 +1,14 @@
 import React from "react";
 import { createClient } from "@/lib/supabase/server";
 import ScannerClient from "@/components/coordinator/ScannerClient";
+import { getCoordinatorAssignedEventIds } from "@/actions/event.actions";
 
 export default async function CoordinatorScannerPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
-  // A Coordinator is assigned an event via app_metadata
-  const assignedEventId = user?.app_metadata?.coordinating_event_id || null;
+  const { assignedEventIds, role } = user ? await getCoordinatorAssignedEventIds(user.id) : { assignedEventIds: [], role: 'coordinator' };
+  const isAdmin = role === 'admin' || role === 'Super Admin';
 
   return (
     <div className="space-y-10">
@@ -20,7 +21,7 @@ export default async function CoordinatorScannerPage() {
         </p>
       </div>
 
-      <ScannerClient assignedEventId={assignedEventId} />
+      <ScannerClient assignedEventIds={assignedEventIds} isAdmin={isAdmin} />
     </div>
   );
 }
