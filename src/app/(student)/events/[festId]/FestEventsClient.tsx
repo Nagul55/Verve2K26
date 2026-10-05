@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { Calendar, Clock, MapPin, ArrowLeft, ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 import { EventDetailsModal, SubEvent, parseEventData } from "@/components/EventDetailsModal";
-import { EventStatusBadge } from "@/components/EventStatusBadge";
 
 interface FestEventsClientProps {
   fest: any;
@@ -105,7 +104,6 @@ export function FestEventsClient({
                       <MapPin className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.location}
                     </div>
                   </div>
-                  <EventStatusBadge event={event} registrationCount={registrationCounts[event.id] || 0} />
                 </div>
               );
             })}
@@ -158,7 +156,6 @@ export function FestEventsClient({
                       <MapPin className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.location}
                     </div>
                   </div>
-                  <EventStatusBadge event={event} registrationCount={registrationCounts[event.id] || 0} />
                 </div>
               );
             })}
