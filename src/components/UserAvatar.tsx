@@ -22,7 +22,7 @@ export function UserAvatar({
       alt={alt}
       className={className}
       onError={(e) => {
-        e.currentTarget.src = '/images/user-avatar.png';
+        e.currentTarget.src = '/images/user-avatar.webp';
       }}
     />
   );

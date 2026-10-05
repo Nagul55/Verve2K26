@@ -8,12 +8,12 @@ export function getUserAvatarUrl(user?: {
   const gender = (user?.gender || user?.user_metadata?.gender || '').toUpperCase();
 
   if (role === 'admin' || role === 'super admin') {
-    return '/images/admin-profile.png';
+    return '/images/admin-profile.webp';
   }
 
   if (gender === 'FEMALE') {
-    return '/images/female-profile.png';
+    return '/images/female-profile.webp';
   }
 
-  return '/images/user-avatar.png';
+  return '/images/user-avatar.webp';
 }

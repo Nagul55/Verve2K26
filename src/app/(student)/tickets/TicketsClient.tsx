@@ -47,7 +47,7 @@ function TicketCard({ reg, participant, ticketRef }: { reg: any, participant: an
            </div>
            {/* Lightbulb 3D Icon */}
            <div className="w-28 h-28 relative shrink-0">
-              <img src="/images/bulb_3d.jpg" alt="3D Bulb" className="w-full h-full object-contain mix-blend-multiply" crossOrigin="anonymous" />
+              <img src="/images/bulb_3d.webp" alt="3D Bulb" className="w-full h-full object-contain mix-blend-multiply" crossOrigin="anonymous" />
            </div>
         </div>
 
