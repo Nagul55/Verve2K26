@@ -89,18 +89,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid ticket — Participant or registration record not found.' }, { status: 404 });
     }
 
-    // 2. Fetch all registered sub-events for this participant (SINGLE SOURCE OF TRUTH)
+    // 2. Fetch registrations for this participant
+    const { data: userRegistrations, error: regLookupError } = await supabaseAdmin
+      .from('registrations')
+      .select('id')
+      .eq('participant_id', targetParticipantId);
+
+    if (regLookupError || !userRegistrations || userRegistrations.length === 0) {
+      return NextResponse.json({ error: 'Access Denied: Participant is not registered for any events.' }, { status: 404 });
+    }
+
+    const regIds = userRegistrations.map((r: any) => r.id);
+
+    // 3. Fetch all registered sub-events (SINGLE SOURCE OF TRUTH)
     const { data: regSubEvents, error: regError } = await supabaseAdmin
       .from('registration_sub_events')
       .select(`
         id,
         sub_event_id,
         registration_id,
-        registrations!inner (
-          id,
-          participant_id
-        ),
-        sub_events!inner (
+        sub_events (
           id,
           title,
           category,
@@ -109,10 +117,10 @@ export async function POST(req: Request) {
           location
         )
       `)
-      .eq('registrations.participant_id', targetParticipantId);
+      .in('registration_id', regIds);
 
     if (regError || !regSubEvents || regSubEvents.length === 0) {
-      return NextResponse.json({ error: 'Access Denied: Participant is not registered for any events.' }, { status: 404 });
+      return NextResponse.json({ error: 'Access Denied: No specific sub-events found for this participant.' }, { status: 404 });
     }
 
     // 3. Match Subevent & Registration according to QR Payload & Coordinator Authorization
