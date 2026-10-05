@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { sendTicketEmail } from "./email.actions";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 
 const getAdminClient = () => {
   return createSupabaseClient(
@@ -12,7 +12,46 @@ const getAdminClient = () => {
   );
 };
 
+export const getCachedCoordinators = unstable_cache(
+  async () => {
+    const adminClient = getAdminClient();
+    let allUsers: any[] = [];
+    let page = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage: 1000 });
+      if (error || !data?.users || data.users.length === 0) {
+        hasMore = false;
+      } else {
+        allUsers = allUsers.concat(data.users);
+        if (data.users.length < 1000) hasMore = false;
+        else page++;
+      }
+    }
+    
+    // Only return processed coordinator objects, dumping the massive user list from memory
+    return allUsers
+      .filter(u => u.app_metadata?.role === 'coordinator')
+      .map(u => {
+        const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
+          ? u.app_metadata.coordinating_event_ids
+          : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
+        return {
+          id: u.id,
+          name: u.user_metadata?.full_name || u.email || 'Coordinator',
+          phone: u.user_metadata?.mobile || u.user_metadata?.phone || u.phone || '',
+          email: u.email || '',
+          event_ids: ids
+        };
+      });
+  },
+  ['coordinators-list'],
+  { revalidate: 3600, tags: ['coordinators'] }
+);
+
 async function getAllAuthUsers(adminClient: any) {
+  // Kept for backward compatibility if needed elsewhere, but should be avoided.
   let allUsers: any[] = [];
   let page = 1;
   const perPage = 1000;
@@ -32,12 +71,16 @@ async function getAllAuthUsers(adminClient: any) {
 }
 
 // FESTS
-export async function getFests() {
-  const adminClient = getAdminClient();
-  const { data, error } = await adminClient.from('fests').select('*');
-  if (error) return [];
-  return data;
-}
+export const getFests = unstable_cache(
+  async () => {
+    const adminClient = getAdminClient();
+    const { data, error } = await adminClient.from('fests').select('*');
+    if (error) return [];
+    return data;
+  },
+  ['fests-list'],
+  { revalidate: 3600, tags: ['fests'] }
+);
 
 export async function createFest(name: string, description: string, minTech: number = 0, minNonTech: number = 0) {
   const adminClient = getAdminClient();
@@ -62,29 +105,19 @@ export async function getSubEvents(festId?: string, includePending: boolean = fa
   const { data, error } = await query;
   if (error || !data) return [];
 
-  // Query coordinators from Supabase Auth users
-  const { data: authData } = await getAllAuthUsers(adminClient);
+  // Query coordinators from CACHED Supabase Auth users
+  const coords = await getCachedCoordinators();
   const eventCoordMap: Record<string, string[]> = {};
   const eventCoordDetails: Record<string, Array<{ name: string; phone: string; email: string }>> = {};
 
-  if (authData?.users) {
-    authData.users.forEach(u => {
-      if (u.app_metadata?.role === 'coordinator') {
-        const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
-          ? u.app_metadata.coordinating_event_ids
-          : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
-        ids.forEach(id => {
-          if (!eventCoordMap[id]) eventCoordMap[id] = [];
-          if (!eventCoordDetails[id]) eventCoordDetails[id] = [];
-          const name = u.user_metadata?.full_name || u.email || 'Coordinator';
-          const phone = u.user_metadata?.mobile || u.user_metadata?.phone || u.phone || '';
-          const email = u.email || '';
-          eventCoordMap[id].push(name);
-          eventCoordDetails[id].push({ name, phone, email });
-        });
-      }
+  coords.forEach(c => {
+    c.event_ids.forEach(id => {
+      if (!eventCoordMap[id]) eventCoordMap[id] = [];
+      if (!eventCoordDetails[id]) eventCoordDetails[id] = [];
+      eventCoordMap[id].push(c.name);
+      eventCoordDetails[id].push({ name: c.name, phone: c.phone, email: c.email });
     });
-  }
+  });
 
   // Student Query (includePending === false): ONLY return LIVE events with >= 1 coordinator assigned!
   if (!includePending) {
@@ -191,14 +224,8 @@ export async function approveSubEvent(subEventId: string, coordinatorIds?: strin
   }
 
   // Server-side Rule Validation: Check coordinator count for this event
-  const { data: authData } = await getAllAuthUsers(adminClient);
-  const assignedCoords = (authData?.users || []).filter(u => {
-    if (u.app_metadata?.role !== 'coordinator' && u.app_metadata?.role !== 'admin') return false;
-    const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
-      ? u.app_metadata.coordinating_event_ids
-      : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
-    return ids.includes(subEventId);
-  });
+  const coords = await getCachedCoordinators();
+  const assignedCoords = coords.filter(c => c.event_ids.includes(subEventId) && (c.role === 'coordinator' || c.role === 'admin'));
 
   // If no coordinator is assigned yet, assign the approving user so the event has a coordinator & appears live
   if (assignedCoords.length === 0 && user) {
@@ -306,26 +333,13 @@ export async function getSubEventById(subEventId: string) {
   }
 
   // Fetch coordinator details for this event
-  const { data: authData } = await getAllAuthUsers(adminClient);
-  const coordinatorDetails: Array<{ id: string; name: string; phone: string; email: string }> = [];
-
-  if (authData?.users) {
-    authData.users.forEach(u => {
-      if (u.app_metadata?.role === 'coordinator') {
-        const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
-          ? u.app_metadata.coordinating_event_ids
-          : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
-        if (ids.includes(subEventId)) {
-          coordinatorDetails.push({
-            id: u.id,
-            name: u.user_metadata?.full_name || u.email || 'Coordinator',
-            phone: u.user_metadata?.mobile || u.user_metadata?.phone || u.phone || '',
-            email: u.email || ''
-          });
-        }
-      }
-    });
-  }
+  const coords = await getCachedCoordinators();
+  const coordinatorDetails = coords.filter(c => c.event_ids.includes(subEventId)).map(c => ({
+    id: c.id,
+    name: c.name,
+    phone: c.phone,
+    email: c.email
+  }));
 
   return {
     ...data,
@@ -445,22 +459,30 @@ export async function registerForEvents(
   const { data: participant } = await supabase.from('participants').select('*').eq('participant_id', user.id).single();
   if (!participant) return { success: false, error: "Participant profile not found. Please update settings first." };
   
-  // 1.5 Validate all Team Member Emails
+  // 1.5 Validate all Team Member Emails in a single batch query
   const adminClient = getAdminClient();
-  const validMemberParticipants: Record<string, any[]> = {}; // Map event_id to valid participants
+  const validMemberParticipants: Record<string, any[]> = {}; 
 
   if (teamMembers && Object.keys(teamMembers).length > 0) {
+    const allEmailsToFetch = Array.from(new Set(
+      Object.values(teamMembers)
+        .flatMap(str => str.split(',').map(e => e.trim()).filter(e => e))
+    ));
+
+    let fetchedParticipants: any[] = [];
+    if (allEmailsToFetch.length > 0) {
+      const { data } = await adminClient
+        .from('participants')
+        .select('*')
+        .in('email', allEmailsToFetch);
+      fetchedParticipants = data || [];
+    }
+
     for (const [subEventId, membersEmailsStr] of Object.entries(teamMembers)) {
       const emails = membersEmailsStr.split(',').map(e => e.trim()).filter(e => e);
       const validParts = [];
       for (const email of emails) {
-        // Find participant by email
-        const { data: memberPart } = await adminClient
-          .from('participants')
-          .select('*')
-          .eq('email', email)
-          .single();
-
+        const memberPart = fetchedParticipants.find(p => p.email === email);
         if (!memberPart) {
           return { success: false, error: `Team member with email ${email} not found. Please ensure they have registered an account.` };
         }
@@ -762,12 +784,7 @@ export async function getCoordinatorParticipants() {
   const adminClient = getAdminClient();
 
   if (!assignedEventId) {
-     // Fallback: Return admin participants but ONLY those who registered for events
-     const allParticipants = await getAdminParticipants();
-     return allParticipants.filter((p: any) => {
-       if (!p.registrations || !Array.isArray(p.registrations)) return false;
-       return p.registrations.some((reg: any) => reg.registration_sub_events && reg.registration_sub_events.length > 0);
-     });
+     return [];
   }
 
   const { data, error } = await adminClient
@@ -1134,25 +1151,17 @@ export async function getSubEventsWithCoordinators(festId?: string) {
     .order('category', { ascending: false })
     .order('title', { ascending: true });
 
-  const { data: authData } = await getAllAuthUsers(adminClient);
+  const coords = await getCachedCoordinators();
   const eventCoordMap: Record<string, string[]> = {};
-
-  if (authData?.users) {
-    authData.users.forEach(u => {
-      const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
-        ? u.app_metadata.coordinating_event_ids
-        : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
-
-      const name = u.user_metadata?.full_name || u.email || 'Coordinator';
-
-      ids.forEach(id => {
-        if (!eventCoordMap[id]) eventCoordMap[id] = [];
-        if (!eventCoordMap[id].includes(name)) {
-          eventCoordMap[id].push(name);
-        }
-      });
+  
+  coords.forEach(c => {
+    c.event_ids.forEach(id => {
+      if (!eventCoordMap[id]) eventCoordMap[id] = [];
+      if (!eventCoordMap[id].includes(c.name)) {
+        eventCoordMap[id].push(c.name);
+      }
     });
-  }
+  });
 
   const enrichedSubEvents = (subEvents || []).map(event => {
     const names = eventCoordMap[event.id] || [];

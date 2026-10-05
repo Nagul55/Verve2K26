@@ -20,8 +20,8 @@ export function CoordinatorSidebar() {
   ];
 
   return (
-    <aside className="w-[230px] h-full bg-eventrix-black text-eventrix-white flex flex-col justify-between hidden md:flex shrink-0 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-      <div className="flex-1">
+    <aside className="w-[230px] h-full bg-eventrix-black text-eventrix-white flex flex-col hidden md:flex shrink-0 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 shrink-0">
         <div className="p-8 pb-4 cursor-default">
           <EventrixLogo fill="#A78BFA" className="w-[140px] h-auto" />
           <span className="text-[10px] font-bold tracking-widest text-eventrix-white/50 uppercase mt-2 block">Coordinator Portal</span>
@@ -56,7 +56,7 @@ export function CoordinatorSidebar() {
         </div>
       </div>
 
-      <div className="p-8 mb-4">
+      <div className="p-8 mb-4 shrink-0">
         <div className="border border-eventrix-lavender/30 p-6 relative">
           <div className="text-eventrix-lavender mb-6">
             <ShieldCheck width="24" height="24" strokeWidth="1.5" />

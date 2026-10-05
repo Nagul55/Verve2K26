@@ -35,7 +35,10 @@ export default async function RegistrationsPage({ params }: { params: Promise<{ 
     );
   }
 
+  const { getStudentRegisteredEventIds } = await import("@/actions/event.actions");
+  const registeredIds = await getStudentRegisteredEventIds();
+
   return (
-    <RegistrationsForm fest={activeFest} events={events} />
+    <RegistrationsForm fest={activeFest} events={events} initialRegisteredIds={registeredIds} />
   );
 }

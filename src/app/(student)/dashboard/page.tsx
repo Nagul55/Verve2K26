@@ -24,10 +24,12 @@ const renderDynamicVisual = (imageUrl: string | null) => {
 };
 
 export default async function Dashboard() {
-  const fests = await getFests();
+  const [fests, registeredEvents] = await Promise.all([
+    getFests(),
+    getParticipantRegistrations()
+  ]);
   const activeFest = fests && fests.length > 0 ? fests[0] : null;
   const events = activeFest ? await getSubEvents(activeFest.id) : [];
-  const registeredEvents = await getParticipantRegistrations();
 
   // Try fetching images in parallel for the first 3 fests
   const featuredFests = (fests || []).slice(0, 3);

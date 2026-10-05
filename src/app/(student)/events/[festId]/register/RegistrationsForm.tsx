@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { parseEventData } from "@/components/EventDetailsModal";
 
-export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }) {
+export function RegistrationsForm({ fest, events, initialRegisteredIds = [] }: { fest: any, events: any[], initialRegisteredIds?: string[] }) {
   const router = useRouter();
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
@@ -16,6 +16,7 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
   const [teamMembers, setTeamMembers] = useState<Record<string, string[]>>({});
 
   const toggleSelection = (id: string) => {
+    if (initialRegisteredIds.includes(id)) return;
     setSelectedEventIds(prev =>
       prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]
     );
@@ -25,9 +26,12 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
   const techCount = selectedEvents.filter(e => e.category === 'Technical').length;
   const nonTechCount = selectedEvents.filter(e => e.category === 'Non-Technical').length;
 
-  const meetsTechRule = fest ? techCount >= fest.min_technical : false;
-  const meetsNonTechRule = fest ? nonTechCount >= fest.min_non_technical : false;
-  const canRegister = meetsTechRule && meetsNonTechRule && !isPending;
+  const totalTechCount = techCount + events.filter(e => e.category === 'Technical' && initialRegisteredIds.includes(e.id)).length;
+  const totalNonTechCount = nonTechCount + events.filter(e => e.category === 'Non-Technical' && initialRegisteredIds.includes(e.id)).length;
+
+  const meetsTechRule = fest ? totalTechCount >= fest.min_technical : false;
+  const meetsNonTechRule = fest ? totalNonTechCount >= fest.min_non_technical : false;
+  const canRegister = meetsTechRule && meetsNonTechRule && selectedEventIds.length > 0 && !isPending;
 
   const teamEvents = selectedEvents.filter(e => e.participation_type === 'Team');
 
@@ -155,23 +159,33 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
                 <div className="flex justify-between items-end mb-4">
                   <h2 className="text-lg md:text-xl font-bold text-eventrix-black">Technical Events</h2>
                   <span className={`text-[10px] md:text-xs font-bold px-2 py-1 rounded-sm ${meetsTechRule ? 'bg-[#20B486]/20 text-[#20B486]' : 'bg-red-500/10 text-red-600'}`}>
-                    {techCount} / {fest?.min_technical || 0} Required
+                    {meetsTechRule ? 'Requirement Met ✓' : `${totalTechCount} / ${fest?.min_technical || 0} Required`}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {events.filter(e => e.category === 'Technical').map(event => (
+                  {events.filter(e => e.category === 'Technical').map(event => {
+                    const isAlreadyReg = initialRegisteredIds.includes(event.id);
+                    return (
                     <div
                       key={event.id}
                       onClick={() => toggleSelection(event.id)}
-                      className={`border p-4 md:p-5 rounded-md cursor-pointer transition-all relative overflow-hidden group ${selectedEventIds.includes(event.id)
-                          ? 'border-eventrix-lavender bg-eventrix-lavender/5 shadow-[0_4px_12px_rgba(167,139,250,0.15)]'
-                          : 'border-[#D9D9DF] bg-eventrix-white hover:border-eventrix-black'
-                        }`}
+                      className={`border p-4 md:p-5 rounded-md transition-all relative overflow-hidden group ${
+                        isAlreadyReg
+                          ? 'border-[#D9D9DF] bg-gray-50 opacity-60 cursor-not-allowed'
+                          : selectedEventIds.includes(event.id)
+                            ? 'border-eventrix-lavender bg-eventrix-lavender/5 shadow-[0_4px_12px_rgba(167,139,250,0.15)] cursor-pointer'
+                            : 'border-[#D9D9DF] bg-eventrix-white hover:border-eventrix-black cursor-pointer'
+                      }`}
                     >
-                      <div className={`absolute top-4 right-4 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${selectedEventIds.includes(event.id) ? 'bg-eventrix-lavender border-eventrix-lavender' : 'border-[#D9D9DF]'
-                        }`}>
-                        {selectedEventIds.includes(event.id) && <Check className="w-3 h-3 text-eventrix-black stroke-[3]" />}
+                      <div className={`absolute top-4 right-4 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
+                        isAlreadyReg 
+                          ? 'bg-gray-200 border-gray-300' 
+                          : selectedEventIds.includes(event.id) 
+                            ? 'bg-eventrix-lavender border-eventrix-lavender' 
+                            : 'border-[#D9D9DF]'
+                      }`}>
+                        {(isAlreadyReg || selectedEventIds.includes(event.id)) && <Check className={`w-3 h-3 stroke-[3] ${isAlreadyReg ? 'text-gray-400' : 'text-eventrix-black'}`} />}
                       </div>
 
                       <span className="text-[9px] md:text-[10px] font-bold text-eventrix-lavender uppercase mb-2 block tracking-widest">{event.category} - {event.participation_type}</span>
@@ -184,7 +198,7 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
                         <div className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.location}</div>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               </section>
 
@@ -193,23 +207,33 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
                 <div className="flex justify-between items-end mb-4">
                   <h2 className="text-lg md:text-xl font-bold text-eventrix-black">Non-Technical Events</h2>
                   <span className={`text-[10px] md:text-xs font-bold px-2 py-1 rounded-sm ${meetsNonTechRule ? 'bg-[#20B486]/20 text-[#20B486]' : 'bg-red-500/10 text-red-600'}`}>
-                    {nonTechCount} / {fest?.min_non_technical || 0} Required
+                    {meetsNonTechRule ? 'Requirement Met ✓' : `${totalNonTechCount} / ${fest?.min_non_technical || 0} Required`}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {events.filter(e => e.category === 'Non-Technical').map(event => (
+                  {events.filter(e => e.category === 'Non-Technical').map(event => {
+                    const isAlreadyReg = initialRegisteredIds.includes(event.id);
+                    return (
                     <div
                       key={event.id}
                       onClick={() => toggleSelection(event.id)}
-                      className={`border p-4 md:p-5 rounded-md cursor-pointer transition-all relative overflow-hidden group ${selectedEventIds.includes(event.id)
-                          ? 'border-eventrix-lavender bg-eventrix-lavender/5 shadow-[0_4px_12px_rgba(167,139,250,0.15)]'
-                          : 'border-[#D9D9DF] bg-eventrix-white hover:border-eventrix-black'
-                        }`}
+                      className={`border p-4 md:p-5 rounded-md transition-all relative overflow-hidden group ${
+                        isAlreadyReg
+                          ? 'border-[#D9D9DF] bg-gray-50 opacity-60 cursor-not-allowed'
+                          : selectedEventIds.includes(event.id)
+                            ? 'border-eventrix-lavender bg-eventrix-lavender/5 shadow-[0_4px_12px_rgba(167,139,250,0.15)] cursor-pointer'
+                            : 'border-[#D9D9DF] bg-eventrix-white hover:border-eventrix-black cursor-pointer'
+                      }`}
                     >
-                      <div className={`absolute top-4 right-4 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${selectedEventIds.includes(event.id) ? 'bg-eventrix-lavender border-eventrix-lavender' : 'border-[#D9D9DF]'
-                        }`}>
-                        {selectedEventIds.includes(event.id) && <Check className="w-3 h-3 text-eventrix-black stroke-[3]" />}
+                      <div className={`absolute top-4 right-4 w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
+                        isAlreadyReg 
+                          ? 'bg-gray-200 border-gray-300' 
+                          : selectedEventIds.includes(event.id) 
+                            ? 'bg-eventrix-lavender border-eventrix-lavender' 
+                            : 'border-[#D9D9DF]'
+                      }`}>
+                        {(isAlreadyReg || selectedEventIds.includes(event.id)) && <Check className={`w-3 h-3 stroke-[3] ${isAlreadyReg ? 'text-gray-400' : 'text-eventrix-black'}`} />}
                       </div>
 
                       <span className="text-[9px] md:text-[10px] font-bold text-eventrix-lavender uppercase mb-2 block tracking-widest">{event.category} - {event.participation_type}</span>
@@ -222,7 +246,7 @@ export function RegistrationsForm({ fest, events }: { fest: any, events: any[] }
                         <div className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.location}</div>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               </section>
             </>

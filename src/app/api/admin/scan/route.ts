@@ -40,40 +40,40 @@ export async function POST(req: Request) {
 
     const secureAdminId = user.id;
 
-    // 1. Verify that the participant actually registered for this specific sub_event
-    const { data: regData, error: regError } = await supabaseAdmin
-      .from('registration_sub_events')
-      .select(`
-        registrations!inner (
-          id,
-          participant_id,
-          participants (full_name, register_number)
-        )
-      `)
-      .eq('sub_event_id', event_id)
-      .eq('registrations.participant_id', pid)
-      .single();
+    // 1 & 2. Parallelize Registration Verification and Attendance Check to avoid waterfall
+    const [regResult, attendanceResult] = await Promise.all([
+      supabaseAdmin
+        .from('registration_sub_events')
+        .select(`
+          registrations!inner (
+            id,
+            participant_id,
+            participants (full_name, register_number)
+          )
+        `)
+        .eq('sub_event_id', event_id)
+        .eq('registrations.participant_id', pid)
+        .single(),
 
+      supabaseAdmin
+        .from('attendance')
+        .select('attendance_id')
+        .eq('participant_id', pid)
+        .eq('event_id', event_id)
+        .single()
+    ]);
 
+    if (attendanceResult.data) {
+      return NextResponse.json({ error: 'Warning: This ticket has already been USED. Participant is already checked in.' }, { status: 400 });
+    }
 
-    if (regError || !regData) {
+    if (regResult.error || !regResult.data) {
       return NextResponse.json({ error: 'Access Denied: Participant is not registered for this specific event.' }, { status: 404 });
     }
 
+    const regData = regResult.data;
     const participantInfo = (regData.registrations as any).participants;
     const registrationId = (regData.registrations as any).id;
-
-    // 2. Check if already checked in (using attendance table)
-    const { data: existingAttendance } = await supabaseAdmin
-      .from('attendance')
-      .select('attendance_id')
-      .eq('participant_id', pid)
-      .eq('event_id', event_id)
-      .single();
-
-    if (existingAttendance) {
-      return NextResponse.json({ error: 'Warning: This ticket has already been USED. Participant is already checked in.' }, { status: 400 });
-    }
 
     // 3. Record Attendance
     const { error: attendanceError } = await supabaseAdmin

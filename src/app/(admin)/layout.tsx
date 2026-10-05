@@ -21,14 +21,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="flex h-[100dvh] w-screen overflow-hidden bg-[#F8F8FC]">
+    <div className="flex h-screen w-full overflow-hidden">
       <AdminSidebar />
-      <main className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden scroll-smooth">
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         <TopNavbar />
-        <div className="p-4 sm:p-6 lg:p-10 space-y-8 lg:space-y-10 pb-24 max-w-[1700px] mx-auto w-full transition-all duration-300">
-          {children}
-        </div>
-      </main>
+        <main className="flex-1 overflow-y-auto scroll-smooth">
+          <div className="p-4 sm:p-6 lg:p-10 space-y-8 lg:space-y-10 pb-24 max-w-[1700px] mx-auto w-full transition-all duration-300">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

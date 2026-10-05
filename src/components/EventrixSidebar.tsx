@@ -21,8 +21,8 @@ export function EventrixSidebar() {
   ];
 
   return (
-    <aside className="w-[230px] h-full bg-eventrix-purple text-eventrix-white flex flex-col justify-between hidden md:flex shrink-0 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-      <div className="flex-1">
+    <aside className="w-[230px] h-full bg-eventrix-purple text-eventrix-white flex flex-col hidden md:flex shrink-0 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 shrink-0">
         <div className="p-8 pb-4 cursor-default">
           <EventrixLogo fill="currentColor" className="w-[140px] h-auto text-eventrix-white" />
         </div>
@@ -56,7 +56,7 @@ export function EventrixSidebar() {
           </div>
         </div>
 
-      <div className="p-8 mb-4">
+      <div className="p-8 mb-4 shrink-0">
         <div className="border border-eventrix-white/20 p-6 relative">
           <div className="text-eventrix-lavender mb-6">
              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2v20M2 12h20M4.9 4.9l14.2 14.2M4.9 19.1l14.2-14.2"/></svg>

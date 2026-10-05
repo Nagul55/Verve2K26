@@ -30,6 +30,8 @@ export function FestEventsClient({
   const techEvents = events.filter((e) => e.category === "Technical");
   const nonTechEvents = events.filter((e) => e.category === "Non-Technical");
 
+  const hasRegisteredForFest = events.some(e => registeredIds.includes(e.id));
+
   return (
     <div className="max-w-5xl mx-auto space-y-10">
       {/* Header */}

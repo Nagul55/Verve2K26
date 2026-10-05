@@ -6,7 +6,7 @@ import { Calendar, MapPin, Users, ShieldCheck, Download, Eye, X, RotateCw } from
 import { QRCodeSVG } from "qrcode.react";
 import * as htmlToImage from "html-to-image";
 
-function TicketCard({ reg, participant, ticketRef }: { reg: any, participant: any, ticketRef?: React.RefObject<HTMLDivElement | null> | ((el: HTMLDivElement | null) => void) }) {
+function TicketCard({ reg, participant, ticketRef }: { reg: any, participant: any, ticketRef?: React.Ref<HTMLDivElement> }) {
   const isTech = reg.category === 'Technical';
   return (
     <div ref={ticketRef} className="w-[1000px] h-[540px] flex rounded-[2rem] shadow-2xl overflow-hidden bg-white shrink-0" style={{ fontFamily: 'sans-serif' }}>
@@ -256,7 +256,7 @@ export function TicketsClient({ registrations, participant }: { registrations: a
                <TicketCard 
                  reg={reg} 
                  participant={participant} 
-                 ticketRef={(el) => { offscreenRefs.current[reg.id] = el; }} 
+                 ticketRef={(el: HTMLDivElement | null) => { offscreenRefs.current[reg.id] = el; }} 
                />
             </div>
           </div>
