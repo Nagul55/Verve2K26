@@ -3,11 +3,24 @@ import { Users, Calendar, Ticket, ShieldCheck, Clock, CheckCircle2, AlertCircle 
 import { getSubEvents, getAdminParticipants } from "@/actions/event.actions";
 import { DashboardCharts } from "@/components/admin/DashboardCharts";
 import Link from "next/link";
-import { ApproveButton } from "@/components/ApproveButton";
 
 export default async function AdminDashboard() {
-  const events = await getSubEvents(undefined, true) || [];
-  const allParticipants = await getAdminParticipants() || [];
+  let events: any[] = [];
+  let allParticipants: any[] = [];
+  let eventsError = false;
+
+  try {
+    events = await getSubEvents(undefined, true) || [];
+  } catch (err) {
+    console.error("Failed to fetch sub-events for Admin Dashboard:", err);
+    eventsError = true;
+  }
+
+  try {
+    allParticipants = await getAdminParticipants() || [];
+  } catch (err) {
+    console.error("Failed to fetch participants for Admin Dashboard:", err);
+  }
 
   // Helper to extract flat array of sub-events for a participant
   const getParticipantEvents = (p: any): any[] => {
@@ -30,8 +43,23 @@ export default async function AdminDashboard() {
   // Calculate total sub-event registration bookings across all participants
   const totalRegistrationsCount = allParticipants.reduce((acc, p) => acc + getParticipantEvents(p).length, 0);
 
+  // Status Helpers based on database conventions:
+  // LIVE / APPROVED -> Approved & Live
+  // PENDING_APPROVAL / DRAFT / Pending -> Pending Admin Review
+  // REJECTED -> Rejected
+  const isPendingEvent = (e: any) => {
+    const s = (e.status || '').toUpperCase();
+    return s !== 'LIVE' && s !== 'APPROVED' && s !== 'REJECTED';
+  };
+
+  const isLiveEvent = (e: any) => {
+    const s = (e.status || '').toUpperCase();
+    return s === 'LIVE' || s === 'APPROVED';
+  };
+
   // Fetch pending events for the table
-  const pendingEvents = events.filter(e => e.status === 'Pending').slice(0, 5);
+  const pendingEvents = events.filter(isPendingEvent);
+  const activeEventsCount = events.filter(isLiveEvent).length;
   
   // Fetch recent participants (limit 5)
   const recentParticipants = allParticipants.slice(0, 5);
@@ -99,8 +127,6 @@ export default async function AdminDashboard() {
 
   const trendsData = last7DaysData.map(d => ({ name: d.name, registrations: d.registrations }));
 
-
-
   // DEMOGRAPHICS CALCULATIONS (Year of Study, Department, College) - Computes ONLY from Student accounts
   const studentParticipants = allParticipants.filter(p => (p.role || 'student').toLowerCase() === 'student');
   const totalCountForDemo = studentParticipants.length || 1;
@@ -150,8 +176,8 @@ export default async function AdminDashboard() {
   const stats = [
     { label: "TOTAL PARTICIPANTS", value: registeredParticipantsCount, icon: Users },
     { label: "TOTAL REGISTRATIONS", value: totalRegistrationsCount, icon: Ticket },
-    { label: "PENDING APPROVALS", value: events.filter(e => e.status === 'Pending').length, icon: AlertCircle, alert: true },
-    { label: "ACTIVE EVENTS", value: events.filter(e => e.status === 'Approved').length, icon: Calendar },
+    { label: "PENDING APPROVALS", value: pendingEvents.length, icon: AlertCircle, alert: true },
+    { label: "ACTIVE EVENTS", value: activeEventsCount, icon: Calendar },
   ];
 
   return (
@@ -210,7 +236,7 @@ export default async function AdminDashboard() {
         
         {/* Pending Approvals */}
         <div className="border border-[#D9D9DF] bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
-          <div className="p-5 border-b border-[#D9D9DF] flex justify-between items-center bg-[#F8F8FC]">
+          <div className="p-5 border-b border-[#D9D9DF] flex justify-between items-center bg-[#F8F8FC] shrink-0">
             <h3 className="font-bold text-eventrix-black text-sm uppercase tracking-widest flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-amber-500" /> Pending Event Approvals
             </h3>
@@ -218,23 +244,40 @@ export default async function AdminDashboard() {
               View All
             </Link>
           </div>
-          <div className="p-0 flex-1">
-            {pendingEvents.length > 0 ? (
-              <div className="divide-y divide-[#D9D9DF]">
+          <div className="p-0 flex-1 flex flex-col min-h-[220px]">
+            {eventsError ? (
+              <div className="p-8 flex flex-col items-center justify-center text-center h-full my-auto">
+                <AlertCircle className="w-8 h-8 text-red-500 mb-2" />
+                <p className="font-bold text-eventrix-black text-sm">Unable to load pending approvals.</p>
+                <p className="text-xs text-eventrix-muted mt-1 mb-4">Failed to fetch events from database.</p>
+                <Link href="/admin" className="text-xs font-bold bg-eventrix-black text-white px-3 py-1.5 rounded uppercase tracking-wider hover:bg-eventrix-lavender hover:text-black transition-colors">
+                  Retry
+                </Link>
+              </div>
+            ) : pendingEvents.length > 0 ? (
+              <div className="divide-y divide-[#D9D9DF] max-h-[380px] overflow-y-auto">
                 {pendingEvents.map(event => (
-                  <div key={event.id} className="p-5 flex justify-between items-center hover:bg-[#F8F8FC] transition-colors">
+                  <div key={event.id} className="p-4 sm:p-5 flex items-center justify-between gap-3 hover:bg-[#F8F8FC] transition-colors">
                     <div>
-                      <h4 className="font-bold text-eventrix-black text-sm">{event.title}</h4>
-                      <p className="text-xs text-eventrix-muted mt-1">{event.category} • {event.participation_type}</p>
-                    </div>
-                    <div className="flex gap-2">
-                       <ApproveButton id={event.id} isApproved={event.status === 'Approved'} />
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-bold text-eventrix-black text-sm">{event.title}</h4>
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest ${
+                          event.status === 'PENDING_APPROVAL' 
+                            ? 'bg-amber-100 text-amber-800 border border-amber-200' 
+                            : 'bg-gray-100 text-gray-700 border border-gray-200'
+                        }`}>
+                          {event.status === 'PENDING_APPROVAL' ? 'Pending Approval' : event.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-eventrix-muted font-medium">
+                        {event.category} • {event.participation_type || 'Individual'} • {event.coordinatorNames && event.coordinatorNames.length > 0 ? event.coordinatorNames.join(', ') : 'Unassigned'}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="p-10 flex flex-col items-center justify-center text-center h-full opacity-60">
+              <div className="p-10 flex flex-col items-center justify-center text-center h-full my-auto opacity-60">
                 <CheckCircle2 className="w-10 h-10 text-green-500 mb-3" />
                 <p className="font-bold text-eventrix-black text-sm">All caught up!</p>
                 <p className="text-xs text-eventrix-muted mt-1">No pending events to approve.</p>

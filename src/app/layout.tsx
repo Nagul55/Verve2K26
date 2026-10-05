@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${inter.variable} ${anton.variable} h-full antialiased scroll-smooth`}
     >
-      <body className="h-screen overflow-hidden flex font-sans bg-eventrix-bg text-eventrix-black">
+      <body className="min-h-screen flex font-sans bg-eventrix-bg text-eventrix-black">
         {children}
         <Toaster />
       </body>

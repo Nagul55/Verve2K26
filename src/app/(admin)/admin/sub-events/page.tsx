@@ -64,12 +64,18 @@ export default async function AdminSubEventsPage({ searchParams }: { searchParam
                     {event.parentFestName}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {event.coordinatorName === 'Unassigned' ? (
+                    {(!event.coordinatorNames || event.coordinatorNames.length === 0) ? (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest bg-gray-100 text-gray-500 px-2 py-1 rounded">
                         <UserX className="w-3 h-3 text-gray-400" /> Unassigned
                       </span>
                     ) : (
-                      <span className="text-xs font-semibold text-eventrix-black">{event.coordinatorName}</span>
+                      <div className="flex flex-col gap-1">
+                        {event.coordinatorNames.map((name: string, idx: number) => (
+                          <span key={idx} className="text-xs font-semibold text-eventrix-black block whitespace-nowrap">
+                            {name}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </td>
                   <td className="px-6 py-4 font-medium text-eventrix-muted whitespace-nowrap">

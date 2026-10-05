@@ -20,7 +20,7 @@ export function AdminSidebar() {
   ];
 
   return (
-    <aside className="w-[230px] h-full bg-eventrix-black text-eventrix-white flex flex-col justify-between hidden md:flex shrink-0 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <aside className="w-[230px] h-full max-h-[100dvh] bg-eventrix-black text-eventrix-white flex flex-col justify-between hidden md:flex shrink-0 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       <div className="flex-1">
         <div className="p-8 pb-4 cursor-default">
           {/* Using a slightly different logo presentation for Admin (maybe purple instead of white?) */}

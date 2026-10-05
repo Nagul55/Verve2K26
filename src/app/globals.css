@@ -172,3 +172,22 @@
     @apply bg-eventrix-black text-eventrix-white font-bold uppercase tracking-wider transition-all duration-200 text-sm px-8 py-4 rounded-md shadow-[4px_4px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[4px_4px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none cursor-pointer;
   }
 }
+
+/* Scoped Auth Page Typography - Josefin Sans */
+.auth-page,
+.auth-page input,
+.auth-page button,
+.auth-page select,
+.auth-page textarea,
+.auth-page .font-sans {
+  font-family: "Josefin Sans", sans-serif;
+  font-optical-sizing: auto;
+  box-sizing: border-box;
+}
+
+.auth-page input::placeholder,
+.auth-page textarea::placeholder {
+  font-weight: 400;
+}
+
+

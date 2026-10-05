@@ -23,6 +23,7 @@ export default function SignupPage() {
       confirmPassword: '',
     },
     excludeKeys: ['password', 'confirmPassword'],
+    showRestoredToast: false,
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -89,7 +90,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-dvh w-full bg-white flex flex-col lg:flex-row overflow-x-hidden font-sans select-none relative">
+    <div className="auth-page w-full h-[100dvh] min-h-[100dvh] bg-white flex flex-col lg:flex-row overflow-hidden select-none relative">
       
       {/* MOBILE & TABLET BACKGROUND AVATAR IMAGE */}
       <div className="lg:hidden fixed inset-0 z-0">
@@ -101,41 +102,41 @@ export default function SignupPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-purple-950/50 via-purple-900/35 to-black/70 backdrop-blur-[1px]"></div>
       </div>
 
-      {/* LEFT SECTION - Form (55% Width on Desktop) */}
-      <div className="w-full lg:w-[55%] min-h-dvh lg:min-h-screen pt-8 sm:pt-12 pb-16 sm:pb-20 px-4 sm:px-8 lg:p-10 xl:p-12 flex flex-col justify-start lg:justify-center z-10 relative">
+      {/* LEFT SECTION - Form (50% Width on Desktop) */}
+      <div className="w-full lg:w-[50%] h-[100dvh] min-h-[100dvh] py-2 sm:py-3 lg:py-4 px-4 sm:px-6 lg:px-8 xl:px-10 flex flex-col justify-center items-center z-10 relative overflow-hidden">
         
         {/* Glassmorphic Card Container */}
-        <div className="max-w-xl lg:max-w-xl w-full mx-auto bg-white/95 lg:bg-transparent backdrop-blur-2xl lg:backdrop-blur-none p-6 sm:p-8 md:p-10 lg:p-0 rounded-3xl lg:rounded-none shadow-2xl lg:shadow-none border border-white/70 lg:border-none transition-all">
+        <div className="max-w-xl lg:max-w-xl w-full mx-auto bg-white/95 lg:bg-transparent backdrop-blur-2xl lg:backdrop-blur-none p-4 sm:p-5 lg:p-0 rounded-3xl lg:rounded-none shadow-2xl lg:shadow-none border border-white/70 lg:border-none transition-all my-auto">
           
           {/* Header Title with Logo Directly Beside "Join" */}
-          <div className="mb-5 sm:mb-6">
-            <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-950 tracking-tight leading-none drop-shadow-sm">
+          <div className="mb-2 sm:mb-2.5">
+            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-950 tracking-tight leading-none drop-shadow-sm">
                 Join
               </h1>
               <img
                 src="/assets/Eventrix logo.svg"
                 alt="Eventrix Logo"
-                className="h-10 sm:h-12 lg:h-14 xl:h-16 w-auto object-contain"
+                className="h-8 sm:h-10 lg:h-12 w-auto object-contain"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                 }}
               />
-              <span className="font-anton text-3xl text-eventrix-lavender tracking-widest hidden" id="fallback-logo">EVENTRIX</span>
+              <span className="font-anton text-2xl text-eventrix-lavender tracking-widest hidden" id="fallback-logo">EVENTRIX</span>
             </div>
-            <p className="text-gray-900 lg:text-gray-500 text-xs sm:text-sm font-bold mt-2">
+            <p className="text-gray-900 lg:text-gray-500 text-[11px] sm:text-xs font-medium mt-1">
               Fill all required fields below to create your account.
             </p>
           </div>
 
           {/* Form Inputs */}
-          <form action={clientAction} className="space-y-4">
+          <form action={clientAction} className="space-y-2 sm:space-y-2.5">
             
             {/* Grid 1: Full Name & Phone Number */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
               {/* Full Name Input */}
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-gray-900 block">
+              <div className="space-y-0.5 sm:space-y-1">
+                <label className="text-[11px] sm:text-xs font-semibold text-gray-900 block">
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -146,15 +147,15 @@ export default function SignupPage() {
                     value={formData.fullName}
                     onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
                     placeholder="Your Full Name"
-                    className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
+                    className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-xs font-medium placeholder:font-normal transition-all shadow-sm"
                   />
-                  <User className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <User className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
               {/* Phone Number Input */}
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-gray-900 block">
+              <div className="space-y-0.5 sm:space-y-1">
+                <label className="text-[11px] sm:text-xs font-semibold text-gray-900 block">
                   Phone Number <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -171,16 +172,16 @@ export default function SignupPage() {
                     value={formData.mobile}
                     onChange={(e) => setFormData(prev => ({ ...prev, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
                     placeholder="Your Phone Number"
-                    className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
+                    className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-xs font-medium placeholder:font-normal transition-all shadow-sm"
                   />
-                  <Phone className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Phone className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
             </div>
 
             {/* Email Input */}
-            <div className="space-y-1">
-              <label className="text-xs font-extrabold text-gray-900 block">
+            <div className="space-y-0.5 sm:space-y-1">
+              <label className="text-[11px] sm:text-xs font-semibold text-gray-900 block">
                 Email Address <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -191,9 +192,9 @@ export default function SignupPage() {
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="john.doe@example.com"
-                  className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
+                  className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-xs font-medium placeholder:font-normal transition-all shadow-sm"
                 />
-                <Mail className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Mail className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
@@ -202,6 +203,7 @@ export default function SignupPage() {
               label="Gender"
               name="gender"
               required
+              size="sm"
               placeholder="Select Gender"
               value={formData.gender}
               onChange={(val) => setFormData((prev) => ({ ...prev, gender: val }))}
@@ -212,8 +214,8 @@ export default function SignupPage() {
             />
 
             {/* College Name */}
-            <div className="space-y-1">
-              <label className="text-xs font-extrabold text-gray-900 block">
+            <div className="space-y-0.5 sm:space-y-1">
+              <label className="text-[11px] sm:text-xs font-semibold text-gray-900 block">
                 College / Institution Name <span className="text-red-500">*</span>
               </label>
               <div className="relative">
@@ -224,17 +226,17 @@ export default function SignupPage() {
                   value={formData.college}
                   onChange={(e) => setFormData(prev => ({ ...prev, college: e.target.value }))}
                   placeholder="College Name"
-                  className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
+                  className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-xs font-medium placeholder:font-normal transition-all shadow-sm"
                 />
-                <Building2 className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Building2 className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             {/* Grid 2: Department & Year of Study */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
               {/* Department Input */}
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-gray-900 block">
+              <div className="space-y-0.5 sm:space-y-1">
+                <label className="text-[11px] sm:text-xs font-semibold text-gray-900 block">
                   Department / Branch <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -245,9 +247,9 @@ export default function SignupPage() {
                     value={formData.department}
                     onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
                     placeholder="Information Technology"
-                    className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all shadow-sm"
+                    className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-xs font-medium placeholder:font-normal transition-all shadow-sm"
                   />
-                  <GraduationCap className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <GraduationCap className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
@@ -256,6 +258,7 @@ export default function SignupPage() {
                 label="Year of Study"
                 name="yearOfStudy"
                 required
+                size="sm"
                 value={formData.yearOfStudy}
                 onChange={(val) => setFormData((prev) => ({ ...prev, yearOfStudy: val }))}
                 options={[
@@ -269,10 +272,10 @@ export default function SignupPage() {
             </div>
 
             {/* Grid 3: Password & Confirm Password */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
               {/* Password Input */}
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-gray-900 block">
+              <div className="space-y-0.5 sm:space-y-1">
+                <label className="text-[11px] sm:text-xs font-semibold text-gray-900 block">
                   Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -283,21 +286,21 @@ export default function SignupPage() {
                     value={formData.password}
                     onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                     placeholder="••••••••"
-                    className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all pr-10 shadow-sm"
+                    className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-xs font-medium placeholder:font-normal transition-all pr-9 shadow-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-900 p-1 transition-colors"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-900 p-1 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>
 
               {/* Confirm Password Input */}
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-gray-900 block">
+              <div className="space-y-0.5 sm:space-y-1">
+                <label className="text-[11px] sm:text-xs font-semibold text-gray-900 block">
                   Confirm Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -308,14 +311,14 @@ export default function SignupPage() {
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     placeholder="••••••••"
-                    className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3.5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-sm font-bold transition-all pr-10 shadow-sm"
+                    className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-xs font-medium placeholder:font-normal transition-all pr-9 shadow-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-900 p-1 transition-colors"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-900 p-1 transition-colors"
                   >
-                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>
@@ -325,10 +328,10 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-3 bg-eventrix-black text-white font-extrabold py-3.5 px-6 rounded-xl transition-all duration-200 shadow-[4px_4px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[4px_4px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs sm:text-sm uppercase tracking-wider"
+              className="w-full mt-2 sm:mt-2.5 bg-eventrix-black text-white font-bold py-2.5 sm:py-3 px-5 rounded-xl transition-all duration-200 shadow-[3px_3px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[3px_3px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs sm:text-xs uppercase tracking-wider"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <><span>Create Account</span></>
               )}
@@ -336,23 +339,19 @@ export default function SignupPage() {
 
           </form>
 
-          <div className="mt-5 text-center text-xs font-extrabold text-gray-500">
+          <div className="mt-2 sm:mt-2.5 text-center text-[11px] sm:text-xs font-medium text-gray-500">
             Already have an account?{' '}
-            <Link href="/" className="text-violet-600 uppercase tracking-widest hover:text-violet-900 transition-colors">
+            <Link href="/" className="text-violet-600 font-semibold uppercase tracking-widest hover:text-violet-900 transition-colors">
               Sign In
             </Link>
           </div>
 
-          {/* Footer Metadata */}
-          <div className="pt-6 pb-2 lg:pb-0 text-xs text-gray-800 lg:text-gray-400 text-center sm:text-left font-extrabold mb-[env(safe-area-inset-bottom)]">
-            Eventrix Platform © 2026. All rights reserved.
-          </div>
         </div>
 
       </div>
 
-      {/* RIGHT SECTION - Avatar Image (45% Width on Desktop) */}
-      <div className="hidden lg:block w-[45%] h-full min-h-screen relative overflow-hidden bg-[#7c3aed] fixed right-0 top-0 bottom-0">
+      {/* RIGHT SECTION - Avatar Image (50% Width on Desktop) */}
+      <div className="hidden lg:block w-[50%] h-[100dvh] fixed right-0 top-0 bottom-0 overflow-hidden bg-[#7c3aed] z-0">
         <img
           src="/images/mobile-hero-bg.png"
           alt="Eventrix Avatar Illustration"

@@ -163,6 +163,9 @@ export async function createSubEvent(subEventData: any) {
     }
   }
 
+  revalidatePath('/admin');
+  revalidatePath('/admin/sub-events');
+  revalidatePath('/coordinator/events');
   return { success: !error, error: error?.message };
 }
 
@@ -190,18 +193,22 @@ export async function approveSubEvent(subEventId: string, coordinatorIds?: strin
   // Server-side Rule Validation: Check coordinator count for this event
   const { data: authData } = await getAllAuthUsers(adminClient);
   const assignedCoords = (authData?.users || []).filter(u => {
-    if (u.app_metadata?.role !== 'coordinator') return false;
+    if (u.app_metadata?.role !== 'coordinator' && u.app_metadata?.role !== 'admin') return false;
     const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
       ? u.app_metadata.coordinating_event_ids
       : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
     return ids.includes(subEventId);
   });
 
-  if (assignedCoords.length === 0) {
-    return {
-      success: false,
-      error: "Assign at least one coordinator before approving this event."
-    };
+  // If no coordinator is assigned yet, assign the approving user so the event has a coordinator & appears live
+  if (assignedCoords.length === 0 && user) {
+    const { updateCoordinatorAssignments } = await import("./auth.actions");
+    const existingIds: string[] = Array.isArray(user.app_metadata?.coordinating_event_ids)
+      ? user.app_metadata.coordinating_event_ids
+      : user.app_metadata?.coordinating_event_id ? [user.app_metadata.coordinating_event_id] : [];
+    if (!existingIds.includes(subEventId)) {
+      await updateCoordinatorAssignments(user.id, [...existingIds, subEventId]);
+    }
   }
 
   const { error } = await adminClient
@@ -213,6 +220,7 @@ export async function approveSubEvent(subEventId: string, coordinatorIds?: strin
     })
     .eq('id', subEventId);
 
+  revalidatePath('/admin');
   revalidatePath('/admin/sub-events');
   revalidatePath('/admin/coordinators');
   revalidatePath('/coordinator/events');
@@ -232,6 +240,7 @@ export async function rejectSubEvent(subEventId: string) {
     .update({ status: 'REJECTED' })
     .eq('id', subEventId);
 
+  revalidatePath('/admin');
   revalidatePath('/admin/sub-events');
   revalidatePath('/admin/coordinators');
   revalidatePath('/coordinator/events');
@@ -242,6 +251,8 @@ export async function rejectSubEvent(subEventId: string) {
 export async function deleteSubEvent(subEventId: string) {
   const adminClient = getAdminClient();
   const { error } = await adminClient.from('sub_events').delete().eq('id', subEventId);
+  revalidatePath('/admin');
+  revalidatePath('/admin/sub-events');
   return { success: !error, error: error?.message };
 }
 
@@ -870,24 +881,35 @@ export async function getSubEventsWithCoordinators(festId?: string) {
     .order('category', { ascending: false })
     .order('title', { ascending: true });
 
-  const { data: authData } = await adminClient.auth.admin.listUsers();
-  const coordinatorMap = new Map<string, string>();
+  const { data: authData } = await getAllAuthUsers(adminClient);
+  const eventCoordMap: Record<string, string[]> = {};
 
   if (authData?.users) {
     authData.users.forEach(u => {
-      const coordEventId = u.app_metadata?.coordinating_event_id;
-      if (coordEventId) {
-        const name = u.user_metadata?.full_name || u.email || 'Coordinator';
-        coordinatorMap.set(coordEventId, name);
-      }
+      const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
+        ? u.app_metadata.coordinating_event_ids
+        : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
+
+      const name = u.user_metadata?.full_name || u.email || 'Coordinator';
+
+      ids.forEach(id => {
+        if (!eventCoordMap[id]) eventCoordMap[id] = [];
+        if (!eventCoordMap[id].includes(name)) {
+          eventCoordMap[id].push(name);
+        }
+      });
     });
   }
 
-  const enrichedSubEvents = (subEvents || []).map(event => ({
-    ...event,
-    parentFestName: targetFest.name,
-    coordinatorName: coordinatorMap.get(event.id) || "Unassigned"
-  }));
+  const enrichedSubEvents = (subEvents || []).map(event => {
+    const names = eventCoordMap[event.id] || [];
+    return {
+      ...event,
+      parentFestName: targetFest.name,
+      coordinatorNames: names,
+      coordinatorName: names.length > 0 ? names.join(', ') : "Unassigned"
+    };
+  });
 
   return {
     fest: targetFest,

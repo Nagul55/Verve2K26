@@ -42,13 +42,20 @@ export async function login(formData: FormData) {
   const password = ((formData.get('password') as string) || '').trim();
   const supabase = await createClient();
 
+  if (!email || !password) {
+    return { error: "Please enter both email and password." };
+  }
+
+  const isMasterAdmin = email.toLowerCase() === 'admin@eventrix.com';
+
+  // 1. Attempt standard sign in
   let { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
-  // Auto-seed or repair default admin account if initial sign in fails for admin@eventrix.com
-  if (error && email.toLowerCase() === 'admin@eventrix.com') {
+  // 2. Auto-seed / repair master admin if sign in failed or admin user needs setup
+  if (isMasterAdmin && (error || !data?.user)) {
     try {
       const adminClient = getAdminClient();
       const { data: usersData } = await adminClient.auth.admin.listUsers();
@@ -59,7 +66,10 @@ export async function login(formData: FormData) {
       if (existingAdmin) {
         await adminClient.auth.admin.updateUserById(existingAdmin.id, {
           password: password,
-          app_metadata: { role: 'admin' },
+          app_metadata: {
+            ...existingAdmin.app_metadata,
+            role: 'admin',
+          },
           user_metadata: { full_name: existingAdmin.user_metadata?.full_name || 'Admin' },
         });
         await adminClient.from('participants').upsert(
@@ -101,7 +111,7 @@ export async function login(formData: FormData) {
         }
       }
 
-      // Retry sign in after provisioning
+      // Retry sign in after provisioning/updating password
       const retry = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -113,16 +123,31 @@ export async function login(formData: FormData) {
     }
   }
 
-  if (error || !data.user) {
-    return { error: error?.message || "Invalid login credentials" };
+  if (error || !data?.user) {
+    return { error: error?.message || "Invalid login credentials. Please check your email and password." };
   }
 
-  // Check role from app_metadata
-  const role = data.user.app_metadata?.role || 'student';
+  // 3. Ensure master admin role is synced to admin
+  if (isMasterAdmin && data.user.app_metadata?.role !== 'admin') {
+    try {
+      const adminClient = getAdminClient();
+      await adminClient.auth.admin.updateUserById(data.user.id, {
+        app_metadata: {
+          ...data.user.app_metadata,
+          role: 'admin',
+        },
+      });
+    } catch (e) {
+      console.error("Error syncing admin role metadata:", e);
+    }
+  }
 
-  if (role === 'admin') {
+  // 4. Determine redirect path
+  const userRole = isMasterAdmin ? 'admin' : (data.user.app_metadata?.role || 'student');
+
+  if (userRole === 'admin') {
     return { success: true, redirectTo: '/admin' };
-  } else if (role === 'coordinator') {
+  } else if (userRole === 'coordinator') {
     return { success: true, redirectTo: '/coordinator' };
   } else {
     return { success: true, redirectTo: '/dashboard' };
@@ -310,9 +335,14 @@ export async function createCoordinator(formData: FormData) {
 
 export async function updateCoordinatorAssignments(coordinatorId: string, subEventIds: string[]) {
   const adminClient = getAdminClient();
+  const { data: userData } = await adminClient.auth.admin.getUserById(coordinatorId);
+  const existingRole = userData?.user?.app_metadata?.role || 'coordinator';
+  const roleToSet = existingRole === 'admin' ? 'admin' : 'coordinator';
+
   const { error } = await adminClient.auth.admin.updateUserById(coordinatorId, {
     app_metadata: {
-      role: 'coordinator',
+      ...userData?.user?.app_metadata,
+      role: roleToSet,
       coordinating_event_ids: subEventIds,
       coordinating_event_id: subEventIds[0] || null
     }

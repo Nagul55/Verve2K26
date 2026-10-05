@@ -18,7 +18,7 @@ export function useFormDraft<T extends Record<string, any>>({
   initialValues,
   excludeKeys = [],
   daysToLive = DEFAULT_TTL_DAYS,
-  showRestoredToast = true,
+  showRestoredToast = false,
 }: UseFormDraftOptions<T>) {
   const [formData, setFormData] = useState<T>(initialValues);
   const [isRestored, setIsRestored] = useState(false);
