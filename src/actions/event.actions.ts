@@ -12,43 +12,41 @@ const getAdminClient = () => {
   );
 };
 
-export const getCachedCoordinators = unstable_cache(
-  async () => {
-    const adminClient = getAdminClient();
-    let allUsers: any[] = [];
-    let page = 1;
-    let hasMore = true;
+export async function getCoordinators() {
+  const adminClient = getAdminClient();
+  let allUsers: any[] = [];
+  let page = 1;
+  let hasMore = true;
 
-    while (hasMore) {
-      const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage: 1000 });
-      if (error || !data?.users || data.users.length === 0) {
-        hasMore = false;
-      } else {
-        allUsers = allUsers.concat(data.users);
-        if (data.users.length < 1000) hasMore = false;
-        else page++;
-      }
+  while (hasMore) {
+    const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error || !data?.users || data.users.length === 0) {
+      hasMore = false;
+    } else {
+      allUsers = allUsers.concat(data.users);
+      if (data.users.length < 1000) hasMore = false;
+      else page++;
     }
-    
-    // Only return processed coordinator objects, dumping the massive user list from memory
-    return allUsers
-      .filter(u => u.app_metadata?.role === 'coordinator')
-      .map(u => {
-        const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
-          ? u.app_metadata.coordinating_event_ids
-          : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
-        return {
-          id: u.id,
-          name: u.user_metadata?.full_name || u.email || 'Coordinator',
-          phone: u.user_metadata?.mobile || u.user_metadata?.phone || u.phone || '',
-          email: u.email || '',
-          event_ids: ids
-        };
-      });
-  },
-  ['coordinators-list'],
-  { revalidate: 3600, tags: ['coordinators'] }
-);
+  }
+  
+  return allUsers
+    .filter(u => u.app_metadata?.role === 'coordinator')
+    .map(u => {
+      const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
+        ? u.app_metadata.coordinating_event_ids
+        : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
+      return {
+        id: u.id,
+        name: u.user_metadata?.full_name || u.email || 'Coordinator',
+        phone: u.user_metadata?.mobile || u.user_metadata?.phone || u.phone || '',
+        email: u.email || '',
+        event_ids: ids
+      };
+    });
+}
+
+export const getCachedCoordinators = getCoordinators;
+
 
 async function getAllAuthUsers(adminClient: any) {
   // Kept for backward compatibility if needed elsewhere, but should be avoided.

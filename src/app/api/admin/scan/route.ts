@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { getCoordinatorAssignedEventIds } from '@/actions/event.actions';
+import { revalidatePath } from 'next/cache';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -23,21 +24,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized access. Please log in.' }, { status: 401 });
     }
     
-    const role = user.app_metadata?.role;
-    const isAdmin = role === 'admin' || role === 'Super Admin';
-    const isCoordinator = role === 'coordinator';
+    // Fetch live user assignment data directly from Supabase Auth admin to bypass any stale JWT or cached state
+    const { assignedEventIds: coordinatorAssignedIds, role: userRole } = await getCoordinatorAssignedEventIds(user.id);
+    const isAdmin = userRole === 'admin' || userRole === 'Super Admin' || user.app_metadata?.role === 'admin' || user.app_metadata?.role === 'Super Admin';
+    const isCoordinator = !isAdmin && (userRole === 'coordinator' || user.app_metadata?.role === 'coordinator');
 
     if (!isAdmin && !isCoordinator) {
       return NextResponse.json({ error: 'Access Denied: You do not have scanner privileges.' }, { status: 403 });
     }
 
-    let coordinatorAssignedIds: string[] = [];
-    if (isCoordinator) {
-      const { assignedEventIds } = await getCoordinatorAssignedEventIds(user.id);
-      coordinatorAssignedIds = assignedEventIds || [];
-      if (coordinatorAssignedIds.length === 0) {
-        return NextResponse.json({ error: 'Access Denied: You have no assigned events to coordinate.' }, { status: 403 });
-      }
+    if (isCoordinator && coordinatorAssignedIds.length === 0) {
+      return NextResponse.json({ error: 'Access Denied: You have no assigned events to coordinate.' }, { status: 403 });
     }
 
     // 1. Resolve Target Participant Profile
@@ -56,7 +53,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Fallback: If not found by participant_id, try searching register_number or raw code
+    // Fallback: If not found by participant_id, try searching register_number or raw code or email
     if (!participantProfile && (pid || rawCode)) {
       const searchValue = pid || rawCode;
       const { data: partData } = await supabaseAdmin
@@ -122,32 +119,46 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Access Denied: No specific sub-events found for this participant.' }, { status: 404 });
     }
 
-    // 3. Match Subevent & Registration according to QR Payload & Coordinator Authorization
+    // 4. Resolve Target Sub-Event & Registration Item
     let selectedRegItem: any = null;
 
     if (qrEventId) {
-      // Event ID explicitly specified in QR code
+      // Event ID explicitly specified in QR payload
       const matched = regSubEvents.find((rse: any) => rse.sub_event_id === qrEventId);
       if (!matched) {
         return NextResponse.json({ error: 'Access Denied: Student is not registered for this specific event.' }, { status: 404 });
       }
 
       if (isCoordinator && !coordinatorAssignedIds.includes(qrEventId)) {
-        return NextResponse.json({ error: 'WRONG EVENT: This ticket is for an event you are not coordinating.' }, { status: 403 });
+        return NextResponse.json({ error: 'Not authorized for this event.' }, { status: 403 });
       }
 
       selectedRegItem = matched;
     } else {
-      // Event ID NOT specified in QR code -> Resolve through database relationship
+      // Event ID NOT specified in QR code -> Resolve through coordinator permissions and attendance state
+      let allowedMatches = regSubEvents;
       if (isCoordinator) {
-        const coordMatches = regSubEvents.filter((rse: any) => coordinatorAssignedIds.includes(rse.sub_event_id));
-        if (coordMatches.length === 0) {
-          return NextResponse.json({ error: 'WRONG EVENT: Participant is registered, but not for any event assigned to you.' }, { status: 403 });
+        allowedMatches = regSubEvents.filter((rse: any) => coordinatorAssignedIds.includes(rse.sub_event_id));
+        if (allowedMatches.length === 0) {
+          return NextResponse.json({ error: 'Participant is not registered for any event assigned to you.' }, { status: 403 });
         }
-        selectedRegItem = coordMatches[0];
+      }
+
+      if (allowedMatches.length === 1) {
+        selectedRegItem = allowedMatches[0];
       } else {
-        // Admin mode -> Pick first registered event
-        selectedRegItem = regSubEvents[0];
+        // Participant registered for multiple allowed sub-events -> Pick the one NOT YET attended (Pending)
+        const subEventIds = allowedMatches.map((r: any) => r.sub_event_id);
+        const { data: existingAttList } = await supabaseAdmin
+          .from('attendance')
+          .select('event_id')
+          .eq('participant_id', targetParticipantId)
+          .in('event_id', subEventIds);
+
+        const attendedEventIds = new Set((existingAttList || []).map(a => a.event_id));
+        const pendingMatch = allowedMatches.find((rse: any) => !attendedEventIds.has(rse.sub_event_id));
+
+        selectedRegItem = pendingMatch || allowedMatches[0];
       }
     }
 
@@ -155,24 +166,25 @@ export async function POST(req: Request) {
     const targetSubEventId = selectedRegItem.sub_event_id;
     const targetRegistrationId = selectedRegItem.registration_id;
 
-    // 4. Check Check-In Status (Prevent Duplicate Scans)
+    // 5. Check Check-In Status (Prevent Duplicate Scans for THIS event)
     const { data: existingAttendance } = await supabaseAdmin
       .from('attendance')
-      .select('attendance_id, created_at')
+      .select('attendance_id, created_at, scanned_at')
       .eq('participant_id', targetParticipantId)
       .eq('event_id', targetSubEventId)
       .maybeSingle();
 
     if (existingAttendance) {
-      const scanTime = existingAttendance.created_at
-        ? new Date(existingAttendance.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      const timeVal = existingAttendance.scanned_at || existingAttendance.created_at;
+      const scanTime = timeVal
+        ? new Date(timeVal).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : '';
       return NextResponse.json({ 
-        error: `Warning: Ticket already checked in! Participant was scanned at ${scanTime || 'an earlier time'}.` 
+        error: `Ticket already checked in! Participant was scanned at ${scanTime || 'an earlier time'} for ${targetSubEvent.title}.` 
       }, { status: 400 });
     }
 
-    // 5. Record Attendance Atomically
+    // 6. Record Attendance Atomically
     const { error: attendanceError } = await supabaseAdmin
       .from('attendance')
       .insert([{
@@ -190,15 +202,27 @@ export async function POST(req: Request) {
         attendanceError.message?.toLowerCase().includes('unique') ||
         attendanceError.message?.toLowerCase().includes('duplicate')
       ) {
-        return NextResponse.json({ error: 'Warning: Ticket already checked in! Duplicate scan detected.' }, { status: 400 });
+        return NextResponse.json({ error: `Ticket already checked in! Duplicate scan detected for ${targetSubEvent.title}.` }, { status: 400 });
       }
       console.error('Attendance Insertion Error:', attendanceError);
       return NextResponse.json({ error: 'Failed to record attendance in database.' }, { status: 500 });
     }
 
+    // Revalidate paths to update Present/Pending statistics in real-time
+    try {
+      revalidatePath('/coordinator/events');
+      revalidatePath('/coordinator/attendance');
+      revalidatePath('/coordinator/participants');
+      revalidatePath('/coordinator/scanner');
+      revalidatePath('/coordinator');
+      revalidatePath('/admin');
+    } catch (e) {
+      console.warn("Revalidation warning in scan route:", e);
+    }
+
     return NextResponse.json({
       success: true,
-      message: `Check-in successful for ${targetSubEvent.title}!`,
+      message: `Attendance marked successfully for ${targetSubEvent.title}!`,
       participantName: participantProfile.full_name || 'Verified Participant',
       registerNo: participantProfile.register_number || participantProfile.email || targetParticipantId.slice(0, 8),
       eventName: targetSubEvent.title,
@@ -213,3 +237,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: err.message || 'Internal Server Error during validation' }, { status: 500 });
   }
 }
+

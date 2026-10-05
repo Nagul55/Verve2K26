@@ -18,9 +18,12 @@ export async function sendTicketEmail(participantEmail: string, participantName:
       selectedEvents.map(async (event) => {
         // Generate a secure payload (in production this would be signed)
         const payload = JSON.stringify({
-          participant: participantName,
+          pid: participantEmail,
           email: participantEmail,
-          eventId: event.event_id,
+          participant: participantName,
+          event_id: event.event_id || event.sub_event_id || event.id,
+          sub_event_id: event.event_id || event.sub_event_id || event.id,
+          eventId: event.event_id || event.sub_event_id || event.id,
           eventName: event.name
         });
         

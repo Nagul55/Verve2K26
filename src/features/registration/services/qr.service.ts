@@ -4,10 +4,15 @@ import QRCode from 'qrcode';
  * Generates a Base64 encoded PNG of the QR code.
  * The payload contains the participant ID which the Admin scanner will read.
  */
-export const generateTicketQR = async (participantId: string): Promise<string> => {
+export const generateTicketQR = async (participantId: string, subEventId?: string): Promise<string> => {
   try {
     // The data that will be read by the scanner
-    const payload = JSON.stringify({ pid: participantId });
+    const payload = JSON.stringify({ 
+      pid: participantId, 
+      event_id: subEventId || null,
+      sub_event_id: subEventId || null,
+      eventId: subEventId || null
+    });
     
     // Returns a base64 Data URI (data:image/png;base64,...)
     const qrDataUri = await QRCode.toDataURL(payload, {

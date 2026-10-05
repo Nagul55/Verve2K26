@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { QrCode, Scan, CheckCircle2, XCircle, UserCheck, Sparkles, Building2, MapPin } from "lucide-react";
+import { QrCode, Scan, CheckCircle2, XCircle, UserCheck, Sparkles, Building2, MapPin, Search } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
 
@@ -14,6 +14,8 @@ interface ScannerClientProps {
 export default function ScannerClient({ assignedEventId, assignedEventIds = [], isAdmin = false }: ScannerClientProps) {
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
+  const [manualQuery, setManualQuery] = useState("");
+  const [isSubmittingManual, setIsSubmittingManual] = useState(false);
 
   const validAssignedIds = assignedEventIds.length > 0 
     ? assignedEventIds 
@@ -89,6 +91,19 @@ export default function ScannerClient({ assignedEventId, assignedEventIds = [], 
     }
 
     verifyTicketApi({ pid, event_id: eventId, registration_id: registrationId, rawCode: payload.rawCode });
+  };
+
+  const handleManualSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = manualQuery.trim();
+    if (!query) {
+      toast.error("Please enter a Register Number, Email, or Ticket ID");
+      return;
+    }
+
+    setIsSubmittingManual(true);
+    await verifyTicketApi({ rawCode: query, pid: query });
+    setIsSubmittingManual(false);
   };
 
   const verifyTicketApi = async (bodyPayload: any) => {
@@ -237,12 +252,37 @@ export default function ScannerClient({ assignedEventId, assignedEventIds = [], 
               <QrCode className="w-12 h-12 text-eventrix-muted mb-4" />
               <p className="text-sm font-bold text-eventrix-muted">Ready to scan student ticket QR code...</p>
               <p className="text-xs text-eventrix-muted/80 mt-1 max-w-[220px]">
-                Click "Activate Scanner Camera" to begin validating tickets.
+                Click "Activate Scanner Camera" or perform manual lookup below.
               </p>
             </div>
           )}
         </div>
+
+        {/* Manual Lookup Card */}
+        <div className="border border-[#D9D9DF] bg-[#F8F8FC] p-5 rounded-md">
+          <h3 className="font-bold text-xs text-eventrix-black mb-3 uppercase tracking-wider flex items-center gap-2">
+            <Search className="w-4 h-4 text-eventrix-lavender" /> Manual Attendance Lookup
+          </h3>
+          <form onSubmit={handleManualSearch} className="flex gap-2">
+            <input 
+              type="text" 
+              value={manualQuery}
+              onChange={(e) => setManualQuery(e.target.value)}
+              placeholder="Enter Register No or Email..." 
+              className="flex-1 border border-[#D9D9DF] rounded px-3 py-2 text-xs focus:outline-none focus:border-eventrix-lavender bg-white"
+            />
+            <button 
+              type="submit"
+              disabled={isSubmittingManual}
+              className="bg-eventrix-black text-white px-4 py-2 rounded font-bold text-xs uppercase tracking-wider hover:bg-eventrix-lavender hover:text-black transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {isSubmittingManual ? 'Checking...' : 'Verify'}
+            </button>
+          </form>
+        </div>
+
       </div>
     </div>
   );
 }
+
