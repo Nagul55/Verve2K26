@@ -29,6 +29,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'You must select exactly 2 events (1 Technical, 1 Non-Technical).' }, { status: 400 });
     }
 
+    // 0. Server-Side Fest Registration Deadline Check
+    if (selectedEventIds && selectedEventIds.length > 0) {
+      const { data: subEvent } = await supabase
+        .from('sub_events')
+        .select('fest_id, fests(registration_closes_at)')
+        .eq('id', selectedEventIds[0])
+        .maybeSingle();
+
+      const deadline = (subEvent as any)?.fests?.registration_closes_at;
+      if (deadline && new Date() >= new Date(deadline)) {
+        return NextResponse.json({ error: 'Registration for this fest has closed.' }, { status: 400 });
+      }
+    }
+
     // 1. Insert Participant
     const { data: participantData, error: participantError } = await supabase
       .from('participants')

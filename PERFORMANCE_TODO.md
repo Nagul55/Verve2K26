@@ -6,11 +6,15 @@ This document contains manual dashboard configuration steps and the final audit 
 
 ## 🛠️ Manual Action Steps for Administrator
 
-### 1. Run Database Performance SQL
+### 1. Run Database Migration & Performance SQL (REQUIRED)
 1. Open the [Supabase Dashboard](https://supabase.com/dashboard).
 2. Select your Eventrix project and navigate to the **SQL Editor**.
-3. Copy and execute all SQL statements from `supabase/performance.sql` (located at [`supabase/performance.sql`](file:///c:/Users/nagul/Documents/GitHub/Verve2K26/supabase/performance.sql)).
-   - This creates missing indexes on high-traffic foreign keys (`registrations`, `team_members`, `attendance`, `sub_events`).
+3. Run the following SQL migration command to add the `registration_closes_at` column:
+   ```sql
+   ALTER TABLE public.fests ADD COLUMN IF NOT EXISTS registration_closes_at TIMESTAMPTZ;
+   ```
+4. Copy and execute all SQL statements from `supabase/performance.sql` (located at [`supabase/performance.sql`](file:///c:/Users/nagul/Documents/GitHub/Verve2K26/supabase/performance.sql)).
+   - This adds the `registration_closes_at` column and missing indexes on high-traffic foreign keys (`registrations`, `team_members`, `attendance`, `sub_events`).
    - This optimizes RLS policies using `(SELECT auth.uid())` to prevent redundant policy evaluations per row.
 
 ### 2. Vercel Function Region Configuration
