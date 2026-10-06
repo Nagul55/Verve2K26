@@ -10,12 +10,11 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
 async function main() {
-  const { data, error } = await adminClient.rpc('check_and_reserve_sub_events_capacity', {
-    p_sub_event_ids: ['4d6554ef-b13d-40ca-9aed-04487b570611'],
-    p_requested_seats: [1]
-  });
-
-  console.log('RPC Call Output:', data, 'Error:', error);
+  const testNames = ['exec_sql', 'exec', 'run_sql', 'sql', 'query'];
+  for (const name of testNames) {
+    const { data, error } = await adminClient.rpc(name, { query: 'SELECT 1;' });
+    console.log(`RPC '${name}':`, data, error?.message);
+  }
 }
 
 main().catch(console.error);
