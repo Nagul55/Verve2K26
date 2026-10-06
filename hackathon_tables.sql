@@ -1,0 +1,37 @@
+-- Add event_type to fests
+ALTER TABLE fests ADD COLUMN IF NOT EXISTS event_type VARCHAR(50) DEFAULT 'fest';
+ALTER TABLE fests ADD COLUMN IF NOT EXISTS logo_url TEXT;
+
+-- Create hackathons table
+CREATE TABLE IF NOT EXISTS hackathons (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id UUID REFERENCES fests(id) ON DELETE CASCADE,
+    tagline VARCHAR(255),
+    description TEXT,
+    registration_opens_at TIMESTAMPTZ,
+    registration_closes_at TIMESTAMPTZ,
+    hackathon_starts_at TIMESTAMPTZ NOT NULL,
+    hackathon_ends_at TIMESTAMPTZ NOT NULL,
+    maximum_teams INT NOT NULL,
+    minimum_team_size INT NOT NULL,
+    maximum_team_size INT NOT NULL,
+    venue VARCHAR(255),
+    coordinator_id UUID REFERENCES auth.users(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create hackathon_problem_statements table
+CREATE TABLE IF NOT EXISTS hackathon_problem_statements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    hackathon_id UUID REFERENCES hackathons(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Allow public read access to fests and hackathons
+-- Enable RLS and setup policies as per your project's security rules
+-- For now we assume policies will be handled or service role is used for backend actions
