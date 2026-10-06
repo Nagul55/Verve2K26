@@ -119,8 +119,21 @@ export async function createFest(
     payload.registration_closes_at = new Date(registrationClosesAt).toISOString();
   }
 
+  const isColumnError = (err: any) => {
+    if (!err) return false;
+    const msg = err.message || '';
+    const code = err.code || '';
+    return (
+      code === '42703' ||
+      code === 'PGRST204' ||
+      code === 'PGRST100' ||
+      msg.includes('registration_closes_at') ||
+      msg.includes('schema cache')
+    );
+  };
+
   let { data, error } = await adminClient.from('fests').insert(payload);
-  if (error && error.code === '42703') {
+  if (error && isColumnError(error)) {
     delete payload.registration_closes_at;
     const retry = await adminClient.from('fests').insert(payload);
     error = retry.error;
@@ -153,8 +166,21 @@ export async function updateFest(
     payload.registration_closes_at = new Date(registrationClosesAt).toISOString();
   }
 
+  const isColumnError = (err: any) => {
+    if (!err) return false;
+    const msg = err.message || '';
+    const code = err.code || '';
+    return (
+      code === '42703' ||
+      code === 'PGRST204' ||
+      code === 'PGRST100' ||
+      msg.includes('registration_closes_at') ||
+      msg.includes('schema cache')
+    );
+  };
+
   let { error } = await adminClient.from('fests').update(payload).eq('id', festId);
-  if (error && error.code === '42703') {
+  if (error && isColumnError(error)) {
     delete payload.registration_closes_at;
     const retry = await adminClient.from('fests').update(payload).eq('id', festId);
     error = retry.error;
