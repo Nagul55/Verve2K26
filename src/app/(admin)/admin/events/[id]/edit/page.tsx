@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getFestById, updateFest } from "@/actions/event.actions";
 import { toast } from "sonner";
+import { DeadlinePicker } from "@/components/DeadlinePicker";
 
 export default function AdminEditFestPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -31,20 +32,12 @@ export default function AdminEditFestPage({ params }: { params: Promise<{ id: st
         return;
       }
 
-      let formattedDate = "";
-      if (fest.registration_closes_at) {
-        const d = new Date(fest.registration_closes_at);
-        // Format as YYYY-MM-THH:mm for datetime-local
-        const pad = (n: number) => n.toString().padStart(2, '0');
-        formattedDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-      }
-
       setFormData({
         name: fest.name || "",
         description: fest.description || "",
         min_technical: String(fest.min_technical ?? 1),
         min_non_technical: String(fest.min_non_technical ?? 1),
-        registration_closes_at: formattedDate
+        registration_closes_at: fest.registration_closes_at || ""
       });
       setIsLoading(false);
     }
@@ -129,10 +122,11 @@ export default function AdminEditFestPage({ params }: { params: Promise<{ id: st
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Min. Non-Technical Events Required</label>
                 <input type="number" min="0" name="min_non_technical" value={formData.min_non_technical} onChange={handleChange} required className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" />
               </div>
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Registration Closes At (Deadline)</label>
-                <input type="datetime-local" name="registration_closes_at" value={formData.registration_closes_at} onChange={handleChange} className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" />
-                <p className="text-xs text-eventrix-muted">Once this deadline passes, registration for all sub-events will be closed.</p>
+              <div className="md:col-span-2">
+                <DeadlinePicker
+                  value={formData.registration_closes_at}
+                  onChange={(isoValue) => setFormData(prev => ({ ...prev, registration_closes_at: isoValue || "" }))}
+                />
               </div>
             </div>
           </div>

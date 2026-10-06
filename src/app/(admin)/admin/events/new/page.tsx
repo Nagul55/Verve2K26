@@ -7,6 +7,7 @@ import Link from "next/link";
 import { createFest } from "@/actions/event.actions";
 import { toast } from "sonner";
 import { useFormDraft } from "@/hooks/useFormDraft";
+import { DeadlinePicker } from "@/components/DeadlinePicker";
 
 export default function CreateFestPage() {
   const router = useRouter();
@@ -95,10 +96,11 @@ export default function CreateFestPage() {
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Min. Non-Technical Events Required</label>
                 <input type="number" min="0" name="min_non_technical" value={formData.min_non_technical} onChange={handleChange} required className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" />
               </div>
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Registration Closes At (Deadline)</label>
-                <input type="datetime-local" name="registration_closes_at" value={formData.registration_closes_at} onChange={handleChange} className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" />
-                <p className="text-xs text-eventrix-muted">Once this deadline passes, registration for all sub-events will be closed.</p>
+              <div className="md:col-span-2">
+                <DeadlinePicker
+                  value={formData.registration_closes_at}
+                  onChange={(isoValue) => setFormData(prev => ({ ...prev, registration_closes_at: isoValue || "" }))}
+                />
               </div>
             </div>
           </div>

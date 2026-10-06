@@ -67,6 +67,7 @@ export default async function Dashboard() {
                   minTech={fest.min_technical}
                   minNonTech={fest.min_non_technical}
                   imageUrl={fest.imageUrl || undefined}
+                  registrationClosesAt={fest.registration_closes_at}
                 />
               ))}
             </div>

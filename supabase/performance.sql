@@ -24,6 +24,9 @@ CREATE INDEX IF NOT EXISTS idx_sub_events_created_at ON sub_events(created_at DE
 
 CREATE INDEX IF NOT EXISTS idx_fests_created_at ON fests(created_at DESC);
 
+-- Fest Registration Deadline Column Schema Migration
+ALTER TABLE fests ADD COLUMN IF NOT EXISTS registration_closes_at TIMESTAMPTZ;
+
 -- Teams & Team Members Lookup Indexes
 CREATE INDEX IF NOT EXISTS idx_teams_event_id ON teams(event_id);
 CREATE INDEX IF NOT EXISTS idx_teams_leader_id ON teams(leader_participant_id);

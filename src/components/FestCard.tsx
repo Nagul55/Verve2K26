@@ -10,9 +10,12 @@ interface FestCardProps {
   minTech: number;
   minNonTech: number;
   imageUrl?: string;
+  registrationClosesAt?: string;
 }
 
-export function FestCard({ id, name, description, minTech, minNonTech, imageUrl }: FestCardProps) {
+export function FestCard({ id, name, description, minTech, minNonTech, imageUrl, registrationClosesAt }: FestCardProps) {
+  const isClosed = registrationClosesAt ? new Date() >= new Date(registrationClosesAt) : false;
+
   return (
     <Link href={`/events/${id}`} className="group block h-full p-2 -m-2">
       <div className="bg-white rounded-lg border-2 border-[#D9D9DF] overflow-hidden transition-all duration-300 relative flex flex-col h-full group-hover:border-eventrix-black group-hover:-translate-y-1.5 group-hover:-translate-x-1.5 group-hover:shadow-[6px_6px_0px_0px_rgba(8,10,18,1)]">
@@ -45,8 +48,15 @@ export function FestCard({ id, name, description, minTech, minNonTech, imageUrl 
             {name}
           </h3>
           
-          <div className="absolute top-4 left-4 bg-white border-2 border-eventrix-black text-eventrix-black text-[10px] font-black px-3 py-1 uppercase tracking-widest flex items-center gap-1.5 shadow-[3px_3px_0px_0px_rgba(8,10,18,1)] z-20">
-            <Sparkles className="w-3 h-3 text-eventrix-lavender" fill="currentColor" /> FEST
+          <div className="absolute top-4 left-4 flex items-center gap-2 z-20">
+            <div className="bg-white border-2 border-eventrix-black text-eventrix-black text-[10px] font-black px-3 py-1 uppercase tracking-widest flex items-center gap-1.5 shadow-[3px_3px_0px_0px_rgba(8,10,18,1)]">
+              <Sparkles className="w-3 h-3 text-eventrix-lavender" fill="currentColor" /> FEST
+            </div>
+            {isClosed && (
+              <div className="bg-red-500 text-white border-2 border-eventrix-black text-[10px] font-black px-2.5 py-1 uppercase tracking-widest shadow-[3px_3px_0px_0px_rgba(8,10,18,1)]">
+                CLOSED
+              </div>
+            )}
           </div>
         </div>
         
