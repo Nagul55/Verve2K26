@@ -284,7 +284,7 @@ export async function createCoordinator(formData: FormData) {
     password,
     email_confirm: true,
     app_metadata: { role: 'coordinator', coordinating_event_ids: initialSubEventIds, coordinating_event_id: subEventId || null },
-    user_metadata: { full_name: fullName, gender: gender }
+    user_metadata: { full_name: fullName, gender: gender, mobile: mobile, phone: mobile }
   });
   
   if (error) {

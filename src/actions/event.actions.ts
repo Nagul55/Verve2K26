@@ -29,17 +29,35 @@ export async function getCoordinators() {
       else page++;
     }
   }
-  
+
+  // Query participant profiles to retrieve mobile numbers saved in database
+  const { data: partData } = await adminClient
+    .from('participants')
+    .select('participant_id, email, mobile');
+
+  const partMap = new Map<string, string>();
+  const emailMap = new Map<string, string>();
+  if (partData) {
+    partData.forEach(p => {
+      if (p.participant_id && p.mobile) partMap.set(p.participant_id, String(p.mobile).trim());
+      if (p.email && p.mobile) emailMap.set(String(p.email).toLowerCase().trim(), String(p.mobile).trim());
+    });
+  }
+
   return allUsers
     .filter(u => u.app_metadata?.role === 'coordinator')
     .map(u => {
       const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
         ? u.app_metadata.coordinating_event_ids
         : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
+
+      const phoneFromDb = partMap.get(u.id) || (u.email ? emailMap.get(u.email.toLowerCase().trim()) : '') || '';
+      const phoneFromMeta = u.user_metadata?.mobile || u.user_metadata?.phone || u.user_metadata?.phone_number || u.user_metadata?.contact || u.user_metadata?.whatsapp || u.phone || '';
+
       return {
         id: u.id,
         name: u.user_metadata?.full_name || u.user_metadata?.name || u.email || 'Coordinator',
-        phone: u.user_metadata?.mobile || u.user_metadata?.phone || u.user_metadata?.phone_number || u.user_metadata?.contact || u.user_metadata?.whatsapp || u.phone || '',
+        phone: phoneFromDb || phoneFromMeta,
         email: u.email || '',
         event_ids: ids
       };

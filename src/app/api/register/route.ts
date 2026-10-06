@@ -29,17 +29,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'You must select exactly 2 events (1 Technical, 1 Non-Technical).' }, { status: 400 });
     }
 
-    // 0. Server-Side Fest Registration Deadline Check
+    // 0. Server-Side Fest Registration Deadline Check & Capacity Check
     if (selectedEventIds && selectedEventIds.length > 0) {
-      const { data: subEvent } = await supabase
+      const { data: subEventsInfo } = await supabase
         .from('sub_events')
-        .select('fest_id, fests(registration_closes_at)')
-        .eq('id', selectedEventIds[0])
-        .maybeSingle();
+        .select('id, title, capacity, fest_id, fests(registration_closes_at)')
+        .in('id', selectedEventIds);
 
-      const deadline = (subEvent as any)?.fests?.registration_closes_at;
+      const deadline = (subEventsInfo?.[0] as any)?.fests?.registration_closes_at;
       if (deadline && new Date() >= new Date(deadline)) {
         return NextResponse.json({ error: 'Registration for this fest has closed.' }, { status: 400 });
+      }
+
+      for (const sub of (subEventsInfo || [])) {
+        const { count: occupiedCount } = await supabase
+          .from('registration_sub_events')
+          .select('*', { count: 'exact', head: true })
+          .eq('sub_event_id', sub.id);
+
+        const hasCapacity = typeof sub.capacity === 'number' && sub.capacity > 0;
+        if (hasCapacity && (occupiedCount || 0) >= sub.capacity) {
+          return NextResponse.json({ error: `Registration for "${sub.title}" is closed. All seats have been filled (${occupiedCount}/${sub.capacity}).` }, { status: 400 });
+        }
       }
     }
 
