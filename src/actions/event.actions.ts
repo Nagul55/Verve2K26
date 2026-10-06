@@ -38,8 +38,8 @@ export async function getCoordinators() {
         : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
       return {
         id: u.id,
-        name: u.user_metadata?.full_name || u.email || 'Coordinator',
-        phone: u.user_metadata?.mobile || u.user_metadata?.phone || u.phone || '',
+        name: u.user_metadata?.full_name || u.user_metadata?.name || u.email || 'Coordinator',
+        phone: u.user_metadata?.mobile || u.user_metadata?.phone || u.user_metadata?.phone_number || u.user_metadata?.contact || u.user_metadata?.whatsapp || u.phone || '',
         email: u.email || '',
         event_ids: ids
       };

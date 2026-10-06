@@ -343,13 +343,19 @@ export function EventDetailsModal({
 
           {/* Contact Information */}
           {(() => {
-            const coords = event.coordinatorDetails && event.coordinatorDetails.length > 0
+            const rawCoords = event.coordinatorDetails && event.coordinatorDetails.length > 0
               ? event.coordinatorDetails
               : parsed.contact && (parsed.contact.name || parsed.contact.phone || parsed.contact.email || parsed.contact.raw)
               ? [parsed.contact]
               : [];
 
-            if (coords.length === 0) return null;
+            if (rawCoords.length === 0) return null;
+
+            const coords = rawCoords.map((c: any) => ({
+              name: c.name || 'Coordinator',
+              phone: c.phone || parsed.contact?.phone || '',
+              email: c.email || parsed.contact?.email || ''
+            }));
 
             return (
               <div className="space-y-2 pt-4 border-t border-[#D9D9DF]">
@@ -358,29 +364,31 @@ export function EventDetailsModal({
                 </h3>
                 <div className="space-y-2">
                   {coords.map((c: any, i: number) => (
-                    <div key={i} className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-medium bg-[#F8F8FC] p-3 rounded-md border border-[#EBEBF0]">
-                      {c.name && (
-                        <div>
-                          <span className="text-[10px] font-bold text-eventrix-muted uppercase block">Coordinator</span>
-                          <span className="text-eventrix-black font-semibold">{c.name}</span>
-                        </div>
-                      )}
-                      {c.phone && (
-                        <div>
-                          <span className="text-[10px] font-bold text-eventrix-muted uppercase block">Phone</span>
-                          <a href={`tel:${c.phone}`} className="text-eventrix-black hover:text-eventrix-lavender font-semibold underline decoration-dotted">
-                            {c.phone}
+                    <div key={i} className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-medium bg-[#F8F8FC] p-3.5 rounded-md border border-[#EBEBF0]">
+                      <div>
+                        <span className="text-[10px] font-bold text-eventrix-muted uppercase block mb-0.5">Coordinator</span>
+                        <span className="text-eventrix-black font-semibold">{c.name}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-eventrix-muted uppercase block mb-0.5">Phone / Contact</span>
+                        {c.phone ? (
+                          <a href={`tel:${c.phone}`} className="text-eventrix-black hover:text-eventrix-lavender font-semibold underline decoration-dotted flex items-center gap-1">
+                            <Phone className="w-3 h-3 text-eventrix-lavender inline" /> {c.phone}
                           </a>
-                        </div>
-                      )}
-                      {c.email && (
-                        <div>
-                          <span className="text-[10px] font-bold text-eventrix-muted uppercase block">Email</span>
+                        ) : (
+                          <span className="text-eventrix-muted font-normal">Not Provided</span>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-eventrix-muted uppercase block mb-0.5">Email</span>
+                        {c.email ? (
                           <a href={`mailto:${c.email}`} className="text-eventrix-black hover:text-eventrix-lavender font-semibold underline decoration-dotted truncate block">
                             {c.email}
                           </a>
-                        </div>
-                      )}
+                        ) : (
+                          <span className="text-eventrix-muted font-normal">Not Provided</span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
