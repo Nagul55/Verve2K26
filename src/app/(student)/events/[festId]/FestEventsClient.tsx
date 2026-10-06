@@ -77,8 +77,8 @@ export function FestEventsClient({
                   </span>
                 ) : (
                   timeLeftStr && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest bg-purple-100 text-purple-700 px-3 py-1 rounded border border-purple-200 font-mono">
-                      <Timer className="w-4 h-4" /> Closes in: {timeLeftStr}
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest bg-purple-100 text-purple-700 px-3.5 py-1.5 rounded-md border border-purple-200 font-mono shadow-sm">
+                      <Timer className="w-4 h-4" /> CLOSES IN: {timeLeftStr}
                     </span>
                   )
                 )

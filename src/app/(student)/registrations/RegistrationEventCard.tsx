@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Calendar, MapPin, Users, ChevronDown, ChevronUp } from "lucide-react";
 import { TeamManager } from "./TeamManager";
 
@@ -12,21 +12,36 @@ interface RegistrationEventCardProps {
   location: string;
   participationType: string;
   teamDetails: any | null;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 export function RegistrationEventCard({ 
-  number, category, title, date, location, participationType, teamDetails 
+  number, 
+  category, 
+  title, 
+  date, 
+  location, 
+  participationType, 
+  teamDetails,
+  isExpanded = false,
+  onToggleExpand
 }: RegistrationEventCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
   const isTeam = participationType === 'Team';
 
+  const handleClick = () => {
+    if (onToggleExpand) {
+      onToggleExpand();
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-0 border border-[#D9D9DE] rounded-[4px] bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div className="flex flex-col gap-0 border border-[#D9D9DE] rounded-[4px] bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow h-auto self-start">
       
-      {/* Event Header Card (Clickable if Team Event) */}
+      {/* Event Header Card (Clickable) */}
       <div 
-        onClick={() => isTeam && setIsExpanded(!isExpanded)}
-        className={`relative w-full p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${isTeam ? 'cursor-pointer hover:bg-[#f8f8fc]' : ''}`}
+        onClick={handleClick}
+        className={`relative w-full p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 cursor-pointer hover:bg-[#f8f8fc] transition-colors`}
       >
         <div className="absolute top-0 bottom-0 left-0 w-[4px] bg-[#080A12]"></div>
         

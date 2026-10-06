@@ -21,6 +21,8 @@ import Link from "next/link";
 import { getSubEventById, updateSubEvent } from "@/actions/event.actions";
 import { toast } from "sonner";
 import { EventrixSelect } from "@/components/ui/EventrixSelect";
+import { EventrixDatePicker } from "@/components/ui/EventrixDatePicker";
+import { EventrixTimePicker } from "@/components/ui/EventrixTimePicker";
 import { EventrixTextarea } from "@/components/ui/EventrixTextarea";
 import EventrixResourceUploader, { EventResourceItem } from "@/components/ui/EventrixResourceUploader";
 
@@ -308,12 +310,10 @@ export default function AdminEditSubEventPage({ params }: { params: Promise<{ id
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5" /> Event Date
                 </label>
-                <input 
-                  type="date" 
-                  name="date" 
-                  value={formData.date} 
-                  onChange={handleChange} 
-                  className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
+                <EventrixDatePicker
+                  value={formData.date}
+                  onChange={(val) => setFormData(prev => ({ ...prev, date: val }))}
+                  placeholder="Select Date"
                 />
               </div>
 
@@ -321,12 +321,11 @@ export default function AdminEditSubEventPage({ params }: { params: Promise<{ id
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" /> Start Time
                 </label>
-                <input 
-                  type="time" 
-                  name="time" 
-                  value={formData.time} 
-                  onChange={handleChange} 
-                  className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
+                <EventrixTimePicker
+                  value={formData.time}
+                  onChange={(val) => setFormData(prev => ({ ...prev, time: val }))}
+                  outputFormat="12h"
+                  placeholder="Select Time"
                 />
               </div>
 

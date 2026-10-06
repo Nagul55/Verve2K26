@@ -112,17 +112,12 @@ export function EventStatusBadge({
         </span>
       )}
 
-      {/* Timer Badge */}
-      {isClosed ? (
+      {/* Closed Badge */}
+      {isClosed && (
         <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest bg-red-100 text-red-700 px-2.5 py-1 rounded border border-red-200">
           <XCircle className="w-3 h-3" /> Registration Closed
         </span>
-      ) : timeLeft ? (
-        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest bg-purple-100 text-purple-700 px-2.5 py-1 rounded border border-purple-200 font-mono">
-          <Timer className="w-3 h-3" />
-          Closes in: {timeLeft.days > 0 && `${timeLeft.days}d `}{pad(timeLeft.hours)}h {pad(timeLeft.minutes)}m {pad(timeLeft.seconds)}s
-        </span>
-      ) : null}
+      )}
     </div>
   );
 }

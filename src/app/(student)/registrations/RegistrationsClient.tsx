@@ -6,6 +6,7 @@ import { RegistrationEventCard } from "./RegistrationEventCard";
 
 export function RegistrationsClient({ festsMap }: { festsMap: Record<string, any[]> }) {
   const [expandedFest, setExpandedFest] = useState<string | null>(null);
+  const [expandedRegistrationId, setExpandedRegistrationId] = useState<string | null>(null);
 
   const toggleFest = (festName: string) => {
     setExpandedFest(expandedFest === festName ? null : festName);
@@ -15,7 +16,6 @@ export function RegistrationsClient({ festsMap }: { festsMap: Record<string, any
     <div className="space-y-8">
       {Object.entries(festsMap).map(([festName, events]) => {
         const isExpanded = expandedFest === festName;
-        // Find if fest has an image in events (we don't pass fest objects right now, but we can default to purple background)
         const techCount = events.filter(e => e.category === 'Technical').length;
         const nonTechCount = events.filter(e => e.category === 'Non-Technical').length;
 
@@ -62,7 +62,7 @@ export function RegistrationsClient({ festsMap }: { festsMap: Record<string, any
             {/* EXPANDED EVENTS GRID */}
             {isExpanded && (
               <div className="pl-0 md:pl-8 border-l-0 md:border-l-4 border-[#A98BFF]/30 space-y-4 animate-in slide-in-from-top-4 fade-in">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                   {events.map((reg, index) => (
                     <RegistrationEventCard
                       key={reg.id}
@@ -73,6 +73,8 @@ export function RegistrationsClient({ festsMap }: { festsMap: Record<string, any
                       location={reg.location}
                       participationType={reg.participation_type}
                       teamDetails={reg.teamDetails}
+                      isExpanded={expandedRegistrationId === reg.id}
+                      onToggleExpand={() => setExpandedRegistrationId(expandedRegistrationId === reg.id ? null : reg.id)}
                     />
                   ))}
                 </div>
