@@ -745,7 +745,10 @@ export async function getParticipantRegistrations() {
           date,
           location,
           time,
-          participation_type
+          participation_type,
+          min_candidates,
+          max_candidates,
+          capacity
         )
       )
     `)
@@ -769,7 +772,8 @@ export async function getParticipantRegistrations() {
           participant_id,
           status,
           participants (
-            full_name
+            full_name,
+            email
           )
         )
       )
@@ -784,7 +788,6 @@ export async function getParticipantRegistrations() {
   if (teamsData) {
     teamsData.forEach((tm: any) => {
        if (tm.teams) {
-         // Handle both possible column names in case schema varied
          const eventId = tm.teams.sub_event_id || tm.teams.event_id;
          if (eventId) {
            userTeams[eventId] = {
@@ -795,6 +798,8 @@ export async function getParticipantRegistrations() {
              members: tm.teams.team_members?.map((m: any) => ({
                participantId: m.participant_id,
                name: m.participants?.full_name,
+               email: m.participants?.email,
+               isLeader: m.participant_id === tm.teams.leader_participant_id,
                status: m.status || 'Accepted'
              })).filter((m: any) => m.name) || []
            };
@@ -808,10 +813,16 @@ export async function getParticipantRegistrations() {
   data.forEach((reg: any) => {
     reg.registration_sub_events.forEach((rse: any) => {
       if (rse.sub_events) {
+        const teamInfo = userTeams[rse.sub_events.id] ? {
+          ...userTeams[rse.sub_events.id],
+          minCandidates: rse.sub_events.min_candidates || 2,
+          maxCandidates: rse.sub_events.max_candidates || 5
+        } : null;
+
         registeredEvents.push({
           ...rse.sub_events,
           festName: reg.fests?.name || 'Fest',
-          teamDetails: userTeams[rse.sub_events.id] || null,
+          teamDetails: teamInfo,
           ticketNumber: `TKT-${reg.id.split('-')[0].toUpperCase()}-${rse.sub_events.id.split('-')[0].toUpperCase()}`
         });
       }

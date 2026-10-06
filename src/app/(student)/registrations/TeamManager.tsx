@@ -1,42 +1,51 @@
 "use client";
 
 import React, { useState } from "react";
-import { Users, UserMinus, Edit3, UserPlus, Save, X } from "lucide-react";
-import { removeTeamMember, updateRegisteredTeam } from "@/actions/team.actions";
+import { Users, Edit3, UserPlus, Save, X } from "lucide-react";
+import { updateRegisteredTeam } from "@/actions/team.actions";
 import { toast } from "sonner";
 
 export function TeamManager({ teamDetails }: { teamDetails: any }) {
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   
-  // Extract initial member emails (excluding leader)
-  const initialExtraMemberEmails = (teamDetails?.members || [])
-    .filter((m: any) => !m.isLeader)
-    .map((m: any) => m.email || '');
-
-  const [memberEmails, setMemberEmails] = useState<string[]>(initialExtraMemberEmails);
-
   const minCandidates = teamDetails?.minCandidates || 2;
   const maxCandidates = teamDetails?.maxCandidates || 5;
   const maxExtraMembers = Math.max(0, maxCandidates - 1);
   const minExtraMembers = Math.max(0, minCandidates - 1);
 
-  const handleRemove = async (participantId: string) => {
-    if (!confirm("Are you sure you want to remove this member?")) return;
-    setLoading(true);
-    const res = await removeTeamMember(teamDetails.teamId, participantId);
-    if (res.success) {
-      toast.success("Team member removed successfully!");
-      window.location.reload();
-    } else {
-      toast.error(res.error || "Failed to remove team member");
-      setLoading(false);
-    }
+  // Extract initial member emails (excluding leader)
+  const getInitialExtraEmails = () => {
+    return (teamDetails?.members || [])
+      .filter((m: any) => !m.isLeader)
+      .map((m: any) => m.email || '');
+  };
+
+  const [memberEmails, setMemberEmails] = useState<string[]>([]);
+
+  const handleOpenEdit = () => {
+    setMemberEmails(getInitialExtraEmails());
+    setIsEditing(true);
   };
 
   const handleSaveTeamEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanEmails = memberEmails.map(e => e.trim()).filter(Boolean);
+
+    const cleanEmails = memberEmails.map(e => e.trim().toLowerCase()).filter(Boolean);
+    const uniqueEmails = Array.from(new Set(cleanEmails));
+
+    if (uniqueEmails.length !== cleanEmails.length) {
+      toast.error("Duplicate member email addresses found. Please ensure each email is unique.");
+      return;
+    }
+
+    // Check if leader email was entered
+    const leaderMember = (teamDetails?.members || []).find((m: any) => m.isLeader);
+    if (leaderMember?.email && cleanEmails.includes(leaderMember.email.toLowerCase())) {
+      toast.error("Team Leader is automatically included. Do not add leader email as a member.");
+      return;
+    }
+
     const totalTeamSize = 1 + cleanEmails.length;
 
     if (totalTeamSize < minCandidates) {
@@ -45,7 +54,7 @@ export function TeamManager({ teamDetails }: { teamDetails: any }) {
     }
 
     if (totalTeamSize > maxCandidates) {
-      toast.error(`Maximum team size is ${maxCandidates} members.`);
+      toast.error(`Maximum team size is ${maxCandidates} members (1 Leader + at most ${maxExtraMembers} member/s).`);
       return;
     }
 
@@ -96,7 +105,7 @@ export function TeamManager({ teamDetails }: { teamDetails: any }) {
           </span>
           {teamDetails.isLeader && !isEditing && (
             <button
-              onClick={() => setIsEditing(true)}
+              onClick={handleOpenEdit}
               className="bg-[#080A12] text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-sm hover:bg-[#A98BFF] hover:text-[#080A12] transition-colors flex items-center gap-1 cursor-pointer"
             >
               <Edit3 className="w-3 h-3" /> Edit Team
@@ -113,7 +122,7 @@ export function TeamManager({ teamDetails }: { teamDetails: any }) {
         {!isEditing ? (
           <div className="space-y-2">
             {teamDetails.members.map((member: any) => (
-              <div key={member.participantId} className="flex items-center justify-between bg-white border border-[#D9D9DE] p-2.5 rounded-sm">
+              <div key={member.participantId || member.email} className="flex items-center justify-between bg-white border border-[#D9D9DE] p-2.5 rounded-sm">
                 <div>
                   <p className="text-xs font-bold text-[#080A12] flex items-center gap-1.5">
                     {member.name}
@@ -127,17 +136,6 @@ export function TeamManager({ teamDetails }: { teamDetails: any }) {
                     {member.isLeader ? 'Leader' : member.status}
                   </p>
                 </div>
-                
-                {teamDetails.isLeader && !member.isLeader && (
-                  <button 
-                    onClick={() => handleRemove(member.participantId)}
-                    disabled={loading}
-                    className="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded-sm transition-colors disabled:opacity-50 cursor-pointer"
-                    title="Remove Member"
-                  >
-                    <UserMinus className="w-3.5 h-3.5" />
-                  </button>
-                )}
               </div>
             ))}
           </div>
@@ -170,16 +168,14 @@ export function TeamManager({ teamDetails }: { teamDetails: any }) {
                     placeholder={`Member ${idx + 2} Email`}
                     className="flex-1 border border-[#D9D9DE] rounded px-3 py-2 text-xs focus:outline-none focus:border-[#A98BFF]"
                   />
-                  {memberEmails.length > minExtraMembers && (
-                    <button
-                      type="button"
-                      onClick={() => removeEmailField(idx)}
-                      className="text-red-500 hover:text-red-700 p-2"
-                      title="Remove Field"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeEmailField(idx)}
+                    className="text-red-500 hover:text-red-700 p-2 border border-red-100 bg-red-50 hover:bg-red-100 rounded transition-colors"
+                    title="Remove Member Field"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -216,4 +212,3 @@ export function TeamManager({ teamDetails }: { teamDetails: any }) {
     </div>
   );
 }
-
