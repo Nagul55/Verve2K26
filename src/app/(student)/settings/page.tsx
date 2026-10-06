@@ -1,25 +1,17 @@
 import React from "react";
-import { createClient } from "@/lib/supabase/server";
 import { SettingsProfileForm } from "@/components/SettingsProfileForm";
-
-import { getProfileForUser } from "@/actions/profile.actions";
+import { getCurrentUser } from "@/lib/auth/get-user";
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  let profile = null;
-  if (user) {
-    profile = await getProfileForUser(user.id, user.email);
-  }
+  const { user, profile } = await getCurrentUser();
 
   const initialData = {
-    role: user?.app_metadata?.role || 'student',
+    role: profile?.role || 'student',
     gender: profile?.gender || user?.user_metadata?.gender || '',
     full_name: profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
-    email: profile?.email || user?.email || '',
-    mobile: profile?.mobile || '',
-    college: profile?.college || '',
+    email: user?.email || '',
+    mobile: profile?.phone_number || '',
+    college: profile?.college_name || '',
     register_number: profile?.register_number || '',
     department: profile?.department || '',
     year_of_study: profile?.year_of_study || '',

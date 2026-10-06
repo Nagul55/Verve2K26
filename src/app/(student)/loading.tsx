@@ -1,14 +1,14 @@
 import React from "react";
-import { Loader2 } from "lucide-react";
 
-export default function Loading() {
+export default function StudentLoading() {
   return (
-    <div className="w-full h-[60vh] flex flex-col items-center justify-center space-y-6">
-      <div className="relative">
-        <div className="absolute inset-0 bg-eventrix-lavender blur-xl opacity-30 rounded-full animate-pulse"></div>
-        <Loader2 className="w-12 h-12 text-eventrix-black animate-spin relative z-10" />
+    <div className="space-y-8 animate-pulse p-4 sm:p-6 max-w-6xl mx-auto">
+      <div className="h-12 w-72 bg-gray-200 rounded-md"></div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-64 bg-gray-200 rounded-md"></div>
+        ))}
       </div>
-      <p className="text-eventrix-black font-anton tracking-widest uppercase text-sm">Preparing Awesomeness...</p>
     </div>
   );
 }

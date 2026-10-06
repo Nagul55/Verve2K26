@@ -1,11 +1,10 @@
 import React from "react";
-import { createClient } from "@/lib/supabase/server";
 import ScannerClient from "@/components/coordinator/ScannerClient";
 import { getCoordinatorAssignedEventIds } from "@/actions/event.actions";
+import { getCurrentUser } from "@/lib/auth/get-user";
 
 export default async function CoordinatorScannerPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user } = await getCurrentUser();
   
   const { assignedEventIds, role } = user ? await getCoordinatorAssignedEventIds(user.id) : { assignedEventIds: [], role: 'coordinator' };
   const isAdmin = role === 'admin' || role === 'Super Admin';

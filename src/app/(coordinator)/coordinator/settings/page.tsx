@@ -1,24 +1,19 @@
 import React from "react";
 import { SettingsProfileForm } from "@/components/SettingsProfileForm";
-import { createClient } from "@/lib/supabase/server";
-
-import { getProfileForUser } from "@/actions/profile.actions";
+import { getCurrentUser } from "@/lib/auth/get-user";
 
 export default async function CoordinatorSettingsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, profile } = await getCurrentUser();
   
   if (!user) return null;
 
-  const profile = await getProfileForUser(user.id, user.email);
-
   const initialData = {
-    role: user.app_metadata?.role || 'coordinator',
+    role: profile?.role || 'coordinator',
     gender: profile?.gender || user.user_metadata?.gender || '',
     full_name: profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || '',
-    email: profile?.email || user.email || '',
-    mobile: profile?.mobile || '',
-    college: profile?.college || '',
+    email: user.email || '',
+    mobile: profile?.phone_number || '',
+    college: profile?.college_name || '',
     register_number: profile?.register_number || '',
     department: profile?.department || '',
     year_of_study: profile?.year_of_study || '',

@@ -66,7 +66,7 @@ export default async function Dashboard() {
                   description={fest.description}
                   minTech={fest.min_technical}
                   minNonTech={fest.min_non_technical}
-                  imageUrl={fest.imageUrl}
+                  imageUrl={fest.imageUrl || undefined}
                 />
               ))}
             </div>

@@ -225,16 +225,15 @@ export async function evaluateTeamTicketStatus(adminClient: any, teamId: string)
   const isComplete = !hasPendingMembers && members.length >= minCandidates;
 
   if (isComplete && subEvent) {
-    const { sendTicketEmail } = await import('./email.actions');
-    for (const m of members) {
-      if (m.participants?.email && m.participants?.full_name) {
-        try {
-          await sendTicketEmail(m.participants.email, m.participants.full_name, [subEvent]);
-        } catch (err) {
-          console.error(`Failed to send ticket email to ${m.participants.email}:`, err);
+    import('./email.actions').then(({ sendTicketEmail }) => {
+      for (const m of members) {
+        if (m.participants?.email && m.participants?.full_name) {
+          sendTicketEmail(m.participants.email, m.participants.full_name, [subEvent]).catch(err => {
+            console.error(`Failed to send ticket email to ${m.participants.email}:`, err);
+          });
         }
       }
-    }
+    }).catch(err => console.error("Error importing email.actions:", err));
   }
 
   return { isComplete, team, subEvent };

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { QrCode, Scan, CheckCircle2, XCircle, UserCheck, Sparkles, Building2, MapPin, Search } from "lucide-react";
-import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
 
 interface ScannerClientProps {
@@ -22,7 +21,7 @@ export default function ScannerClient({ assignedEventId, assignedEventIds = [], 
     : (assignedEventId ? [assignedEventId] : []);
   
   // Store the scanner instance in a ref to properly clean it up on unmount
-  const scannerRef = React.useRef<Html5Qrcode | null>(null);
+  const scannerRef = React.useRef<any | null>(null);
 
   useEffect(() => {
     return () => {
@@ -36,6 +35,8 @@ export default function ScannerClient({ assignedEventId, assignedEventIds = [], 
     setScanning(true);
     setScanResult(null);
 
+    const { Html5Qrcode } = await import("html5-qrcode");
+
     if (!scannerRef.current) {
       scannerRef.current = new Html5Qrcode("qr-reader");
     }
@@ -44,7 +45,7 @@ export default function ScannerClient({ assignedEventId, assignedEventIds = [], 
       await scannerRef.current.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
-        async (decodedText) => {
+        async (decodedText: string) => {
           // Found a QR Code -> Stop camera immediately to freeze view
           if (scannerRef.current?.isScanning) {
             await scannerRef.current.stop();

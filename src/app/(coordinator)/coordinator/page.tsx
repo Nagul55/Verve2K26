@@ -1,7 +1,8 @@
 import React from "react";
 import { Users, Calendar, Ticket, ShieldCheck, QrCode, CheckCircle2, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import Image from "next/image";
+import { getCurrentUser } from "@/lib/auth/get-user";
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getCoordinatorAssignedEventIds } from "@/actions/event.actions";
 
@@ -13,8 +14,7 @@ const getAdminClient = () => {
 };
 
 export default async function CoordinatorDashboard() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user } = await getCurrentUser();
 
   const { assignedEventIds, role } = user ? await getCoordinatorAssignedEventIds(user.id) : { assignedEventIds: [], role: 'coordinator' };
   const isAdmin = role === 'admin' || role === 'Super Admin';
@@ -89,11 +89,12 @@ export default async function CoordinatorDashboard() {
         </div>
         
         <div className="relative z-10 flex flex-col justify-start md:justify-end">
-          <img 
+          <Image 
             src="/assets/Eventrix logo.svg" 
             alt="Eventrix Logo" 
             width={130}
             height={45}
+            priority
             className="w-[85px] sm:w-[105px] md:w-[130px] h-auto mb-2 md:mb-3.5 object-contain self-start"
           />
           <span className="text-[11px] sm:text-xs md:text-sm font-bold text-eventrix-lavender uppercase tracking-widest mb-0.5 md:mb-1.5 block">

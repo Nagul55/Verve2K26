@@ -1,12 +1,11 @@
 import React from "react";
 import { EventrixSidebar } from "@/components/EventrixSidebar";
 import { TopNavbar } from "@/components/TopNavbar";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/get-user";
 import { redirect } from "next/navigation";
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user } = await getCurrentUser();
 
   if (!user) {
     redirect('/');

@@ -1,6 +1,6 @@
 import React from "react";
 import { getParticipantRegistrations } from "@/actions/event.actions";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/get-user";
 import { EventrixLogo } from "@/components/EventrixLogo";
 import { Calendar, MapPin, Users, ShieldCheck, Lightbulb } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -8,16 +8,20 @@ import { TicketsClient } from "./TicketsClient";
 import Link from "next/link";
 
 export default async function TicketsPage() {
-  const registrations = await getParticipantRegistrations();
-  
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  let participant = null;
-  if (user) {
-    const { data } = await supabase.from('participants').select('*').eq('participant_id', user.id).single();
-    participant = data;
-  }
+  const [{ user, profile }, registrations] = await Promise.all([
+    getCurrentUser(),
+    getParticipantRegistrations(),
+  ]);
+
+  const participant = profile ? {
+    participant_id: profile.id,
+    full_name: profile.full_name,
+    department: profile.department,
+    year_of_study: profile.year_of_study,
+    college_name: profile.college_name,
+    register_number: profile.register_number,
+    gender: profile.gender,
+  } : null;
 
   return (
     <div className="max-w-6xl mx-auto space-y-12 bg-[#F4F4F9] min-h-screen p-4 md:p-8">

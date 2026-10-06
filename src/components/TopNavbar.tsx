@@ -1,37 +1,21 @@
 import React from "react";
 import { Search, Settings } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import Image from "next/image";
 import { MobileNav } from "./MobileNav";
 import { LogoutButton } from "./LogoutButton";
-
-import { getProfileForUser } from "@/actions/profile.actions";
-
 import { UserAvatar } from "./UserAvatar";
+import { getCurrentUser } from "@/lib/auth/get-user";
 
 export async function TopNavbar() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, profile: userProfile, role } = await getCurrentUser();
   
-  let profile = {
-    full_name: "STUDENT",
-    department: "",
-    year_of_study: "",
-    gender: ""
+  const profile = {
+    full_name: userProfile?.full_name || "STUDENT",
+    department: userProfile?.department || "",
+    year_of_study: userProfile?.year_of_study || "",
+    gender: userProfile?.gender || user?.user_metadata?.gender || ""
   };
-
-  if (user) {
-    const dbProfile = await getProfileForUser(user.id, user.email);
-    if (dbProfile) {
-      profile = dbProfile;
-    } else {
-      profile.full_name = user.user_metadata?.full_name || "STUDENT";
-      profile.gender = user.user_metadata?.gender || "";
-    }
-  }
-
-  const role = user?.app_metadata?.role || 'student';
-  const initials = profile.full_name.substring(0, 2).toUpperCase();
 
   return (
     <header className="flex items-center justify-between px-4 md:px-10 py-4 md:py-5 bg-eventrix-bg sticky top-0 z-50 border-b border-[#D9D9DF]/50 transition-all">
@@ -48,16 +32,19 @@ export async function TopNavbar() {
       </div>
       <div className="flex items-center gap-4 md:gap-6 ml-auto shrink-0">
         <div className="flex items-center shrink-0">
-          <img
+          <Image
             src="/images/sona-logo.webp"
             alt="Sona College of Technology"
+            width={140}
+            height={36}
+            priority
             className="h-7 md:h-9 w-auto object-contain"
           />
         </div>
         
         <div className="flex items-center gap-2 border-l border-[#D9D9DF] pl-3 sm:pl-4 h-9 sm:h-10">
           <UserAvatar
-            user={{ role, gender: profile.gender || user?.user_metadata?.gender }}
+            user={{ role, gender: profile.gender }}
             alt="User Profile"
             className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover shrink-0 border border-[#D9D9DF]"
           />

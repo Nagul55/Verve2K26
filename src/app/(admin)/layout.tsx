@@ -1,21 +1,18 @@
 import React from "react";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { TopNavbar } from "@/components/TopNavbar";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/get-user";
 import { redirect } from "next/navigation";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, role } = await getCurrentUser();
 
   if (!user) {
     redirect('/');
   }
 
-  const role = user.app_metadata?.role;
   const isMasterAdmin = user.email?.toLowerCase() === 'admin@eventrix.com';
   if (!isMasterAdmin && role !== 'admin' && role !== 'Super Admin') {
-    // If not an admin, redirect based on their actual role
     if (role === 'coordinator') redirect('/coordinator');
     else redirect('/dashboard');
   }

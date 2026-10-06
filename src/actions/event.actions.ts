@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { sendTicketEmail } from "./email.actions";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { getCurrentUser } from "@/lib/auth/get-user";
 
 const getAdminClient = () => {
   return createSupabaseClient(
@@ -45,11 +46,13 @@ export async function getCoordinators() {
     });
 }
 
-export const getCachedCoordinators = getCoordinators;
-
+export const getCachedCoordinators = unstable_cache(
+  async () => getCoordinators(),
+  ['coordinators-list'],
+  { revalidate: 300, tags: ['coordinators'] }
+);
 
 async function getAllAuthUsers(adminClient: any) {
-  // Kept for backward compatibility if needed elsewhere, but should be avoided.
   let allUsers: any[] = [];
   let page = 1;
   const perPage = 1000;
@@ -69,11 +72,22 @@ async function getAllAuthUsers(adminClient: any) {
 }
 
 // FESTS
+export const getCachedFests = unstable_cache(
+  async () => {
+    const adminClient = getAdminClient();
+    const { data, error } = await adminClient
+      .from('fests')
+      .select('id, name, description, min_technical, min_non_technical, registration_closes_at, created_at')
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    return data;
+  },
+  ['fests-list'],
+  { revalidate: 300, tags: ['fests'] }
+);
+
 export async function getFests() {
-  const adminClient = getAdminClient();
-  const { data, error } = await adminClient.from('fests').select('*').order('created_at', { ascending: false });
-  if (error) return [];
-  return data;
+  return getCachedFests();
 }
 
 export async function getFestById(festId: string) {
@@ -833,7 +847,9 @@ export async function registerForEvents(
     });
 
     if (readyEvents.length > 0) {
-      await sendTicketEmail(participant.email, participant.full_name, readyEvents);
+      sendTicketEmail(participant.email, participant.full_name, readyEvents).catch(err => {
+        console.error("Failed to send ticket email asynchronously:", err);
+      });
     }
   }
 
@@ -843,63 +859,65 @@ export async function registerForEvents(
 }
 
 export async function getParticipantRegistrations() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user } = await getCurrentUser();
   if (!user) return [];
 
   const adminClient = getAdminClient();
 
-  // Query registrations for this participant, join with registration_sub_events, sub_events, and fests
-  const { data, error } = await adminClient
-    .from('registrations')
-    .select(`
-      id,
-      fests (
+  // Query registrations and teams concurrently with Promise.all
+  const [
+    { data, error },
+    { data: teamsData, error: teamsError }
+  ] = await Promise.all([
+    adminClient
+      .from('registrations')
+      .select(`
         id,
-        name
-      ),
-      registration_sub_events (
-        sub_events (
+        fests (
           id,
-          title,
-          category,
-          date,
-          location,
-          time,
-          participation_type,
-          min_candidates,
-          max_candidates,
-          capacity
-        )
-      )
-    `)
-    .eq('participant_id', user.id);
-
-  if (error || !data) return [];
-
-  // Fetch teams for this participant to show team details for team events
-  const { data: teamsData, error: teamsError } = await adminClient
-    .from('team_members')
-    .select(`
-      team_id,
-      teams (
-        team_id,
-        team_name,
-        event_id,
-
-        leader_participant_id,
-        is_locked,
-        team_members (
-          participant_id,
-          status,
-          participants (
-            full_name,
-            email
+          name
+        ),
+        registration_sub_events (
+          sub_events (
+            id,
+            title,
+            category,
+            date,
+            location,
+            time,
+            participation_type,
+            min_candidates,
+            max_candidates,
+            capacity
           )
         )
-      )
-    `)
-    .eq('participant_id', user.id);
+      `)
+      .eq('participant_id', user.id),
+    adminClient
+      .from('team_members')
+      .select(`
+        team_id,
+        teams (
+          team_id,
+          team_name,
+          event_id,
+
+          leader_participant_id,
+          is_locked,
+          team_members (
+            participant_id,
+            status,
+            participants (
+              full_name,
+              email
+            )
+          )
+        )
+      `)
+      .eq('participant_id', user.id)
+  ]);
+
+  if (error || !data) return [];
 
   if (teamsError) {
     console.error("Error fetching teamsData in getParticipantRegistrations:", teamsError);

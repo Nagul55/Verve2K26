@@ -1,24 +1,15 @@
 import React from "react";
 import { AdminProfileForm } from "@/components/AdminProfileForm";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/get-user";
 
 export default async function AdminSettingsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, profile } = await getCurrentUser();
   
   if (!user) return null;
 
-  let profile = null;
-  const { data } = await supabase
-    .from('participants')
-    .select('*')
-    .eq('participant_id', user.id)
-    .single();
-  profile = data;
-
   const initialData = {
     full_name: profile?.full_name || user.user_metadata?.full_name || "Admin",
-    email: profile?.email || user.email || "admin@eventrix.com",
+    email: user.email || "admin@eventrix.com",
   };
 
   return (
