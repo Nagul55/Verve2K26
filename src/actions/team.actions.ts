@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from '@/lib/supabase/server';
+import { getConflictingParticipantsForEvent } from './event.actions';
 
 export async function createTeam(teamName: string, eventId: string, leaderEmail: string) {
   const supabase = await createClient();
@@ -142,15 +143,20 @@ export async function acceptTeamInvitation(teamId: string, eventId: string, fest
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
-  // 1. Update status to Accepted
-  
-  // Admin client needed for registering and email
   const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
   const adminClient = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  // 0. Check for event conflicts (user must not already be registered or in another team for eventId)
+  const conflicts = await getConflictingParticipantsForEvent(adminClient, [user.id], eventId, teamId);
+  if (conflicts.length > 0) {
+    const conflictMsgs = conflicts.map(c => `${c.name} ${c.reason}`).join('; ');
+    return { success: false, error: `Cannot accept invitation: ${conflictMsgs}.` };
+  }
+
+  // 1. Update status to Accepted
   const { error: updateError } = await adminClient
     .from('team_members')
     .update({ status: 'Accepted' })
@@ -367,10 +373,6 @@ export async function updateRegisteredTeam(
     memberParticipants = parts;
   }
 
-  // 5. Atomic Update of Team Members
-  const targetPartIds = new Set(memberParticipants.map(p => p.participant_id));
-  targetPartIds.add(user.id); // Ensure Leader stays
-
   // Fetch current team members
   const { data: currentMembers } = await adminClient
     .from('team_members')
@@ -378,6 +380,28 @@ export async function updateRegisteredTeam(
     .eq('team_id', teamId);
 
   const currentMap = new Map((currentMembers || []).map(m => [m.participant_id, m.status]));
+
+  // Identify newly added member participant IDs
+  const newlyAddedPartIds = memberParticipants
+    .filter(p => !currentMap.has(p.participant_id))
+    .map(p => p.participant_id);
+
+  // 4.5 EVENT CONFLICT CHECK FOR NEW MEMBERS (SERVER-SIDE ENFORCEMENT)
+  if (newlyAddedPartIds.length > 0) {
+    const subEventId = subEvent.id;
+    const conflicts = await getConflictingParticipantsForEvent(adminClient, newlyAddedPartIds, subEventId, teamId);
+    if (conflicts.length > 0) {
+      const conflictMsgs = conflicts.map(c => `${c.name} ${c.reason}`).join('; ');
+      return { 
+        success: false, 
+        error: `Cannot update team: ${conflictMsgs}.` 
+      };
+    }
+  }
+
+  // 5. Atomic Update of Team Members
+  const targetPartIds = new Set(memberParticipants.map(p => p.participant_id));
+  targetPartIds.add(user.id); // Ensure Leader stays
 
   // Remove members who are no longer in cleanEmails
   for (const [partId] of currentMap.entries()) {

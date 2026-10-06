@@ -499,6 +499,103 @@ export async function updateSubEvent(subEventId: string, subEventData: any) {
   };
 }
 
+// HELPER: Detect if participants are already registered or participating in another team for a sub-event
+export async function getConflictingParticipantsForEvent(
+  adminClient: any,
+  participantIds: string[],
+  subEventId: string,
+  excludeTeamId?: string
+): Promise<{ participantId: string; name: string; reason: string }[]> {
+  if (!participantIds || participantIds.length === 0) return [];
+
+  const uniqueIds = Array.from(new Set(participantIds));
+
+  // Fetch participant names for error reporting
+  const { data: partData } = await adminClient
+    .from('participants')
+    .select('participant_id, full_name, email')
+    .in('participant_id', uniqueIds);
+
+  const partMap = new Map<string, any>((partData || []).map((p: any) => [p.participant_id, p]));
+  const conflicts: { participantId: string; name: string; reason: string }[] = [];
+
+  const addConflict = (pId: string, reason: string) => {
+    if (!conflicts.some(c => c.participantId === pId)) {
+      const part: any = partMap.get(pId);
+      const name = part?.full_name || part?.email || pId;
+      conflicts.push({ participantId: pId, name, reason });
+    }
+  };
+
+  // 1. Direct event registrations in registration_sub_events
+  const { data: regSubEvents } = await adminClient
+    .from('registration_sub_events')
+    .select('registration_id, sub_event_id, registrations!inner(participant_id)')
+    .eq('sub_event_id', subEventId)
+    .in('registrations.participant_id', uniqueIds);
+
+  if (regSubEvents && regSubEvents.length > 0) {
+    for (const rse of regSubEvents) {
+      const pId = rse.registrations?.participant_id;
+      if (pId) addConflict(pId, 'is already registered for this event');
+    }
+  }
+
+  // 2. Team leaders for this sub-event
+  let leaderQuery = adminClient
+    .from('teams')
+    .select('team_id, leader_participant_id')
+    .eq('event_id', subEventId)
+    .in('leader_participant_id', uniqueIds);
+
+  if (excludeTeamId) {
+    leaderQuery = leaderQuery.neq('team_id', excludeTeamId);
+  }
+
+  const { data: leaderTeams } = await leaderQuery;
+  if (leaderTeams && leaderTeams.length > 0) {
+    for (const t of leaderTeams) {
+      if (t.leader_participant_id) {
+        addConflict(t.leader_participant_id, 'is already Team Leader for another team in this event');
+      }
+    }
+  }
+
+  // 3. Team members (Accepted or Pending) for teams in this sub-event
+  let teamsQuery = adminClient
+    .from('teams')
+    .select('team_id')
+    .eq('event_id', subEventId);
+
+  if (excludeTeamId) {
+    teamsQuery = teamsQuery.neq('team_id', excludeTeamId);
+  }
+
+  const { data: eventTeams } = await teamsQuery;
+  const eventTeamIds = (eventTeams || []).map((t: any) => t.team_id);
+
+  if (eventTeamIds.length > 0) {
+    const { data: teamMembers } = await adminClient
+      .from('team_members')
+      .select('participant_id, status')
+      .in('team_id', eventTeamIds)
+      .in('participant_id', uniqueIds);
+
+    if (teamMembers && teamMembers.length > 0) {
+      for (const tm of teamMembers) {
+        if (tm.participant_id) {
+          const statusDesc = tm.status === 'Accepted'
+            ? 'is already a member of another team for this event'
+            : 'has an active invitation for another team in this event';
+          addConflict(tm.participant_id, statusDesc);
+        }
+      }
+    }
+  }
+
+  return conflicts;
+}
+
 // REGISTRATIONS
 export async function registerForEvents(
   festId: string,
@@ -560,6 +657,21 @@ export async function registerForEvents(
         validParts.push(memberPart);
       }
       validMemberParticipants[subEventId] = validParts;
+    }
+  }
+
+  // 1.6 EVENT CONFLICT & ALREADY-REGISTERED PARTICIPANT CHECK
+  for (const subEventId of subEventIds) {
+    const memberParts = validMemberParticipants[subEventId] || [];
+    const targetPartIds = [participant.participant_id, ...memberParts.map(p => p.participant_id)];
+
+    const conflicts = await getConflictingParticipantsForEvent(adminClient, targetPartIds, subEventId);
+    if (conflicts.length > 0) {
+      const conflictMsgs = conflicts.map(c => `${c.name} ${c.reason}`).join('; ');
+      return { 
+        success: false, 
+        error: `Cannot register for event: ${conflictMsgs}. Each student can participate only once per event.` 
+      };
     }
   }
 
