@@ -166,6 +166,33 @@ export async function POST(req: Request) {
     const targetSubEventId = selectedRegItem.sub_event_id;
     const targetRegistrationId = selectedRegItem.registration_id;
 
+    // 4.8 Check Team Ticket Completeness & Validity if this is a Team Event
+    if (targetSubEvent.participation_type === 'Team') {
+      const { data: userTeamMember } = await supabaseAdmin
+        .from('team_members')
+        .select('team_id, status, teams!inner(team_id, event_id, min_candidates, team_members(participant_id, status))')
+        .eq('participant_id', targetParticipantId)
+        .eq('teams.event_id', targetSubEventId)
+        .maybeSingle();
+
+      if (!userTeamMember || userTeamMember.status !== 'Accepted') {
+        return NextResponse.json({ 
+          error: 'Ticket is no longer valid. The team membership was updated or team acceptance is pending.' 
+        }, { status: 400 });
+      }
+
+      const teamData: any = userTeamMember.teams;
+      const allMembers = teamData?.team_members || [];
+      const hasPending = allMembers.some((m: any) => m.status === 'Pending');
+      const minCount = teamData?.min_candidates || 2;
+
+      if (hasPending || allMembers.length < minCount) {
+        return NextResponse.json({ 
+          error: 'Ticket is not valid. Waiting for all team members to accept their team invitations.' 
+        }, { status: 400 });
+      }
+    }
+
     // 5. Check Check-In Status (Prevent Duplicate Scans for THIS event)
     const { data: existingAttendance } = await supabaseAdmin
       .from('attendance')

@@ -822,10 +822,19 @@ export async function registerForEvents(
     }
   }
 
-  // 4. Send Email
+  // 4. Send Email (Only for confirmed individual events or complete teams)
   const { data: bookedEvents } = await adminClient.from('sub_events').select('*').in('id', subEventIds);
   if (bookedEvents && bookedEvents.length > 0) {
-    await sendTicketEmail(participant.email, participant.full_name, bookedEvents);
+    const readyEvents = bookedEvents.filter((se: any) => {
+      if (se.participation_type !== 'Team') return true;
+      const validParts = validMemberParticipants[se.id] || [];
+      // If team has pending invited members, do not send ticket email yet
+      return validParts.length === 0;
+    });
+
+    if (readyEvents.length > 0) {
+      await sendTicketEmail(participant.email, participant.full_name, readyEvents);
+    }
   }
 
   revalidatePath('/dashboard');
@@ -924,20 +933,25 @@ export async function getParticipantRegistrations() {
   const registeredEvents: any[] = [];
   data.forEach((reg: any) => {
     reg.registration_sub_events.forEach((rse: any) => {
-      if (rse.sub_events) {
+        const members = userTeams[rse.sub_events.id]?.members || [];
+        const minCandidates = rse.sub_events.min_candidates || 2;
+        const hasPendingMembers = members.some((m: any) => m.status === 'Pending');
+        const isTeamComplete = rse.sub_events.participation_type !== 'Team' || (!hasPendingMembers && members.length >= minCandidates);
+
         const teamInfo = userTeams[rse.sub_events.id] ? {
           ...userTeams[rse.sub_events.id],
-          minCandidates: rse.sub_events.min_candidates || 2,
-          maxCandidates: rse.sub_events.max_candidates || 5
+          minCandidates,
+          maxCandidates: rse.sub_events.max_candidates || 5,
+          isTeamComplete
         } : null;
 
         registeredEvents.push({
           ...rse.sub_events,
           festName: reg.fests?.name || 'Fest',
           teamDetails: teamInfo,
+          isTicketValid: isTeamComplete,
           ticketNumber: `TKT-${reg.id.split('-')[0].toUpperCase()}-${rse.sub_events.id.split('-')[0].toUpperCase()}`
         });
-      }
     });
   });
 

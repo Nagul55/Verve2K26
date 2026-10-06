@@ -220,47 +220,77 @@ export function TicketsClient({ registrations, participant }: { registrations: a
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {registrations.map(reg => (
-          <div key={reg.id} className="bg-white border border-[#D9D9DF] rounded-xl p-5 shadow-sm flex flex-col gap-4">
-            <div>
-              <span className="inline-block bg-purple-100 text-[#3A1C71] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest mb-2">
-                {reg.category} Event
-              </span>
-              <h3 className="font-anton text-2xl uppercase text-eventrix-black">{reg.title}</h3>
-              <p className="text-xs text-eventrix-muted mt-1">{reg.date} at {reg.time}</p>
-            </div>
-            
-            <div className="flex items-center gap-3 mt-2">
-              <button
-                onClick={() => setPreviewTicket(reg)}
-                className="flex-1 bg-[#F8F8FC] border border-[#D9D9DF] text-eventrix-black py-2 rounded-md text-xs font-bold uppercase tracking-wide hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Eye className="w-4 h-4" /> Preview
-              </button>
-              <button
-                onClick={() => downloadTicketAsPng(reg)}
-                disabled={downloadingId === reg.id}
-                className="flex-1 bg-eventrix-black text-white py-2 rounded-md text-xs font-bold uppercase tracking-wide hover:bg-eventrix-lavender hover:text-black transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
-              >
-                {downloadingId === reg.id ? (
-                  <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                ) : (
-                  <Download className="w-4 h-4" />
-                )}
-                Download
-              </button>
-            </div>
+        {registrations.map(reg => {
+          const isTicketPending = reg.isTicketValid === false;
 
-            {/* Hidden ticket for png generation */}
-            <div className="absolute top-[-9999px] left-[-9999px] overflow-hidden" style={{ width: 1000, height: 540 }}>
-               <TicketCard 
-                 reg={reg} 
-                 participant={participant} 
-                 ticketRef={(el: HTMLDivElement | null) => { offscreenRefs.current[reg.id] = el; }} 
-               />
+          if (isTicketPending) {
+            return (
+              <div key={reg.id} className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl p-5 shadow-sm flex flex-col justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className="inline-block bg-purple-100 text-[#3A1C71] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest">
+                      {reg.category} Event
+                    </span>
+                    <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-0.5 rounded uppercase border border-amber-200">
+                      Acceptance Pending
+                    </span>
+                  </div>
+                  <h3 className="font-anton text-2xl uppercase text-eventrix-black">{reg.title}</h3>
+                  <p className="text-xs text-amber-900 font-medium mt-2 leading-relaxed">
+                    Waiting for all team members to accept their invitations. Digital tickets will be activated once every team member accepts.
+                  </p>
+                </div>
+                
+                <div className="bg-white/90 p-3 rounded-md border border-[#FDE68A] text-xs font-semibold text-amber-800 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                  <span>Tickets will be generated after all members accept</span>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div key={reg.id} className="bg-white border border-[#D9D9DF] rounded-xl p-5 shadow-sm flex flex-col gap-4">
+              <div>
+                <span className="inline-block bg-purple-100 text-[#3A1C71] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest mb-2">
+                  {reg.category} Event
+                </span>
+                <h3 className="font-anton text-2xl uppercase text-eventrix-black">{reg.title}</h3>
+                <p className="text-xs text-eventrix-muted mt-1">{reg.date} at {reg.time}</p>
+              </div>
+              
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  onClick={() => setPreviewTicket(reg)}
+                  className="flex-1 bg-[#F8F8FC] border border-[#D9D9DF] text-eventrix-black py-2 rounded-md text-xs font-bold uppercase tracking-wide hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Eye className="w-4 h-4" /> Preview
+                </button>
+                <button
+                  onClick={() => downloadTicketAsPng(reg)}
+                  disabled={downloadingId === reg.id}
+                  className="flex-1 bg-eventrix-black text-white py-2 rounded-md text-xs font-bold uppercase tracking-wide hover:bg-eventrix-lavender hover:text-black transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
+                  {downloadingId === reg.id ? (
+                    <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  Download
+                </button>
+              </div>
+
+              {/* Hidden ticket for png generation */}
+              <div className="absolute top-[-9999px] left-[-9999px] overflow-hidden" style={{ width: 1000, height: 540 }}>
+                 <TicketCard 
+                   reg={reg} 
+                   participant={participant} 
+                   ticketRef={(el: HTMLDivElement | null) => { offscreenRefs.current[reg.id] = el; }} 
+                 />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Preview Modal */}

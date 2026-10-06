@@ -199,19 +199,45 @@ export async function acceptTeamInvitation(teamId: string, eventId: string, fest
         registration_id: memberFestRegId,
         sub_event_id: eventId
       });
-      
-      // 4. Send Ticket Email
-      const { sendTicketEmail } = await import('./email.actions');
-      const { data: memberPart } = await adminClient.from('participants').select('*').eq('participant_id', user.id).single();
-      const { data: eventData } = await adminClient.from('sub_events').select('*').eq('id', eventId).single();
-      
-      if (memberPart && eventData) {
-        await sendTicketEmail(memberPart.email, memberPart.full_name, [eventData]);
+    }
+  }
+
+  // 4. Check if whole team has accepted and generate tickets if complete
+  await evaluateTeamTicketStatus(adminClient, teamId);
+
+  return { success: true };
+}
+
+export async function evaluateTeamTicketStatus(adminClient: any, teamId: string) {
+  const { data: team, error } = await adminClient
+    .from('teams')
+    .select('*, sub_events(*), team_members(*, participants(*))')
+    .eq('team_id', teamId)
+    .single();
+
+  if (error || !team) return { isComplete: false };
+
+  const subEvent = team.sub_events;
+  const members = team.team_members || [];
+  const minCandidates = subEvent?.min_candidates || 2;
+
+  const hasPendingMembers = members.some((m: any) => m.status === 'Pending');
+  const isComplete = !hasPendingMembers && members.length >= minCandidates;
+
+  if (isComplete && subEvent) {
+    const { sendTicketEmail } = await import('./email.actions');
+    for (const m of members) {
+      if (m.participants?.email && m.participants?.full_name) {
+        try {
+          await sendTicketEmail(m.participants.email, m.participants.full_name, [subEvent]);
+        } catch (err) {
+          console.error(`Failed to send ticket email to ${m.participants.email}:`, err);
+        }
       }
     }
   }
 
-  return { success: true };
+  return { isComplete, team, subEvent };
 }
 
 export async function rejectTeamInvitation(teamId: string) {
@@ -291,6 +317,9 @@ export async function removeTeamMember(teamId: string, memberParticipantId: stri
     .delete()
     .eq('team_id', teamId)
     .eq('participant_id', memberParticipantId);
+
+  // Evaluate ticket status after removing member
+  await evaluateTeamTicketStatus(adminClient, teamId);
 
   revalidatePath('/registrations');
   revalidatePath('/dashboard');
@@ -420,6 +449,9 @@ export async function updateRegisteredTeam(
       });
     }
   }
+
+  // Evaluate team ticket status (if all members accepted, issues tickets)
+  await evaluateTeamTicketStatus(adminClient, teamId);
 
   revalidatePath('/registrations');
   revalidatePath('/dashboard');

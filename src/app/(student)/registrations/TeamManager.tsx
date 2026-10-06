@@ -99,7 +99,16 @@ export function TeamManager({ teamDetails }: { teamDetails: any }) {
           <Users className="w-4 h-4 text-[#A98BFF]" />
           <span className="font-['Inter'] text-[10px] font-bold tracking-[0.1em] uppercase">Team Info</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          {teamDetails.isTeamComplete ? (
+            <span className="bg-[#20B486]/10 text-[#20B486] text-[9px] px-2.5 py-1 rounded-sm font-bold uppercase tracking-wider border border-[#20B486]/30">
+              Team Confirmed ✓
+            </span>
+          ) : (
+            <span className="bg-amber-100 text-amber-800 text-[9px] px-2.5 py-1 rounded-sm font-bold uppercase tracking-wider border border-amber-200">
+              Acceptance Pending
+            </span>
+          )}
           <span className="bg-[#A98BFF]/10 text-[#596078] text-[9px] px-2.5 py-1 rounded-sm font-bold uppercase tracking-wider">
             Size: {currentTotal} / {maxCandidates} (Min: {minCandidates})
           </span>
@@ -115,9 +124,16 @@ export function TeamManager({ teamDetails }: { teamDetails: any }) {
       </div>
 
       <div className="pl-2">
-        <p className="font-['Roboto_Condensed','Anton',sans-serif] font-[800] text-[20px] leading-[1] text-[#080A12] uppercase mb-3">
+        <p className="font-['Roboto_Condensed','Anton',sans-serif] font-[800] text-[20px] leading-[1] text-[#080A12] uppercase mb-2">
           {teamDetails.teamName}
         </p>
+
+        {!teamDetails.isTeamComplete && !isEditing && (
+          <div className="mb-3 p-2.5 bg-amber-50 border border-amber-200 rounded-sm text-[11px] font-medium text-amber-800 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse"></span>
+            <span>Waiting for all team members to accept invitations before tickets are generated.</span>
+          </div>
+        )}
 
         {!isEditing ? (
           <div className="space-y-2">
