@@ -104,6 +104,12 @@ export async function updateProfile(userId: string, data: any) {
     return { error: error.message };
   }
 
+  try {
+    const { revalidateTag } = await import('next/cache');
+    (revalidateTag as any)('coordinators');
+    revalidatePath('/events');
+  } catch (e) {}
+
   return { success: true };
 }
 

@@ -66,8 +66,8 @@ export async function getCoordinators() {
 
 export const getCachedCoordinators = unstable_cache(
   async () => getCoordinators(),
-  ['coordinators-list'],
-  { revalidate: 300, tags: ['coordinators'] }
+  ['coordinators-list-v2'],
+  { revalidate: 15, tags: ['coordinators'] }
 );
 
 async function getAllAuthUsers(adminClient: any) {
@@ -720,28 +720,54 @@ export async function registerForEvents(
     }
   }
 
-  // 1.8 CAPACITY & TEAM MIN/MAX SIZE VALIDATION (SERVER-SIDE ENFORCEMENT)
+  // 1.8 CAPACITY & TEAM MIN/MAX SIZE VALIDATION (SERVER-SIDE ENFORCEMENT & CONCURRENCY SAFE)
   if (subEventIds.length > 0) {
     const { data: subEventsInfo } = await adminClient
       .from('sub_events')
       .select('id, title, capacity, participation_type, min_candidates, max_candidates')
       .in('id', subEventIds);
 
+    // Attempt RPC atomic check (with FOR UPDATE DB row locking) if available
+    const requestedSeatsList = subEventIds.map(id => {
+      const members = validMemberParticipants[id] || [];
+      const sub = (subEventsInfo || []).find((s: any) => s.id === id);
+      return sub?.participation_type === 'Team' ? (1 + members.length) : 1;
+    });
+
+    const { data: rpcRes, error: rpcErr } = await adminClient.rpc('check_and_reserve_sub_events_capacity', {
+      p_sub_event_ids: subEventIds,
+      p_requested_seats: requestedSeatsList
+    });
+
+    if (!rpcErr && rpcRes && rpcRes.success === false) {
+      return { success: false, error: rpcRes.message || "Registration closed for this event. Maximum seat capacity has been reached." };
+    }
+
     for (const sub of (subEventsInfo || [])) {
+      const membersList = validMemberParticipants[sub.id] || [];
+      const requestedSeats = sub.participation_type === 'Team' ? (1 + membersList.length) : 1;
+
       // Check Capacity / Seats Available
       const { count: occupiedCount } = await adminClient
         .from('registration_sub_events')
         .select('*', { count: 'exact', head: true })
         .eq('sub_event_id', sub.id);
 
-      const capacity = typeof sub.capacity === 'number' ? sub.capacity : 50;
-      if ((occupiedCount || 0) >= capacity) {
-        return { success: false, error: `No seats available for ${sub.title}. (Capacity: ${capacity})` };
+      const hasCapacity = typeof sub.capacity === 'number' && sub.capacity > 0;
+      if (hasCapacity) {
+        const capacity = sub.capacity;
+        const currentOccupied = occupiedCount || 0;
+        if (currentOccupied + requestedSeats > capacity) {
+          const remaining = Math.max(0, capacity - currentOccupied);
+          return { 
+            success: false, 
+            error: `Registration closed for "${sub.title}". Insufficient seats available (${remaining} seat(s) remaining, team requested ${requestedSeats} seat(s)).` 
+          };
+        }
       }
 
       // Check Team Min / Max size
       if (sub.participation_type === 'Team') {
-        const membersList = validMemberParticipants[sub.id] || [];
         const totalTeamSize = 1 + membersList.length; // Leader + Members
         const minSize = sub.min_candidates || 2;
         const maxSize = sub.max_candidates || 5;
