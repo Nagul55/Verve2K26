@@ -1,7 +1,7 @@
 import React from "react";
 import { getFests, deleteFest } from "@/actions/event.actions";
 import { DeleteButton } from "@/components/DeleteButton";
-import { Plus, List, Settings } from "lucide-react";
+import { Plus, List, Edit } from "lucide-react";
 import Link from "next/link";
 
 export default async function AdminEventsPage() {
@@ -29,7 +29,7 @@ export default async function AdminEventsPage() {
             <tr>
               <th className="px-6 py-4">Fest Name</th>
               <th className="px-6 py-4">Description</th>
-              <th className="px-6 py-4">Registration Rules</th>
+              <th className="px-6 py-4">Registration Deadline & Rules</th>
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -41,6 +41,13 @@ export default async function AdminEventsPage() {
                 <td className="px-6 py-4">
                   <div className="flex flex-col gap-1">
                     <span className="text-xs font-bold text-eventrix-muted">
+                      Deadline: <span className="text-eventrix-black">
+                        {fest.registration_closes_at 
+                          ? new Date(fest.registration_closes_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' }) 
+                          : 'No deadline set'}
+                      </span>
+                    </span>
+                    <span className="text-xs font-bold text-eventrix-muted">
                       Min Technical: <span className="text-eventrix-black">{fest.min_technical}</span>
                     </span>
                     <span className="text-xs font-bold text-eventrix-muted">
@@ -50,6 +57,9 @@ export default async function AdminEventsPage() {
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-4">
+                    <Link href={`/admin/events/${fest.id}/edit`} className="flex items-center gap-1 text-eventrix-black font-bold text-xs uppercase hover:text-eventrix-lavender transition-colors editorial-label">
+                      <Edit className="w-3.5 h-3.5" /> Edit
+                    </Link>
                     <Link href={`/admin/sub-events?fest_id=${fest.id}`} className="flex items-center gap-1 text-eventrix-lavender font-bold text-xs uppercase hover:text-eventrix-black transition-colors editorial-label">
                       <List className="w-3.5 h-3.5" /> Sub-Events
                     </Link>

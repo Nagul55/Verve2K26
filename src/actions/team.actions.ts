@@ -231,47 +231,175 @@ export async function rejectTeamInvitation(teamId: string) {
   return { success: !error, error: error?.message };
 }
 
+import { revalidatePath } from 'next/cache';
+
 export async function removeTeamMember(teamId: string, memberParticipantId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
-  // Verify caller is leader and team is not locked
-  const { data: team } = await supabase.from('teams').select('leader_participant_id, is_locked').eq('team_id', teamId).single();
+  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+  const adminClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  // 1. Fetch team, sub_event, and fest
+  const { data: team, error: teamErr } = await adminClient
+    .from('teams')
+    .select('*, sub_events(*, fests(*))')
+    .eq('team_id', teamId)
+    .single();
   
-  if (!team || team.leader_participant_id !== user.id) {
+  if (teamErr || !team) return { success: false, error: "Team not found." };
+  if (team.leader_participant_id !== user.id) {
     return { success: false, error: "Only the team leader can remove members" };
   }
-  if (team.is_locked) {
-    return { success: false, error: "Team is locked. You cannot remove members anymore." };
+
+  const subEvent = team.sub_events;
+  const fest = subEvent?.fests;
+
+  // 2. Check Fest Registration Deadline
+  if (fest?.registration_closes_at && new Date() >= new Date(fest.registration_closes_at)) {
+    return { success: false, error: "Team changes are closed because fest registration has ended." };
   }
 
-  const { error } = await supabase
+  // 3. Count remaining members
+  const { data: currentMembers } = await adminClient
+    .from('team_members')
+    .select('participant_id')
+    .eq('team_id', teamId);
+
+  const currentCount = currentMembers?.length || 0;
+  const minCandidates = subEvent?.min_candidates || 2;
+
+  if (currentCount - 1 < minCandidates) {
+    return { 
+      success: false, 
+      error: `Cannot remove member: Team must have at least ${minCandidates} members.` 
+    };
+  }
+
+  const { error } = await adminClient
     .from('team_members')
     .delete()
     .eq('team_id', teamId)
     .eq('participant_id', memberParticipantId);
 
+  revalidatePath('/registrations');
+  revalidatePath('/dashboard');
   return { success: !error, error: error?.message };
 }
 
-export async function lockTeam(teamId: string) {
+export async function updateRegisteredTeam(
+  teamId: string,
+  newMemberEmails: string[]
+) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
-  // Verify caller is leader
-  const { data: team } = await supabase.from('teams').select('leader_participant_id').eq('team_id', teamId).single();
-  
-  if (!team || team.leader_participant_id !== user.id) {
-    return { success: false, error: "Only the team leader can lock the team" };
+  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+  const adminClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  // 1. Fetch team, sub_event, and fest
+  const { data: team, error: teamErr } = await adminClient
+    .from('teams')
+    .select('*, sub_events(*, fests(*))')
+    .eq('team_id', teamId)
+    .single();
+
+  if (teamErr || !team) return { success: false, error: "Team not found." };
+  if (team.leader_participant_id !== user.id) {
+    return { success: false, error: "Only the team leader can modify the team." };
   }
 
-  const { error } = await supabase
-    .from('teams')
-    .update({ is_locked: true })
+  const subEvent = team.sub_events;
+  const fest = subEvent?.fests;
+
+  // 2. Check Fest Registration Deadline
+  if (fest?.registration_closes_at && new Date() >= new Date(fest.registration_closes_at)) {
+    return { success: false, error: "Team changes are closed because fest registration has ended." };
+  }
+
+  // 3. Validate Proposed Final Team Size
+  const cleanEmails = Array.from(new Set(newMemberEmails.map(e => e.trim().toLowerCase()).filter(Boolean)));
+  const minCandidates = subEvent?.min_candidates || 2;
+  const maxCandidates = subEvent?.max_candidates || 5;
+
+  const finalTeamSize = 1 + cleanEmails.length; // Leader + members
+
+  if (finalTeamSize < minCandidates) {
+    return { success: false, error: `Team must have at least ${minCandidates} members.` };
+  }
+  if (finalTeamSize > maxCandidates) {
+    return { success: false, error: `Maximum team size is ${maxCandidates} members.` };
+  }
+
+  // Ensure leader email is not included in extra member emails
+  const { data: leaderPart } = await adminClient
+    .from('participants')
+    .select('email')
+    .eq('participant_id', user.id)
+    .single();
+
+  const leaderEmail = leaderPart?.email?.toLowerCase();
+  if (leaderEmail && cleanEmails.includes(leaderEmail)) {
+    return { success: false, error: "Team Leader is automatically included. Do not add leader email as a member." };
+  }
+
+  // 4. Validate Member Existence
+  let memberParticipants: any[] = [];
+  if (cleanEmails.length > 0) {
+    const { data: parts } = await adminClient
+      .from('participants')
+      .select('*')
+      .in('email', cleanEmails);
+
+    if (!parts || parts.length !== cleanEmails.length) {
+      const foundEmails = new Set((parts || []).map(p => p.email.toLowerCase()));
+      const missing = cleanEmails.filter(e => !foundEmails.has(e));
+      return { success: false, error: `Member(s) not registered in system: ${missing.join(', ')}` };
+    }
+    memberParticipants = parts;
+  }
+
+  // 5. Atomic Update of Team Members
+  const targetPartIds = new Set(memberParticipants.map(p => p.participant_id));
+  targetPartIds.add(user.id); // Ensure Leader stays
+
+  // Fetch current team members
+  const { data: currentMembers } = await adminClient
+    .from('team_members')
+    .select('participant_id, status')
     .eq('team_id', teamId);
 
-  return { success: !error, error: error?.message };
+  const currentMap = new Map((currentMembers || []).map(m => [m.participant_id, m.status]));
+
+  // Remove members who are no longer in cleanEmails
+  for (const [partId] of currentMap.entries()) {
+    if (partId !== user.id && !targetPartIds.has(partId)) {
+      await adminClient.from('team_members').delete().eq('team_id', teamId).eq('participant_id', partId);
+    }
+  }
+
+  // Add new member emails as Pending
+  for (const p of memberParticipants) {
+    if (!currentMap.has(p.participant_id)) {
+      await adminClient.from('team_members').insert({
+        team_id: teamId,
+        participant_id: p.participant_id,
+        status: 'Pending'
+      });
+    }
+  }
+
+  revalidatePath('/registrations');
+  revalidatePath('/dashboard');
+  return { success: true };
 }
+
 

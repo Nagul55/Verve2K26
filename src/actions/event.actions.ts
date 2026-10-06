@@ -69,28 +69,76 @@ async function getAllAuthUsers(adminClient: any) {
 }
 
 // FESTS
-export const getFests = unstable_cache(
-  async () => {
-    const adminClient = getAdminClient();
-    const { data, error } = await adminClient.from('fests').select('*');
-    if (error) return [];
-    return data;
-  },
-  ['fests-list'],
-  { revalidate: 3600, tags: ['fests'] }
-);
-
-export async function createFest(name: string, description: string, minTech: number = 0, minNonTech: number = 0) {
+export async function getFests() {
   const adminClient = getAdminClient();
-  const { data, error } = await adminClient.from('fests').insert({
-    name, description, min_technical: minTech, min_non_technical: minNonTech
-  });
+  const { data, error } = await adminClient.from('fests').select('*').order('created_at', { ascending: false });
+  if (error) return [];
+  return data;
+}
+
+export async function getFestById(festId: string) {
+  const adminClient = getAdminClient();
+  const { data, error } = await adminClient.from('fests').select('*').eq('id', festId).single();
+  if (error) return null;
+  return data;
+}
+
+export async function createFest(
+  name: string, 
+  description: string, 
+  minTech: number = 0, 
+  minNonTech: number = 0,
+  registrationClosesAt?: string | null
+) {
+  const adminClient = getAdminClient();
+  const payload: any = {
+    name,
+    description,
+    min_technical: minTech,
+    min_non_technical: minNonTech
+  };
+
+  if (registrationClosesAt) {
+    payload.registration_closes_at = new Date(registrationClosesAt).toISOString();
+  }
+
+  const { data, error } = await adminClient.from('fests').insert(payload);
+  revalidatePath('/admin');
+  revalidatePath('/admin/events');
+  revalidatePath('/events');
+  return { success: !error, error: error?.message };
+}
+
+export async function updateFest(
+  festId: string,
+  name: string, 
+  description: string, 
+  minTech: number = 0, 
+  minNonTech: number = 0,
+  registrationClosesAt?: string | null
+) {
+  const adminClient = getAdminClient();
+  const payload: any = {
+    name,
+    description,
+    min_technical: minTech,
+    min_non_technical: minNonTech,
+    registration_closes_at: registrationClosesAt ? new Date(registrationClosesAt).toISOString() : null
+  };
+
+  const { error } = await adminClient.from('fests').update(payload).eq('id', festId);
+  revalidatePath('/admin');
+  revalidatePath('/admin/events');
+  revalidatePath('/events');
   return { success: !error, error: error?.message };
 }
 
 export async function deleteFest(festId: string) {
   const adminClient = getAdminClient();
   const { error } = await adminClient.from('fests').delete().eq('id', festId);
+  revalidatePath('/admin');
+  revalidatePath('/admin/events');
+  revalidatePath('/events');
   return { success: !error, error: error?.message };
 }
 
@@ -467,8 +515,20 @@ export async function registerForEvents(
   const { data: participant } = await supabase.from('participants').select('*').eq('participant_id', user.id).single();
   if (!participant) return { success: false, error: "Participant profile not found. Please update settings first." };
   
-  // 1.5 Validate all Team Member Emails in a single batch query
   const adminClient = getAdminClient();
+
+  // 1.2 FEST REGISTRATION DEADLINE CHECK (SERVER-SIDE MANDATORY)
+  const { data: festData } = await adminClient
+    .from('fests')
+    .select('registration_closes_at')
+    .eq('id', festId)
+    .maybeSingle();
+
+  if (festData?.registration_closes_at && new Date() >= new Date(festData.registration_closes_at)) {
+    return { success: false, error: "Registration for this fest has closed." };
+  }
+
+  // 1.5 Validate all Team Member Emails in a single batch query
   const validMemberParticipants: Record<string, any[]> = {}; 
 
   if (teamMembers && Object.keys(teamMembers).length > 0) {
@@ -490,13 +550,58 @@ export async function registerForEvents(
       const emails = membersEmailsStr.split(',').map(e => e.trim()).filter(e => e);
       const validParts = [];
       for (const email of emails) {
-        const memberPart = fetchedParticipants.find(p => p.email === email);
+        if (email.toLowerCase() === participant.email?.toLowerCase()) {
+          return { success: false, error: "Team Leader is automatically included. Do not add leader email as a member." };
+        }
+        const memberPart = fetchedParticipants.find(p => p.email.toLowerCase() === email.toLowerCase());
         if (!memberPart) {
           return { success: false, error: `Team member with email ${email} not found. Please ensure they have registered an account.` };
         }
         validParts.push(memberPart);
       }
       validMemberParticipants[subEventId] = validParts;
+    }
+  }
+
+  // 1.8 CAPACITY & TEAM MIN/MAX SIZE VALIDATION (SERVER-SIDE ENFORCEMENT)
+  if (subEventIds.length > 0) {
+    const { data: subEventsInfo } = await adminClient
+      .from('sub_events')
+      .select('id, title, capacity, participation_type, min_candidates, max_candidates')
+      .in('id', subEventIds);
+
+    for (const sub of (subEventsInfo || [])) {
+      // Check Capacity / Seats Available
+      const { count: occupiedCount } = await adminClient
+        .from('registration_sub_events')
+        .select('*', { count: 'exact', head: true })
+        .eq('sub_event_id', sub.id);
+
+      const capacity = typeof sub.capacity === 'number' ? sub.capacity : 50;
+      if ((occupiedCount || 0) >= capacity) {
+        return { success: false, error: `No seats available for ${sub.title}. (Capacity: ${capacity})` };
+      }
+
+      // Check Team Min / Max size
+      if (sub.participation_type === 'Team') {
+        const membersList = validMemberParticipants[sub.id] || [];
+        const totalTeamSize = 1 + membersList.length; // Leader + Members
+        const minSize = sub.min_candidates || 2;
+        const maxSize = sub.max_candidates || 5;
+
+        if (totalTeamSize < minSize) {
+          return { 
+            success: false, 
+            error: `Team size for ${sub.title} must be at least ${minSize} members. Current team size is ${totalTeamSize} (1 Leader + ${membersList.length} member/s).` 
+          };
+        }
+        if (totalTeamSize > maxSize) {
+          return { 
+            success: false, 
+            error: `Team size for ${sub.title} cannot exceed ${maxSize} members. Current team size is ${totalTeamSize}.` 
+          };
+        }
+      }
     }
   }
 

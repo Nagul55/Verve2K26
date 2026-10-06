@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS public.fests (
   description text NOT NULL,
   min_technical integer DEFAULT 1 NOT NULL,
   min_non_technical integer DEFAULT 1 NOT NULL,
+  registration_closes_at timestamp with time zone,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

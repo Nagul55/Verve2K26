@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Calendar, Clock, MapPin, ArrowLeft, ArrowRight, Check } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Calendar, Clock, MapPin, ArrowLeft, ArrowRight, Check, Timer, XCircle } from "lucide-react";
 import Link from "next/link";
 import { EventDetailsModal, SubEvent, parseEventData } from "@/components/EventDetailsModal";
 import { EventStatusBadge } from "@/components/EventStatusBadge";
@@ -21,17 +21,38 @@ export function FestEventsClient({
 }: FestEventsClientProps) {
   const [selectedEvent, setSelectedEvent] = useState<SubEvent | null>(null);
   const [registeredIds, setRegisteredIds] = useState<string[]>(initialRegisteredIds);
+  const [isFestClosed, setIsFestClosed] = useState(false);
+  const [timeLeftStr, setTimeLeftStr] = useState<string | null>(null);
 
-  const handleRegisterSuccess = (eventId: string) => {
-    if (!registeredIds.includes(eventId)) {
-      setRegisteredIds((prev) => [...prev, eventId]);
-    }
-  };
+  useEffect(() => {
+    if (!fest.registration_closes_at) return;
+
+    const updateFestCountdown = () => {
+      const now = new Date().getTime();
+      const deadline = new Date(fest.registration_closes_at).getTime();
+      const diff = deadline - now;
+
+      if (diff <= 0) {
+        setIsFestClosed(true);
+        setTimeLeftStr(null);
+      } else {
+        setIsFestClosed(false);
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        setTimeLeftStr(`${days > 0 ? `${days}d ` : ''}${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`);
+      }
+    };
+
+    updateFestCountdown();
+    const interval = setInterval(updateFestCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [fest.registration_closes_at]);
 
   const techEvents = events.filter((e) => e.category === "Technical");
   const nonTechEvents = events.filter((e) => e.category === "Non-Technical");
-
-  const hasRegisteredForFest = events.some(e => registeredIds.includes(e.id));
 
   return (
     <div className="max-w-5xl mx-auto space-y-10">
@@ -45,19 +66,45 @@ export function FestEventsClient({
         </Link>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div>
-            <h1 className="font-anton text-[40px] text-eventrix-black leading-none uppercase tracking-wide mb-2">
-              {fest.name} Events
-            </h1>
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
+              <h1 className="font-anton text-[40px] text-eventrix-black leading-none uppercase tracking-wide">
+                {fest.name} Events
+              </h1>
+              {fest.registration_closes_at && (
+                isFestClosed ? (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest bg-red-100 text-red-700 px-3 py-1 rounded border border-red-200">
+                    <XCircle className="w-4 h-4" /> Registration Closed
+                  </span>
+                ) : (
+                  timeLeftStr && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest bg-purple-100 text-purple-700 px-3 py-1 rounded border border-purple-200 font-mono">
+                      <Timer className="w-4 h-4" /> Closes in: {timeLeftStr}
+                    </span>
+                  )
+                )
+              )}
+            </div>
             <p className="text-eventrix-muted font-medium max-w-2xl">
               {fest.description}
             </p>
           </div>
-          <Link
-            href={`/events/${fest.id}/register`}
-            className="bg-eventrix-black text-white px-8 py-4 rounded-md text-sm font-bold tracking-wide uppercase hover:bg-eventrix-lavender hover:text-black transition-all shadow-[4px_4px_0px_0px_rgba(167,139,250,1)] flex items-center gap-2"
-          >
-            Register Now <ArrowRight className="w-4 h-4" />
-          </Link>
+
+          {isFestClosed ? (
+            <button
+              disabled
+              className="bg-[#D9D9DF] text-[#85858F] px-8 py-4 rounded-md text-sm font-bold tracking-wide uppercase cursor-not-allowed flex items-center gap-2"
+              title="Registration for this fest has closed."
+            >
+              Registration Closed
+            </button>
+          ) : (
+            <Link
+              href={`/events/${fest.id}/register`}
+              className="bg-eventrix-black text-white px-8 py-4 rounded-md text-sm font-bold tracking-wide uppercase hover:bg-eventrix-lavender hover:text-black transition-all shadow-[4px_4px_0px_0px_rgba(167,139,250,1)] flex items-center gap-2"
+            >
+              Register Now <ArrowRight className="w-4 h-4" />
+            </Link>
+          )}
         </div>
       </div>
 
@@ -99,7 +146,8 @@ export function FestEventsClient({
                       date={event.date} 
                       time={event.time} 
                       capacity={event.capacity} 
-                      registeredCount={registrationCounts[event.id]} 
+                      registeredCount={registrationCounts[event.id]}
+                      festRegistrationClosesAt={fest.registration_closes_at} 
                     />
                   </div>
 
@@ -161,6 +209,7 @@ export function FestEventsClient({
                       time={event.time} 
                       capacity={event.capacity} 
                       registeredCount={registrationCounts[event.id]} 
+                      festRegistrationClosesAt={fest.registration_closes_at}
                     />
                   </div>
 
