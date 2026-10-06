@@ -52,7 +52,7 @@ export default function AdminEditFestPage({ params }: { params: Promise<{ id: st
     e.preventDefault();
 
     startTransition(async () => {
-      const res = await updateFest(
+      const { success, error } = await updateFest(
         id,
         formData.name,
         formData.description,
@@ -61,14 +61,8 @@ export default function AdminEditFestPage({ params }: { params: Promise<{ id: st
         formData.registration_closes_at || null
       );
 
-      if (res.error) {
-        toast.error(res.error);
-      } else if (res.warning) {
-        toast.warning(res.warning, { duration: 6000 });
-        setTimeout(() => {
-          router.push('/admin/events');
-          router.refresh();
-        }, 1500);
+      if (error) {
+        toast.error(error);
       } else {
         toast.success("Fest updated successfully!");
         setTimeout(() => {

@@ -118,22 +118,7 @@ export async function createFest(
 
   const { data, error } = await adminClient.from('fests').insert(payload);
   if (error) {
-    if (error.code === 'PGRST204' || error.message?.includes('registration_closes_at')) {
-      delete payload.registration_closes_at;
-      const fallback = await adminClient.from('fests').insert(payload);
-      (revalidateTag as any)('fests');
-      revalidatePath('/admin');
-      revalidatePath('/admin/events');
-      revalidatePath('/events');
-
-      if (fallback.error) {
-        return { success: false, error: fallback.error.message };
-      }
-      return { 
-        success: true, 
-        warning: "Fest created! To activate registration deadline persistence, please click 'Reload Schema Cache' in Supabase Dashboard (Project Settings -> API)." 
-      };
-    }
+    console.error("Error creating fest in Supabase:", error);
     return { success: false, error: error.message };
   }
 
@@ -163,22 +148,7 @@ export async function updateFest(
 
   const { error } = await adminClient.from('fests').update(payload).eq('id', festId);
   if (error) {
-    if (error.code === 'PGRST204' || error.message?.includes('registration_closes_at')) {
-      delete payload.registration_closes_at;
-      const fallback = await adminClient.from('fests').update(payload).eq('id', festId);
-      (revalidateTag as any)('fests');
-      revalidatePath('/admin');
-      revalidatePath('/admin/events');
-      revalidatePath('/events');
-
-      if (fallback.error) {
-        return { success: false, error: fallback.error.message };
-      }
-      return { 
-        success: true, 
-        warning: "Fest updated! To activate registration deadline persistence, please click 'Reload Schema Cache' in Supabase Dashboard (Project Settings -> API)." 
-      };
-    }
+    console.error("Error updating fest in Supabase:", error);
     return { success: false, error: error.message };
   }
 
