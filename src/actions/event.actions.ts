@@ -77,10 +77,13 @@ export const getCachedFests = unstable_cache(
     const adminClient = getAdminClient();
     const { data, error } = await adminClient
       .from('fests')
-      .select('id, name, description, min_technical, min_non_technical, registration_closes_at, created_at')
+      .select('*')
       .order('created_at', { ascending: false });
-    if (error) return [];
-    return data;
+    if (error) {
+      console.error("Error in getCachedFests query:", error);
+      return [];
+    }
+    return data || [];
   },
   ['fests-list'],
   { revalidate: 300, tags: ['fests'] }
@@ -116,7 +119,14 @@ export async function createFest(
     payload.registration_closes_at = new Date(registrationClosesAt).toISOString();
   }
 
-  const { data, error } = await adminClient.from('fests').insert(payload);
+  let { data, error } = await adminClient.from('fests').insert(payload);
+  if (error && error.code === '42703') {
+    delete payload.registration_closes_at;
+    const retry = await adminClient.from('fests').insert(payload);
+    error = retry.error;
+  }
+
+  (revalidateTag as any)('fests');
   revalidatePath('/admin');
   revalidatePath('/admin/events');
   revalidatePath('/events');
@@ -136,11 +146,21 @@ export async function updateFest(
     name,
     description,
     min_technical: minTech,
-    min_non_technical: minNonTech,
-    registration_closes_at: registrationClosesAt ? new Date(registrationClosesAt).toISOString() : null
+    min_non_technical: minNonTech
   };
 
-  const { error } = await adminClient.from('fests').update(payload).eq('id', festId);
+  if (registrationClosesAt) {
+    payload.registration_closes_at = new Date(registrationClosesAt).toISOString();
+  }
+
+  let { error } = await adminClient.from('fests').update(payload).eq('id', festId);
+  if (error && error.code === '42703') {
+    delete payload.registration_closes_at;
+    const retry = await adminClient.from('fests').update(payload).eq('id', festId);
+    error = retry.error;
+  }
+
+  (revalidateTag as any)('fests');
   revalidatePath('/admin');
   revalidatePath('/admin/events');
   revalidatePath('/events');
@@ -150,6 +170,7 @@ export async function updateFest(
 export async function deleteFest(festId: string) {
   const adminClient = getAdminClient();
   const { error } = await adminClient.from('fests').delete().eq('id', festId);
+  (revalidateTag as any)('fests');
   revalidatePath('/admin');
   revalidatePath('/admin/events');
   revalidatePath('/events');
