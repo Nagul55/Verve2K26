@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Code } from "lucide-react";
 import Image from "next/image";
 
 interface FestCardProps {
@@ -11,10 +11,12 @@ interface FestCardProps {
   minNonTech: number;
   imageUrl?: string;
   registrationClosesAt?: string;
+  eventType?: string;
 }
 
-export function FestCard({ id, name, description, minTech, minNonTech, imageUrl, registrationClosesAt }: FestCardProps) {
+export function FestCard({ id, name, description, minTech, minNonTech, imageUrl, registrationClosesAt, eventType }: FestCardProps) {
   const isClosed = registrationClosesAt ? new Date() >= new Date(registrationClosesAt) : false;
+  const isHackathon = eventType === 'hackathon';
 
   return (
     <Link href={`/events/${id}`} className="group block h-full p-2 -m-2">
@@ -50,7 +52,15 @@ export function FestCard({ id, name, description, minTech, minNonTech, imageUrl,
           
           <div className="absolute top-4 left-4 flex items-center gap-2 z-20">
             <div className="bg-white border-2 border-eventrix-black text-eventrix-black text-[10px] font-black px-3 py-1 uppercase tracking-widest flex items-center gap-1.5 shadow-[3px_3px_0px_0px_rgba(8,10,18,1)]">
-              <Sparkles className="w-3 h-3 text-eventrix-lavender" fill="currentColor" /> FEST
+              {isHackathon ? (
+                <>
+                  <Code className="w-3 h-3 text-eventrix-lavender" /> HACKATHON
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3 h-3 text-eventrix-lavender" fill="currentColor" /> FEST
+                </>
+              )}
             </div>
             {isClosed && (
               <div className="bg-red-500 text-white border-2 border-eventrix-black text-[10px] font-black px-2.5 py-1 uppercase tracking-widest shadow-[3px_3px_0px_0px_rgba(8,10,18,1)]">

@@ -1,5 +1,6 @@
 import React from "react";
 import { getFests, getSubEvents, getStudentRegisteredEventIds, getSubEventRegistrationCounts } from "@/actions/event.actions";
+import { getHackathon } from "@/actions/hackathon.actions";
 import { notFound } from "next/navigation";
 import { FestEventsClient } from "./FestEventsClient";
 
@@ -15,6 +16,7 @@ export default async function FestEventsPage({ params }: { params: Promise<{ fes
   const events = await getSubEvents(fest.id);
   const registeredIds = await getStudentRegisteredEventIds();
   const registrationCounts = await getSubEventRegistrationCounts();
+  const hackathonData = fest.event_type === 'hackathon' ? await getHackathon(fest.id) : null;
 
   return (
     <FestEventsClient
@@ -22,6 +24,7 @@ export default async function FestEventsPage({ params }: { params: Promise<{ fes
       events={events}
       initialRegisteredIds={registeredIds}
       registrationCounts={registrationCounts}
+      hackathonData={hackathonData}
     />
   );
 }
