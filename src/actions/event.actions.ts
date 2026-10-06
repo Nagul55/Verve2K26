@@ -112,38 +112,26 @@ export async function createFest(
     name,
     description,
     min_technical: minTech,
-    min_non_technical: minNonTech
+    min_non_technical: minNonTech,
+    registration_closes_at: registrationClosesAt ? new Date(registrationClosesAt).toISOString() : null
   };
 
-  if (registrationClosesAt) {
-    payload.registration_closes_at = new Date(registrationClosesAt).toISOString();
-  }
-
-  const isColumnError = (err: any) => {
-    if (!err) return false;
-    const msg = err.message || '';
-    const code = err.code || '';
-    return (
-      code === '42703' ||
-      code === 'PGRST204' ||
-      code === 'PGRST100' ||
-      msg.includes('registration_closes_at') ||
-      msg.includes('schema cache')
-    );
-  };
-
-  let { data, error } = await adminClient.from('fests').insert(payload);
-  if (error && isColumnError(error)) {
-    delete payload.registration_closes_at;
-    const retry = await adminClient.from('fests').insert(payload);
-    error = retry.error;
+  const { data, error } = await adminClient.from('fests').insert(payload);
+  if (error) {
+    if (error.code === 'PGRST204' || error.message?.includes('registration_closes_at')) {
+      return { 
+        success: false, 
+        error: "Supabase Schema Error: Column 'registration_closes_at' does not exist on 'fests' table. Please run the SQL migration query in Supabase SQL Editor." 
+      };
+    }
+    return { success: false, error: error.message };
   }
 
   (revalidateTag as any)('fests');
   revalidatePath('/admin');
   revalidatePath('/admin/events');
   revalidatePath('/events');
-  return { success: !error, error: error?.message };
+  return { success: true };
 }
 
 export async function updateFest(
@@ -159,38 +147,26 @@ export async function updateFest(
     name,
     description,
     min_technical: minTech,
-    min_non_technical: minNonTech
+    min_non_technical: minNonTech,
+    registration_closes_at: registrationClosesAt ? new Date(registrationClosesAt).toISOString() : null
   };
 
-  if (registrationClosesAt) {
-    payload.registration_closes_at = new Date(registrationClosesAt).toISOString();
-  }
-
-  const isColumnError = (err: any) => {
-    if (!err) return false;
-    const msg = err.message || '';
-    const code = err.code || '';
-    return (
-      code === '42703' ||
-      code === 'PGRST204' ||
-      code === 'PGRST100' ||
-      msg.includes('registration_closes_at') ||
-      msg.includes('schema cache')
-    );
-  };
-
-  let { error } = await adminClient.from('fests').update(payload).eq('id', festId);
-  if (error && isColumnError(error)) {
-    delete payload.registration_closes_at;
-    const retry = await adminClient.from('fests').update(payload).eq('id', festId);
-    error = retry.error;
+  const { error } = await adminClient.from('fests').update(payload).eq('id', festId);
+  if (error) {
+    if (error.code === 'PGRST204' || error.message?.includes('registration_closes_at')) {
+      return { 
+        success: false, 
+        error: "Supabase Schema Error: Column 'registration_closes_at' does not exist on 'fests' table. Please run the SQL migration query in Supabase SQL Editor." 
+      };
+    }
+    return { success: false, error: error.message };
   }
 
   (revalidateTag as any)('fests');
   revalidatePath('/admin');
   revalidatePath('/admin/events');
   revalidatePath('/events');
-  return { success: !error, error: error?.message };
+  return { success: true };
 }
 
 export async function deleteFest(festId: string) {
