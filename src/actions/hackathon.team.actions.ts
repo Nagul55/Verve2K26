@@ -232,9 +232,17 @@ export async function sendHackathonInvitation(teamId: string, email: string) {
     return { success: false, error: "Team not found." };
   }
 
-  // 2. Only Team Leader can send invitations
-  if (team.leader_id !== user.id) {
-    return { success: false, error: "Only the Team Leader can send team invitations." };
+  // 2. Any member of the team (or leader) can send invitations
+  const isLeader = team.leader_id === user.id;
+  const { data: memberRecord } = await adminClient
+    .from('hackathon_team_members')
+    .select('id')
+    .eq('team_id', teamId)
+    .eq('participant_id', user.id)
+    .maybeSingle();
+
+  if (!isLeader && !memberRecord) {
+    return { success: false, error: "Only members of this team can send team invitations." };
   }
 
   // 3. Find target student by email
@@ -370,8 +378,16 @@ export async function cancelHackathonInvitation(teamId: string, participantId: s
   const adminClient = getAdminClient();
 
   const { data: team } = await adminClient.from('hackathon_teams').select('leader_id').eq('id', teamId).single();
-  if (team?.leader_id !== user.id) {
-    return { success: false, error: "Only the Team Leader can cancel invitations." };
+  const isLeader = team?.leader_id === user.id;
+  const { data: memberRecord } = await adminClient
+    .from('hackathon_team_members')
+    .select('id')
+    .eq('team_id', teamId)
+    .eq('participant_id', user.id)
+    .maybeSingle();
+
+  if (!isLeader && !memberRecord) {
+    return { success: false, error: "Only members of this team can cancel invitations." };
   }
 
   const { error } = await adminClient

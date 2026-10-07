@@ -231,7 +231,7 @@ export function HackathonClient({
                               </div>
                             </div>
                           </div>
-                          {isLeader && (
+                          {Boolean(userTeam) && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -260,7 +260,7 @@ export function HackathonClient({
                     <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
                       <code className="text-xl font-mono font-bold text-slate-800 dark:text-white tracking-widest">{userTeam.passcode}</code>
                       <div className="flex items-center gap-2">
-                        {isLeader && (
+                        {Boolean(userTeam) && (
                           <Button 
                             size="sm" 
                             onClick={() => setIsInviteModalOpen(true)}

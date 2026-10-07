@@ -20,12 +20,12 @@ export default async function StudentLayout({ children }: { children: React.Reac
       <EventrixSidebar />
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         <TopNavbar />
-        <main className="flex-1 overflow-y-auto scroll-smooth">
-          <div className="p-4 sm:p-8 lg:p-10 space-y-8 lg:space-y-10 pb-24 max-w-[1700px] mx-auto w-full transition-all duration-300">
+        <main className="flex-1 overflow-y-auto scroll-smooth flex flex-col justify-between">
+          <div className="p-4 sm:p-8 lg:p-10 space-y-8 lg:space-y-10 pb-8 max-w-[1700px] mx-auto w-full transition-all duration-300 flex-1">
             {children}
           </div>
+          <FooterNav />
         </main>
-        <FooterNav />
       </div>
     </div>
   );
