@@ -7,19 +7,35 @@ interface FestCardProps {
   id: string;
   name: string;
   description: string;
-  minTech: number;
-  minNonTech: number;
+  minTech?: number;
+  minNonTech?: number;
   imageUrl?: string;
   registrationClosesAt?: string;
   eventType?: string;
+  teamSize?: string;
+  mode?: string;
+  customHref?: string;
 }
 
-export function FestCard({ id, name, description, minTech, minNonTech, imageUrl, registrationClosesAt, eventType }: FestCardProps) {
+export function FestCard({ 
+  id, 
+  name, 
+  description, 
+  minTech, 
+  minNonTech, 
+  imageUrl, 
+  registrationClosesAt, 
+  eventType,
+  teamSize,
+  mode,
+  customHref 
+}: FestCardProps) {
   const isClosed = registrationClosesAt ? new Date() >= new Date(registrationClosesAt) : false;
   const isHackathon = eventType === 'hackathon';
+  const targetHref = customHref || (isHackathon ? `/hackathons/${id}` : `/events/${id}`);
 
   return (
-    <Link href={`/events/${id}`} className="group block h-full p-2 -m-2">
+    <Link href={targetHref} className="group block h-full p-2 -m-2">
       <div className="bg-white rounded-lg border-2 border-[#D9D9DF] overflow-hidden transition-all duration-300 relative flex flex-col h-full group-hover:border-eventrix-black group-hover:-translate-y-1.5 group-hover:-translate-x-1.5 group-hover:shadow-[6px_6px_0px_0px_rgba(8,10,18,1)]">
         
         {/* Header Section */}
@@ -73,7 +89,7 @@ export function FestCard({ id, name, description, minTech, minNonTech, imageUrl,
         {/* Body Section */}
         <div className="p-6 sm:p-8 flex-1 flex flex-col">
           <p className="text-sm text-eventrix-muted font-medium mb-8 line-clamp-3 leading-relaxed flex-1 group-hover:text-gray-800 transition-colors">
-            {description || "Join us for an incredible celebration of technology, culture, and innovation."}
+            {description || (isHackathon ? "Register your team and compete in this upcoming hackathon." : "Join us for an incredible celebration of technology, culture, and innovation.")}
           </p>
           
           <div className="flex justify-between items-end pt-6 border-t-2 border-dashed border-[#D9D9DF] mt-auto group-hover:border-eventrix-black/40 transition-colors gap-2">
@@ -82,12 +98,25 @@ export function FestCard({ id, name, description, minTech, minNonTech, imageUrl,
                 REQUIREMENTS
               </span>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-block whitespace-nowrap bg-white px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold text-eventrix-black border-2 border-eventrix-black shadow-[2px_2px_0px_0px_rgba(169,139,255,1)]">
-                  {minTech || 0} TECH
-                </span>
-                <span className="inline-block whitespace-nowrap bg-white px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold text-eventrix-black border-2 border-eventrix-black shadow-[2px_2px_0px_0px_rgba(169,139,255,1)]">
-                  {minNonTech || 0} NON-TECH
-                </span>
+                {isHackathon ? (
+                  <>
+                    <span className="inline-block whitespace-nowrap bg-white px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold text-eventrix-black border-2 border-eventrix-black shadow-[2px_2px_0px_0px_rgba(169,139,255,1)]">
+                      {teamSize || "2 - 4 MEMBERS"}
+                    </span>
+                    <span className="inline-block whitespace-nowrap bg-white px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold text-eventrix-black border-2 border-eventrix-black shadow-[2px_2px_0px_0px_rgba(169,139,255,1)]">
+                      {mode || "TEAM EVENT"}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="inline-block whitespace-nowrap bg-white px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold text-eventrix-black border-2 border-eventrix-black shadow-[2px_2px_0px_0px_rgba(169,139,255,1)]">
+                      {minTech || 0} TECH
+                    </span>
+                    <span className="inline-block whitespace-nowrap bg-white px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-bold text-eventrix-black border-2 border-eventrix-black shadow-[2px_2px_0px_0px_rgba(169,139,255,1)]">
+                      {minNonTech || 0} NON-TECH
+                    </span>
+                  </>
+                )}
               </div>
             </div>
             

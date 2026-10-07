@@ -95,11 +95,12 @@ export const getCachedFests = unstable_cache(
     const adminClient = getAdminClient();
     const { data, error } = await adminClient
       .from('fests')
-      .select('*')
+      .select('*, hackathons(*)')
       .order('created_at', { ascending: false });
     if (error) {
       console.error("Error in getCachedFests query:", error);
-      return [];
+      const { data: fallback } = await adminClient.from('fests').select('*').order('created_at', { ascending: false });
+      return fallback || [];
     }
     return data || [];
   },

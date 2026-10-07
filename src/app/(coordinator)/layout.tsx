@@ -1,6 +1,7 @@
 import React from "react";
 import { CoordinatorSidebar } from "@/components/CoordinatorSidebar";
 import { TopNavbar } from "@/components/TopNavbar";
+import { FooterNav } from "@/components/FooterNav";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { redirect } from "next/navigation";
 
@@ -28,6 +29,7 @@ export default async function CoordinatorLayout({ children }: { children: React.
             {children}
           </div>
         </main>
+        <FooterNav />
       </div>
     </div>
   );

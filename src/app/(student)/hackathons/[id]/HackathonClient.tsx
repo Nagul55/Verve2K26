@@ -11,25 +11,67 @@ import {
   ChevronDown, 
   ChevronUp, 
   Download,
-  AlertCircle
+  AlertCircle,
+  UserPlus,
+  Clock,
+  Send,
+  X,
+  Loader2
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { sendHackathonInvitation, cancelHackathonInvitation } from "@/actions/hackathon.team.actions";
 
 export function HackathonClient({ 
   fest, 
   hackathon, 
   problemStatements,
-  userTeam
+  userTeam,
+  currentUserId
 }: { 
   fest: any; 
   hackathon: any; 
   problemStatements: any[];
   userTeam?: any;
+  currentUserId?: string;
 }) {
+  const router = useRouter();
   const [expandedStatement, setExpandedStatement] = useState<string | null>(null);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+
+  const isLeader = Boolean(
+    userTeam && (
+      (currentUserId && userTeam.leader_id === currentUserId) ||
+      (!currentUserId && userTeam.members?.some((m: any) => m.participant_id === userTeam.leader_id))
+    )
+  );
+
+  const handleSendInvitation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+
+    setIsSendingInvite(true);
+    try {
+      const res = await sendHackathonInvitation(userTeam.id, inviteEmail.trim());
+      if (res.success) {
+        toast.success(res.message || "Invitation sent successfully!");
+        setInviteEmail("");
+        setIsInviteModalOpen(false);
+        router.refresh();
+      } else {
+        toast.error(res.error || "Failed to send invitation.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "An unexpected error occurred.");
+    } finally {
+      setIsSendingInvite(false);
+    }
+  };
 
   const isRegistrationOpen = new Date() >= new Date(hackathon.registration_opens_at) && new Date() <= new Date(hackathon.registration_closes_at);
   const registrationStatus = isRegistrationOpen 
@@ -147,7 +189,16 @@ export function HackathonClient({
                   </div>
                   
                   <div className="mt-6">
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-2 font-semibold tracking-wider uppercase">Team Members ({userTeam.members?.length || 1} / {hackathon.maximum_team_size})</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 font-semibold tracking-wider uppercase">
+                        Team Members ({userTeam.members?.length || 1} / {hackathon.maximum_team_size})
+                      </p>
+                      {userTeam.pendingInvitations && userTeam.pendingInvitations.length > 0 && (
+                        <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200/60 dark:border-amber-800/40">
+                          {userTeam.pendingInvitations.length} Pending
+                        </span>
+                      )}
+                    </div>
                     <div className="space-y-2">
                       {userTeam.members?.map((member: any) => (
                         <div key={member.participant_id} className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
@@ -162,23 +213,145 @@ export function HackathonClient({
                           </div>
                         </div>
                       ))}
+
+                      {/* Pending invitations */}
+                      {userTeam.pendingInvitations?.map((inv: any) => (
+                        <div key={inv.participant_id} className="flex items-center justify-between p-3 bg-amber-50/60 dark:bg-amber-950/20 rounded-lg border border-dashed border-amber-300 dark:border-amber-800/60">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-amber-700 dark:text-amber-400 font-bold text-xs">
+                              {inv.participants?.full_name?.charAt(0) || "?"}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                {inv.participants?.full_name || inv.participants?.email || "Invited Student"}
+                              </p>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                                <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Invitation Pending</span>
+                              </div>
+                            </div>
+                          </div>
+                          {isLeader && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 h-7 px-2"
+                              onClick={async () => {
+                                if (!confirm("Cancel this invitation?")) return;
+                                const res = await cancelHackathonInvitation(userTeam.id, inv.participant_id, fest.id);
+                                if (res.success) {
+                                  toast.info("Invitation cancelled.");
+                                  router.refresh();
+                                } else {
+                                  toast.error(res.error || "Failed to cancel invitation");
+                                }
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
 
                   <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-700">
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-2 font-semibold tracking-wider uppercase">Invite Members with Passcode</p>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
                       <code className="text-xl font-mono font-bold text-slate-800 dark:text-white tracking-widest">{userTeam.passcode}</code>
-                      <Button variant="outline" size="sm" onClick={() => {
-                        navigator.clipboard.writeText(userTeam.passcode);
-                        toast.success("Passcode copied to clipboard!");
-                      }}>
-                        Copy Code
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        {isLeader && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => setIsInviteModalOpen(true)}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm active:translate-y-[1px]"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            Share Invitation
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm" onClick={() => {
+                          navigator.clipboard.writeText(userTeam.passcode);
+                          toast.success("Passcode copied to clipboard!");
+                        }}>
+                          Copy Code
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Share Invitation Modal */}
+            {isInviteModalOpen && userTeam && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+                  <button 
+                    onClick={() => { setIsInviteModalOpen(false); setInviteEmail(""); }}
+                    className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-lg"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                      <UserPlus className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold dark:text-white">Share Team Invitation</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Team: {userTeam.name}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 mb-5 leading-relaxed">
+                    Send an invitation directly to a registered student. The invite will appear in their <strong className="text-indigo-600 dark:text-indigo-400">Invitations</strong> section where they can accept it to join your team.
+                  </p>
+                  <form onSubmit={handleSendInvitation} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                        Teammate&apos;s Registered Email
+                      </label>
+                      <input
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        placeholder="e.g. teammate@sonatech.ac.in"
+                        required
+                        className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">
+                        Make sure they have already signed up on Eventrix with this email address.
+                      </p>
+                    </div>
+                    <div className="pt-2 flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => { setIsInviteModalOpen(false); setInviteEmail(""); }}
+                        disabled={isSendingInvite}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={isSendingInvite || !inviteEmail.trim()}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center gap-2"
+                      >
+                        {isSendingInvite ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4" />
+                            Send Invitation
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              </div>
             )}
 
             <Card className="border-0 shadow-xl bg-white dark:bg-slate-900 overflow-hidden">

@@ -18,8 +18,12 @@ export function InvitationsList({ invitations }: { invitations: any[] }) {
       invitation.teams.sub_events.fest_id
     );
     if (res.success) {
-      toast.success("Team invitation accepted!");
-      router.push("/registrations");
+      toast.success(invitation.isHackathon ? "Hackathon team invitation accepted!" : "Team invitation accepted!");
+      if (invitation.isHackathon && invitation.teams?.sub_events?.fest_id) {
+        router.push(`/hackathons/${invitation.teams.sub_events.fest_id}`);
+      } else {
+        router.push("/registrations");
+      }
     } else {
       toast.error(res.error || "Failed to accept team invitation");
       setLoadingId(null);
@@ -59,7 +63,9 @@ export function InvitationsList({ invitations }: { invitations: any[] }) {
           
           <div className="flex justify-between items-start mb-4">
             <div>
-              <span className="text-[10px] font-bold text-[#A98BFF] uppercase tracking-widest mb-1 block">Team Invitation</span>
+              <span className="text-[10px] font-bold text-[#A98BFF] uppercase tracking-widest mb-1 block">
+                {inv.isHackathon ? "Hackathon Team Invitation" : "Team Invitation"}
+              </span>
               <h3 className="font-['Roboto_Condensed','Anton',sans-serif] font-[800] text-2xl text-[#080A12] uppercase leading-none">
                 {inv.teams.team_name}
               </h3>

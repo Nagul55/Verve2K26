@@ -1,6 +1,7 @@
 import React from "react";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { TopNavbar } from "@/components/TopNavbar";
+import { FooterNav } from "@/components/FooterNav";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { redirect } from "next/navigation";
 
@@ -27,6 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             {children}
           </div>
         </main>
+        <FooterNav />
       </div>
     </div>
   );

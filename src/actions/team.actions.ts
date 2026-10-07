@@ -116,7 +116,7 @@ export async function getPendingInvitations() {
   
   const { data: subEvents, error: subErr } = await adminClient
     .from('sub_events')
-    .select('id, title, fest_id')
+    .select('id, title, fest_id, fests(id, name, event_type)')
     .in('id', eventIds);
 
   if (subErr) {
@@ -127,9 +127,11 @@ export async function getPendingInvitations() {
 
   return (teamMembers || []).map((tm: any) => {
     const eventId = tm.teams?.event_id;
-    const subEvent = subEventsMap.get(eventId);
+    const subEvent: any = subEventsMap.get(eventId);
+    const isHackathon = subEvent?.fests?.event_type === 'hackathon';
     return {
       ...tm,
+      isHackathon,
       teams: {
         ...(tm.teams || {}),
         sub_events: subEvent || null
@@ -164,6 +166,22 @@ export async function acceptTeamInvitation(teamId: string, eventId: string, fest
     .eq('participant_id', user.id);
 
   if (updateError) return { success: false, error: updateError.message };
+
+  // 1.5 If this is a Hackathon team, also add to hackathon_team_members
+  const { data: hTeam } = await adminClient
+    .from('hackathon_teams')
+    .select('id, hackathon_id')
+    .eq('id', teamId)
+    .maybeSingle();
+
+  if (hTeam) {
+    await adminClient
+      .from('hackathon_team_members')
+      .upsert({
+        team_id: teamId,
+        participant_id: user.id
+      }, { onConflict: 'team_id,participant_id' });
+  }
 
   // 2. Ensure registered for Fest
   let memberFestRegId;

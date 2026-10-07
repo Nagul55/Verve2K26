@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { HackathonClient } from "./HackathonClient";
 
 import { getUserHackathonTeam } from "@/actions/hackathon.team.actions";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function HackathonDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -14,6 +15,9 @@ export default async function HackathonDetailsPage({ params }: { params: Promise
     notFound();
   }
 
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   const userTeam = await getUserHackathonTeam(hackathonData.hackathonDetails.id);
 
   return (
@@ -22,6 +26,7 @@ export default async function HackathonDetailsPage({ params }: { params: Promise
       hackathon={hackathonData.hackathonDetails}
       problemStatements={hackathonData.problem_statements}
       userTeam={userTeam}
+      currentUserId={user?.id}
     />
   );
 }
