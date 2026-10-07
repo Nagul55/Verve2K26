@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DepartmentSelect } from '@/components/ui/DepartmentSelect';
 
 export function RegistrationForm() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -158,9 +159,14 @@ export function RegistrationForm() {
               {errors.college && <span className="text-xs text-destructive">{errors.college.message}</span>}
             </div>
             <div className="space-y-2">
-              <Label>Department</Label>
-              <Input placeholder="Information Technology" {...register('department')} />
-              {errors.department && <span className="text-xs text-destructive">{errors.department.message}</span>}
+              <DepartmentSelect
+                label="Department"
+                name="department"
+                value={watch('department')}
+                onChange={(val) => setValue('department', val, { shouldValidate: true })}
+                placeholder="Select Department"
+                error={errors.department?.message}
+              />
             </div>
             <div className="space-y-2">
               <Label>Year of Study</Label>

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useFormDraft } from "@/hooks/useFormDraft";
 import { UserAvatar } from "@/components/UserAvatar";
+import { DepartmentSelect } from "@/components/ui/DepartmentSelect";
 
 export function SettingsProfileForm({ initialData, userId, showAcademic = true }: { initialData: any, userId: string, showAcademic?: boolean }) {
   const router = useRouter();
@@ -141,8 +142,14 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
                 <input name="register_number" value={formData.register_number} onChange={handleChange} disabled={!isEditing} className={inputClass} placeholder={isEditing ? "Register / Roll Number" : "-"} />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Department</label>
-                <input name="department" value={formData.department} onChange={handleChange} placeholder={isEditing ? "Information Technology" : "-"} disabled={!isEditing} className={inputClass} />
+                <DepartmentSelect
+                  label="Department"
+                  name="department"
+                  value={formData.department}
+                  onChange={(val) => setFormData(prev => ({ ...prev, department: val }))}
+                  disabled={!isEditing}
+                  placeholder={isEditing ? "Select Department" : "-"}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Year of Study</label>

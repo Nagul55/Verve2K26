@@ -8,6 +8,9 @@ import { updateHackathon, addHackathonPDF, replaceHackathonPDF, removeHackathonP
 import { getCachedCoordinators } from "@/actions/event.actions";
 import { toast } from "sonner";
 import { DateTimePicker } from "@/components/DateTimePicker";
+import { DepartmentSelect } from "@/components/ui/DepartmentSelect";
+import { MultiDepartmentSelect } from "@/components/ui/MultiDepartmentSelect";
+import { EventrixDatePicker } from "@/components/ui/EventrixDatePicker";
 import { parseISTDeadlineParts } from "@/utils/date-utils";
 
 const parseDateString = (dateString?: string) => {
@@ -285,8 +288,13 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
                 <input name="domain" value={formData.domain} onChange={handleChange} className={inputClass} />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Organizing Department</label>
-                <input name="organizing_department" value={formData.organizing_department} onChange={handleChange} className={inputClass} />
+                <DepartmentSelect
+                  label="Organizing Department"
+                  name="organizing_department"
+                  value={formData.organizing_department}
+                  onChange={(val) => setFormData(prev => ({ ...prev, organizing_department: val }))}
+                  placeholder="Select Organizing Department"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Venue</label>
@@ -368,11 +376,19 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Abstract Submission Deadline (Optional)</label>
-                <input type="date" name="abstract_submission_date" value={formData.abstract_submission_date} onChange={handleChange} className={inputClass} />
+                <EventrixDatePicker
+                  value={formData.abstract_submission_date}
+                  onChange={(val) => setFormData(prev => ({ ...prev, abstract_submission_date: val }))}
+                  placeholder="Select Date"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Project Submission Deadline (Optional)</label>
-                <input type="date" name="project_submission_date" value={formData.project_submission_date} onChange={handleChange} className={inputClass} />
+                <EventrixDatePicker
+                  value={formData.project_submission_date}
+                  onChange={(val) => setFormData(prev => ({ ...prev, project_submission_date: val }))}
+                  placeholder="Select Date"
+                />
               </div>
             </div>
           </div>
@@ -418,8 +434,12 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Allowed Departments (Comma Separated)</label>
-                <input name="allowed_departments" value={formData.allowed_departments} onChange={handleChange} className={inputClass} />
+                <MultiDepartmentSelect
+                  label="Allowed Departments"
+                  value={formData.allowed_departments}
+                  onChange={(val) => setFormData(prev => ({ ...prev, allowed_departments: val }))}
+                  placeholder="Select allowed departments or click 'Select All'"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Allowed Years (Comma Separated)</label>

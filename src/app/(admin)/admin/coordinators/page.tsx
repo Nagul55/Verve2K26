@@ -33,6 +33,7 @@ import { useFormDraft } from "@/hooks/useFormDraft";
 import { UserAvatar } from "@/components/UserAvatar";
 import { CoordinatorEventSelector } from "@/components/CoordinatorEventSelector";
 import { EventrixSelect } from "@/components/ui/EventrixSelect";
+import { DepartmentSelect } from "@/components/ui/DepartmentSelect";
 
 export default function CoordinatorsPage() {
   const [activeTab, setActiveTab] = useState<"manage" | "add">("manage");
@@ -584,20 +585,14 @@ export default function CoordinatorsPage() {
                 </div>
 
                 {/* Department / Branch */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
-                    Department / Branch <span className="text-red-500">*</span>
-                  </label>
-                  <input 
-                    type="text"
-                    name="department" 
-                    value={formData.department} 
-                    onChange={handleChange} 
-                    required 
-                    placeholder="Information Technology" 
-                    className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
-                  />
-                </div>
+                <DepartmentSelect
+                  label="Department / Branch"
+                  name="department"
+                  required
+                  value={formData.department}
+                  onChange={(val) => setFormData((prev) => ({ ...prev, department: val }))}
+                  placeholder="Select Department"
+                />
 
                 {/* Year of Study */}
                 <EventrixSelect
