@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [],
   experimental: {
     serverActions: {
+      bodySizeLimit: '100mb',
       allowedOrigins: [
         'localhost:3000', 
         '127.0.0.1:3000',

@@ -23,6 +23,8 @@ export interface EventResourceItem {
   created_at: string;
 }
 
+import { getMimeType } from "@/lib/mimeUtils";
+
 export async function uploadEventResourceAction(formData: FormData) {
   try {
     const file = formData.get("file") as File;
@@ -32,10 +34,10 @@ export async function uploadEventResourceAction(formData: FormData) {
       return { success: false, error: "No file selected for upload." };
     }
 
-    // Max file size: 15MB limit
-    const MAX_SIZE = 15 * 1024 * 1024;
+    // Max file size: 100MB limit
+    const MAX_SIZE = 100 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      return { success: false, error: "File exceeds the maximum allowed size limit of 15MB." };
+      return { success: false, error: "File exceeds the maximum allowed size limit of 100MB." };
     }
 
     const adminClient = getAdminClient();
@@ -48,11 +50,12 @@ export async function uploadEventResourceAction(formData: FormData) {
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+    const mimeType = getMimeType(file.name, file.type);
 
     const { error: uploadError } = await adminClient.storage
       .from('event-resources')
       .upload(storagePath, buffer, {
-        contentType: file.type || 'application/octet-stream',
+        contentType: mimeType,
         upsert: true
       });
 
@@ -69,7 +72,7 @@ export async function uploadEventResourceAction(formData: FormData) {
       original_name: file.name,
       file_url: urlData.publicUrl,
       storage_path: storagePath,
-      file_type: file.type || file.name.split('.').pop() || 'file',
+      file_type: mimeType,
       file_size: file.size,
       uploaded_by: user?.id || 'system',
       created_at: new Date().toISOString()

@@ -11,6 +11,11 @@ import { DateTimePicker } from "@/components/DateTimePicker";
 import { DepartmentSelect } from "@/components/ui/DepartmentSelect";
 import { MultiDepartmentSelect } from "@/components/ui/MultiDepartmentSelect";
 import { EventrixDatePicker } from "@/components/ui/EventrixDatePicker";
+import { EventrixSelect } from "@/components/ui/EventrixSelect";
+import { MultiCollegeSelect } from "@/components/ui/MultiCollegeSelect";
+import { MultiYearSelect } from "@/components/ui/MultiYearSelect";
+import { ALLOWED_FILE_ACCEPT } from "@/lib/mimeUtils";
+import { getFileIcon } from "@/components/ui/EventrixResourceUploader";
 import { parseISTDeadlineParts } from "@/utils/date-utils";
 
 const parseDateString = (dateString?: string) => {
@@ -126,19 +131,16 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
     const file = e.target.files?.[0];
     if (!file) return;
     
-    if (file.type !== "application/pdf") {
-      toast.error(`${file.name} is not a PDF.`);
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error(`${file.name} exceeds 10MB limit.`);
+    const MAX_SIZE = 100 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      toast.error(`${file.name} exceeds 100MB limit.`);
       return;
     }
 
     const payload = new FormData();
     payload.append('file', file);
     
-    const toastId = toast.loading("Uploading new problem statement...");
+    const toastId = toast.loading("Uploading problem statement document...");
     const result = await addHackathonPDF(hd.id, payload);
     
     if (result.error) {
@@ -162,13 +164,9 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
     const file = e.target.files?.[0];
     if (!file || !replacingId) return;
     
-    if (file.type !== "application/pdf") {
-      toast.error(`${file.name} is not a PDF.`);
-      setReplacingId(null);
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error(`${file.name} exceeds 10MB limit.`);
+    const MAX_SIZE = 100 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      toast.error(`${file.name} exceeds 100MB limit.`);
       setReplacingId(null);
       return;
     }
@@ -301,12 +299,17 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
                 <input name="venue" value={formData.venue} onChange={handleChange} className={inputClass} />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Mode</label>
-                <select name="mode" value={formData.mode} onChange={handleChange} className={inputClass}>
-                  <option value="Offline">Offline</option>
-                  <option value="Online">Online</option>
-                  <option value="Hybrid">Hybrid</option>
-                </select>
+                <EventrixSelect
+                  label="Mode"
+                  name="mode"
+                  value={formData.mode}
+                  onChange={(val) => setFormData(prev => ({ ...prev, mode: val }))}
+                  options={[
+                    { value: "Offline", label: "Offline" },
+                    { value: "Online", label: "Online" },
+                    { value: "Hybrid", label: "Hybrid" },
+                  ]}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">External Link / Website (Optional)</label>
@@ -317,11 +320,16 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
                 <input name="logo_url" value={formData.logo_url} onChange={handleChange} className={inputClass} />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Event Status (Visibility)</label>
-                <select name="status" value={formData.status} onChange={handleChange} className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium font-bold text-eventrix-black">
-                  <option value="DRAFT">DRAFT (Hidden from Student Portal)</option>
-                  <option value="LIVE">LIVE (Visible on Student Portal)</option>
-                </select>
+                <EventrixSelect
+                  label="Event Status (Visibility)"
+                  name="status"
+                  value={formData.status}
+                  onChange={(val) => setFormData(prev => ({ ...prev, status: val }))}
+                  options={[
+                    { value: "DRAFT", label: "DRAFT (Hidden from Student Portal)" },
+                    { value: "LIVE", label: "LIVE (Visible on Student Portal)" },
+                  ]}
+                />
               </div>
             </div>
           </div>
@@ -425,13 +433,18 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Eligibility Type</label>
-                <select name="eligibility_type" value={formData.eligibility_type} onChange={handleChange} className={inputClass}>
-                  <option value="College Students">College Students</option>
-                  <option value="Sona Students">Sona Students Only</option>
-                  <option value="Open to All">Open to All</option>
-                  <option value="Custom">Custom Criteria</option>
-                </select>
+                <EventrixSelect
+                  label="Eligibility Type"
+                  name="eligibility_type"
+                  value={formData.eligibility_type}
+                  onChange={(val) => setFormData(prev => ({ ...prev, eligibility_type: val }))}
+                  options={[
+                    { value: "College Students", label: "College Students" },
+                    { value: "Sona Students", label: "Sona Students Only" },
+                    { value: "Open to All", label: "Open to All" },
+                    { value: "Custom", label: "Custom Criteria" },
+                  ]}
+                />
               </div>
               <div className="space-y-2">
                 <MultiDepartmentSelect
@@ -442,12 +455,20 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Allowed Years (Comma Separated)</label>
-                <input name="allowed_years" value={formData.allowed_years} onChange={handleChange} className={inputClass} />
+                <MultiYearSelect
+                  label="Allowed Years"
+                  value={formData.allowed_years}
+                  onChange={(val) => setFormData(prev => ({ ...prev, allowed_years: val }))}
+                  placeholder="Select allowed years or click 'All Years'"
+                />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Allowed Colleges (Comma Separated)</label>
-                <input name="allowed_colleges" value={formData.allowed_colleges} onChange={handleChange} className={inputClass} />
+                <MultiCollegeSelect
+                  label="Allowed Colleges"
+                  value={formData.allowed_colleges}
+                  onChange={(val) => setFormData(prev => ({ ...prev, allowed_colleges: val }))}
+                  placeholder="Select allowed Tamil Nadu colleges or click 'All Colleges'"
+                />
               </div>
             </div>
           </div>
@@ -477,12 +498,28 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
             </div>
           </div>
 
-          {/* SECTION F — PROBLEM STATEMENT & ATTACHMENTS */}
+          {/* SECTION F — PROBLEM STATEMENT & DOCUMENTS */}
           <div className="pt-6 border-t border-[#D9D9DF]">
             <h3 className="font-bold text-eventrix-black uppercase tracking-widest mb-4 text-sm pb-2 border-b border-[#D9D9DF]">
-              Section F — Problem Statements
+              Section F — Problem Statements & Documents
             </h3>
             
+            {/* Hidden file inputs for adding and replacing files */}
+            <input 
+              ref={addFileInputRef} 
+              type="file" 
+              accept={ALLOWED_FILE_ACCEPT} 
+              className="hidden" 
+              onChange={handleAddFile} 
+            />
+            <input 
+              ref={replaceFileInputRef} 
+              type="file" 
+              accept={ALLOWED_FILE_ACCEPT} 
+              className="hidden" 
+              onChange={handleReplaceFile} 
+            />
+
             <div className="space-y-4 mb-6">
               <div className="space-y-2 mb-6">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Problem Statement / Challenge Description</label>
@@ -492,14 +529,16 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
               {problemStatements.map((ps, index) => (
                 <div key={ps.id} className="border border-[#D9D9DF] rounded-md overflow-hidden bg-[#F8F8FC]">
                   <div className="p-6 flex items-center justify-between border-b border-[#D9D9DF]">
-                    <div className="flex items-center gap-4">
-                      <FileText className="w-8 h-8 text-eventrix-lavender" />
-                      <div>
-                        <h4 className="font-bold text-eventrix-black text-sm">{ps.title || `Problem Statement ${index + 1}`}</h4>
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="p-2.5 bg-white rounded-lg border border-[#D9D9DF] shrink-0">
+                        {getFileIcon(ps.file_name || 'document.pdf')}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-eventrix-black text-sm truncate">{ps.title || `Problem Statement ${index + 1}`}</h4>
                         {ps.file_name ? (
-                          <p className="text-xs text-eventrix-muted mt-1 break-all">{ps.file_name}</p>
+                          <p className="text-xs text-eventrix-muted mt-1 truncate max-w-[280px] md:max-w-[420px]">{ps.file_name}</p>
                         ) : (
-                          <p className="text-xs text-eventrix-muted mt-1 break-all italic">Text-Only Problem Statement</p>
+                          <p className="text-xs text-eventrix-muted mt-1 italic">Text-Only Problem Statement</p>
                         )}
                       </div>
                     </div>
@@ -513,19 +552,19 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
                         {ps.file_url && (
                           <>
                             <a href={ps.file_url} target="_blank" rel="noopener noreferrer" className="text-xs font-bold tracking-widest uppercase text-eventrix-black hover:text-eventrix-lavender transition-colors bg-white px-3 py-2 rounded border border-[#D9D9DF] flex items-center gap-1">
-                              <Eye className="w-3.5 h-3.5" /> View PDF
+                              <Eye className="w-3.5 h-3.5" /> View File
                             </a>
-                            <button type="button" onClick={() => handleReplaceClick(ps.id)} className="text-xs font-bold tracking-widest uppercase text-eventrix-black hover:text-eventrix-lavender transition-colors bg-white px-3 py-2 rounded border border-[#D9D9DF] flex items-center gap-1">
-                              <RefreshCw className="w-3.5 h-3.5" /> Replace PDF
+                            <button type="button" onClick={() => handleReplaceClick(ps.id)} className="text-xs font-bold tracking-widest uppercase text-eventrix-black hover:text-eventrix-lavender transition-colors bg-white px-3 py-2 rounded border border-[#D9D9DF] flex items-center gap-1 cursor-pointer">
+                              <RefreshCw className="w-3.5 h-3.5" /> Replace File
                             </button>
                           </>
                         )}
                         {!ps.file_url && (
-                           <button type="button" onClick={() => handleReplaceClick(ps.id)} className="text-xs font-bold tracking-widest uppercase text-eventrix-black hover:text-eventrix-lavender transition-colors bg-white px-3 py-2 rounded border border-[#D9D9DF] flex items-center gap-1">
-                             <Upload className="w-3.5 h-3.5" /> Attach PDF
+                           <button type="button" onClick={() => handleReplaceClick(ps.id)} className="text-xs font-bold tracking-widest uppercase text-eventrix-black hover:text-eventrix-lavender transition-colors bg-white px-3 py-2 rounded border border-[#D9D9DF] flex items-center gap-1 cursor-pointer">
+                             <Upload className="w-3.5 h-3.5" /> Attach File
                            </button>
                         )}
-                        <button type="button" onClick={() => handleRemoveFile(ps.id)} className="text-xs font-bold tracking-widest uppercase text-red-500 hover:text-red-700 transition-colors bg-white px-3 py-2 rounded border border-[#D9D9DF] flex items-center gap-1">
+                        <button type="button" onClick={() => handleRemoveFile(ps.id)} className="text-xs font-bold tracking-widest uppercase text-red-500 hover:text-red-700 transition-colors bg-white px-3 py-2 rounded border border-[#D9D9DF] flex items-center gap-1 cursor-pointer">
                           <Trash2 className="w-3.5 h-3.5" /> Remove
                         </button>
                       </div>
@@ -588,12 +627,17 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
               <button 
                 type="button" 
                 onClick={() => addFileInputRef.current?.click()}
-                className="flex items-center justify-center gap-2 w-full border-2 border-dashed border-[#D9D9DF] rounded-md py-6 hover:border-eventrix-lavender hover:bg-[#F8F8FC] transition-colors group cursor-pointer"
+                className="flex items-center justify-center gap-3 w-full border-2 border-dashed border-[#D9D9DF] rounded-xl py-6 hover:border-eventrix-lavender hover:bg-[#F8F8FC] transition-colors group cursor-pointer"
               >
                 <Upload className="w-5 h-5 text-eventrix-muted group-hover:text-eventrix-lavender transition-colors" />
-                <span className="text-sm font-bold uppercase tracking-widest text-eventrix-muted group-hover:text-eventrix-black transition-colors">
-                  Upload PDF Problem Statement
-                </span>
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-bold uppercase tracking-widest text-eventrix-muted group-hover:text-eventrix-black transition-colors">
+                    Upload Problem Statement / Document
+                  </span>
+                  <span className="text-[11px] text-eventrix-muted mt-0.5">
+                    PDF, DOCX, PPTX, XLSX, PNG, JPG, ZIP — up to 100MB
+                  </span>
+                </div>
               </button>
               
               <button 
@@ -688,13 +732,23 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Select Coordinator</label>
-                <select name="coordinator_id" value={formData.coordinator_id} onChange={handleChange} className={inputClass}>
-                  <option value="">Unassigned</option>
-                  {coordinators.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                <EventrixSelect
+                  label="Select Coordinator"
+                  name="coordinator_id"
+                  value={formData.coordinator_id}
+                  onChange={(val) => setFormData(prev => ({ ...prev, coordinator_id: val }))}
+                  placeholder="Unassigned (Optional)"
+                  searchable={true}
+                  searchPlaceholder="Search coordinator..."
+                  options={[
+                    { value: "", label: "Unassigned" },
+                    ...coordinators.map(c => ({
+                      value: c.id,
+                      label: c.name,
+                      description: c.email
+                    }))
+                  ]}
+                />
               </div>
               {selectedCoordinator && (
                 <div className="space-y-1.5 flex flex-col justify-center bg-[#F8F8FC] p-4 rounded-md border border-[#D9D9DF]">

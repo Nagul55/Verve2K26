@@ -335,6 +335,12 @@ export async function approveSubEvent(subEventId: string, coordinatorIds?: strin
     };
   }
 
+  const { data: currentSubEvent } = await adminClient
+    .from('sub_events')
+    .select('fest_id')
+    .eq('id', subEventId)
+    .single();
+
   const { error } = await adminClient
     .from('sub_events')
     .update({
@@ -344,10 +350,19 @@ export async function approveSubEvent(subEventId: string, coordinatorIds?: strin
     })
     .eq('id', subEventId);
 
+  if (currentSubEvent?.fest_id) {
+    await adminClient
+      .from('fests')
+      .update({ status: 'LIVE' })
+      .eq('id', currentSubEvent.fest_id);
+  }
+
   try {
     (revalidateTag as any)('coordinators');
     (revalidateTag as any)('fests');
+    (revalidateTag as any)('fests-list');
     revalidatePath('/admin');
+    revalidatePath('/admin/events');
     revalidatePath('/admin/sub-events');
     revalidatePath('/admin/coordinators');
     revalidatePath('/coordinator/events');
@@ -366,16 +381,36 @@ export async function approveAndPermitSubEvent(subEventId: string, coordinatorId
 
 export async function rejectSubEvent(subEventId: string) {
   const adminClient = getAdminClient();
+  const { data: currentSubEvent } = await adminClient
+    .from('sub_events')
+    .select('fest_id')
+    .eq('id', subEventId)
+    .single();
+
   const { error } = await adminClient
     .from('sub_events')
     .update({ status: 'REJECTED' })
     .eq('id', subEventId);
 
-  revalidatePath('/admin');
-  revalidatePath('/admin/sub-events');
-  revalidatePath('/admin/coordinators');
-  revalidatePath('/coordinator/events');
-  revalidatePath('/events');
+  if (currentSubEvent?.fest_id) {
+    await adminClient
+      .from('fests')
+      .update({ status: 'REJECTED' })
+      .eq('id', currentSubEvent.fest_id);
+  }
+
+  try {
+    (revalidateTag as any)('coordinators');
+    (revalidateTag as any)('fests');
+    (revalidateTag as any)('fests-list');
+    revalidatePath('/admin');
+    revalidatePath('/admin/events');
+    revalidatePath('/admin/sub-events');
+    revalidatePath('/admin/coordinators');
+    revalidatePath('/coordinator/events');
+    revalidatePath('/events');
+  } catch (e) {}
+
   return { success: !error, error: error?.message };
 }
 

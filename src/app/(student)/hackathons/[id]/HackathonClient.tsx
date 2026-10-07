@@ -222,7 +222,7 @@ export function HackathonClient({
                           <div className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold">
                             #{index + 1}
                           </div>
-                          <h3 className="font-bold text-lg dark:text-slate-200">{ps.title || ps.file_name.replace('.pdf', '')}</h3>
+                          <h3 className="font-bold text-lg dark:text-slate-200">{ps.title || (ps.file_name ? ps.file_name.replace(/\.[^/.]+$/, '') : `Problem Statement #${index + 1}`)}</h3>
                         </div>
                         {expandedStatement === ps.id ? <ChevronUp className="text-slate-400" /> : <ChevronDown className="text-slate-400" />}
                       </button>
@@ -235,14 +235,16 @@ export function HackathonClient({
                             </p>
                           )}
                           
-                          <div className="mt-4 flex gap-3">
-                            <a href={ps.file_url} target="_blank" rel="noreferrer">
-                              <Button className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60 shadow-none gap-2">
-                                <Download className="w-4 h-4" />
-                                Download PDF
-                              </Button>
-                            </a>
-                          </div>
+                          {ps.file_url && (
+                            <div className="mt-4 flex gap-3">
+                              <a href={ps.file_url} target="_blank" rel="noreferrer">
+                                <Button className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60 shadow-none gap-2">
+                                  <Download className="w-4 h-4" />
+                                  Download Attachment
+                                </Button>
+                              </a>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

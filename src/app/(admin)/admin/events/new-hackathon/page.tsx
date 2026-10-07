@@ -11,6 +11,11 @@ import { DateTimePicker } from "@/components/DateTimePicker";
 import { DepartmentSelect } from "@/components/ui/DepartmentSelect";
 import { MultiDepartmentSelect } from "@/components/ui/MultiDepartmentSelect";
 import { EventrixDatePicker } from "@/components/ui/EventrixDatePicker";
+import { EventrixSelect } from "@/components/ui/EventrixSelect";
+import { MultiCollegeSelect } from "@/components/ui/MultiCollegeSelect";
+import { MultiYearSelect } from "@/components/ui/MultiYearSelect";
+import { ALLOWED_FILE_ACCEPT, formatFileSize } from "@/lib/mimeUtils";
+import { getFileIcon } from "@/components/ui/EventrixResourceUploader";
 
 export default function CreateHackathonPage() {
   const router = useRouter();
@@ -82,14 +87,11 @@ export default function CreateHackathonPage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles = Array.from(e.target.files);
+      const MAX_SIZE = 100 * 1024 * 1024;
       
       const validFiles = newFiles.filter(file => {
-        if (file.type !== "application/pdf") {
-          toast.error(`${file.name} is not a PDF.`);
-          return false;
-        }
-        if (file.size > 10 * 1024 * 1024) {
-          toast.error(`${file.name} exceeds 10MB limit.`);
+        if (file.size > MAX_SIZE) {
+          toast.error(`${file.name} exceeds 100MB limit.`);
           return false;
         }
         return true;
@@ -209,12 +211,17 @@ export default function CreateHackathonPage() {
                 <input name="venue" value={formData.venue} onChange={handleChange} placeholder="e.g. Innovation Centre / Main Auditorium" className={inputClass} />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Mode</label>
-                <select name="mode" value={formData.mode} onChange={handleChange} className={inputClass}>
-                  <option value="Offline">Offline</option>
-                  <option value="Online">Online</option>
-                  <option value="Hybrid">Hybrid</option>
-                </select>
+                <EventrixSelect
+                  label="Mode"
+                  name="mode"
+                  value={formData.mode}
+                  onChange={(val) => setFormData(prev => ({ ...prev, mode: val }))}
+                  options={[
+                    { value: "Offline", label: "Offline" },
+                    { value: "Online", label: "Online" },
+                    { value: "Hybrid", label: "Hybrid" },
+                  ]}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">External Link / Website (Optional)</label>
@@ -326,13 +333,18 @@ export default function CreateHackathonPage() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Eligibility Type</label>
-                <select name="eligibility_type" value={formData.eligibility_type} onChange={handleChange} className={inputClass}>
-                  <option value="College Students">College Students</option>
-                  <option value="Sona Students">Sona Students Only</option>
-                  <option value="Open to All">Open to All</option>
-                  <option value="Custom">Custom Criteria</option>
-                </select>
+                <EventrixSelect
+                  label="Eligibility Type"
+                  name="eligibility_type"
+                  value={formData.eligibility_type}
+                  onChange={(val) => setFormData(prev => ({ ...prev, eligibility_type: val }))}
+                  options={[
+                    { value: "College Students", label: "College Students" },
+                    { value: "Sona Students", label: "Sona Students Only" },
+                    { value: "Open to All", label: "Open to All" },
+                    { value: "Custom", label: "Custom Criteria" },
+                  ]}
+                />
               </div>
               <div className="space-y-2">
                 <MultiDepartmentSelect
@@ -343,12 +355,20 @@ export default function CreateHackathonPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Allowed Years (Comma Separated)</label>
-                <input name="allowed_years" value={formData.allowed_years} onChange={handleChange} placeholder="e.g. 1st Year, 2nd Year, 3rd Year" className={inputClass} />
+                <MultiYearSelect
+                  label="Allowed Years"
+                  value={formData.allowed_years}
+                  onChange={(val) => setFormData(prev => ({ ...prev, allowed_years: val }))}
+                  placeholder="Select allowed years or click 'All Years'"
+                />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Allowed Colleges (Comma Separated)</label>
-                <input name="allowed_colleges" value={formData.allowed_colleges} onChange={handleChange} placeholder="e.g. Sona College of Technology, All Engineering Colleges" className={inputClass} />
+                <MultiCollegeSelect
+                  label="Allowed Colleges"
+                  value={formData.allowed_colleges}
+                  onChange={(val) => setFormData(prev => ({ ...prev, allowed_colleges: val }))}
+                  placeholder="Select allowed Tamil Nadu colleges or click 'All Colleges'"
+                />
               </div>
             </div>
           </div>
@@ -381,7 +401,7 @@ export default function CreateHackathonPage() {
           {/* SECTION F — PROBLEM STATEMENT & ATTACHMENTS */}
           <div className="pt-6 border-t border-[#D9D9DF]">
             <h3 className="font-bold text-eventrix-black uppercase tracking-widest mb-4 text-sm pb-2 border-b border-[#D9D9DF]">
-              Section F — Problem Statement & PDF Documents
+              Section F — Problem Statement & Documents
             </h3>
             <div className="space-y-4">
               <div className="space-y-2">
@@ -389,17 +409,19 @@ export default function CreateHackathonPage() {
                 <textarea name="problem_statement_description" value={formData.problem_statement_description} onChange={handleChange} placeholder="Detailed problem statement summary..." className={textareaClass} />
               </div>
 
-              <div className="space-y-4 pt-2">
+              <div className="space-y-3 pt-2">
                 {pdfFiles.map((file, index) => (
-                  <div key={index} className="border border-[#D9D9DF] rounded-md p-4 bg-[#F8F8FC] flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <FileText className="w-6 h-6 text-eventrix-lavender" />
+                  <div key={index} className="border border-[#D9D9DF] rounded-lg p-3.5 bg-[#F8F8FC] flex items-center justify-between hover:border-eventrix-lavender transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-white rounded-md border border-[#D9D9DF]">
+                        {getFileIcon(file.name, file.type)}
+                      </div>
                       <div>
-                        <h4 className="font-bold text-eventrix-black text-xs">Problem Statement PDF {index + 1}</h4>
-                        <p className="text-[11px] text-eventrix-muted">{file.name}</p>
+                        <h4 className="font-bold text-eventrix-black text-xs truncate max-w-[280px] md:max-w-[450px]">{file.name}</h4>
+                        <p className="text-[11px] text-eventrix-muted">Attachment {index + 1} • {formatFileSize(file.size)}</p>
                       </div>
                     </div>
-                    <button type="button" onClick={() => removeFile(index)} className="text-[10px] font-bold tracking-widest uppercase text-red-500 hover:text-red-700 bg-white px-3 py-1.5 rounded border border-[#D9D9DF]">
+                    <button type="button" onClick={() => removeFile(index)} className="text-[10px] font-bold tracking-widest uppercase text-red-500 hover:text-red-700 bg-white px-3 py-1.5 rounded border border-[#D9D9DF] cursor-pointer">
                       Remove
                     </button>
                   </div>
@@ -408,7 +430,7 @@ export default function CreateHackathonPage() {
 
               <input 
                 type="file" 
-                accept="application/pdf" 
+                accept={ALLOWED_FILE_ACCEPT}
                 multiple 
                 className="hidden" 
                 ref={fileInputRef} 
@@ -418,12 +440,17 @@ export default function CreateHackathonPage() {
               <button 
                 type="button" 
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center justify-center gap-2 w-full border-2 border-dashed border-[#D9D9DF] rounded-md py-6 hover:border-eventrix-lavender hover:bg-[#F8F8FC] transition-colors group cursor-pointer"
+                className="flex items-center justify-center gap-3 w-full border-2 border-dashed border-[#D9D9DF] rounded-xl py-6 hover:border-eventrix-lavender hover:bg-[#F8F8FC] transition-colors group cursor-pointer"
               >
-                <Upload className="w-5 h-5 text-eventrix-muted group-hover:text-eventrix-lavender" />
-                <span className="text-xs font-bold uppercase tracking-widest text-eventrix-muted group-hover:text-eventrix-black">
-                  Upload Problem Statement PDF
-                </span>
+                <Upload className="w-5 h-5 text-eventrix-muted group-hover:text-eventrix-lavender transition-colors" />
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-bold uppercase tracking-widest text-eventrix-muted group-hover:text-eventrix-black transition-colors">
+                    Upload Problem Statement / Attachment
+                  </span>
+                  <span className="text-[11px] text-eventrix-muted mt-0.5">
+                    PDF, DOCX, PPTX, XLSX, PNG, JPG, ZIP — up to 100MB each
+                  </span>
+                </div>
               </button>
             </div>
           </div>
@@ -496,13 +523,23 @@ export default function CreateHackathonPage() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Select Coordinator</label>
-                <select name="coordinator_id" value={formData.coordinator_id} onChange={handleChange} className={inputClass}>
-                  <option value="">Unassigned</option>
-                  {coordinators.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                <EventrixSelect
+                  label="Select Coordinator"
+                  name="coordinator_id"
+                  value={formData.coordinator_id}
+                  onChange={(val) => setFormData(prev => ({ ...prev, coordinator_id: val }))}
+                  placeholder="Unassigned (Optional)"
+                  searchable={true}
+                  searchPlaceholder="Search coordinator..."
+                  options={[
+                    { value: "", label: "Unassigned" },
+                    ...coordinators.map(c => ({
+                      value: c.id,
+                      label: c.name,
+                      description: c.email
+                    }))
+                  ]}
+                />
               </div>
               {selectedCoordinator && (
                 <div className="space-y-1.5 flex flex-col justify-center bg-[#F8F8FC] p-4 rounded-md border border-[#D9D9DF]">

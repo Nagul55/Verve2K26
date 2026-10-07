@@ -77,9 +77,15 @@ export function EventrixResourceUploader({
     setIsUploading(true);
 
     const uploadedList: EventResourceItem[] = [];
+    const MAX_SIZE = 100 * 1024 * 1024;
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      if (file.size > MAX_SIZE) {
+        toast.error(`${file.name} exceeds the 100MB limit.`);
+        continue;
+      }
+
       const formData = new FormData();
       formData.append("file", file);
       formData.append("sub_event_id", subEventId);
@@ -118,6 +124,13 @@ export function EventrixResourceUploader({
   const handleReplaceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !replaceTargetId) return;
+
+    const MAX_SIZE = 100 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      toast.error(`${file.name} exceeds the 100MB limit.`);
+      if (replaceInputRef.current) replaceInputRef.current.value = "";
+      return;
+    }
 
     setIsUploading(true);
     const formData = new FormData();
@@ -159,6 +172,7 @@ export function EventrixResourceUploader({
         ref={fileInputRef}
         type="file"
         multiple
+        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.webp,.gif,.svg,.zip,.rar,.7z,.txt,.md"
         className="hidden"
         onChange={(e) => {
           if (e.target.files) handleFiles(e.target.files);
@@ -170,6 +184,7 @@ export function EventrixResourceUploader({
       <input
         ref={replaceInputRef}
         type="file"
+        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.webp,.gif,.svg,.zip,.rar,.7z,.txt,.md"
         className="hidden"
         onChange={handleReplaceFile}
         disabled={disabled}
@@ -208,7 +223,7 @@ export function EventrixResourceUploader({
               {isUploading ? "Uploading Event Resources..." : "Click or drag & drop files to upload"}
             </p>
             <p className="text-xs text-eventrix-muted mt-0.5">
-              PDF • DOCX • PPTX • XLSX • PNG • JPG • ZIP • up to 15MB each
+              PDF • DOCX • PPTX • XLSX • PNG • JPG • WEBP • ZIP • up to 100MB each
             </p>
           </div>
         </div>

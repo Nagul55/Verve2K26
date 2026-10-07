@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { useFormDraft } from '@/hooks/useFormDraft';
 import { EventrixSelect } from '@/components/ui/EventrixSelect';
 import { DepartmentSelect } from '@/components/ui/DepartmentSelect';
+import { CollegeSelect } from '@/components/ui/CollegeSelect';
 
 export default function SignupPage() {
   const { formData, setFormData, resetForm } = useFormDraft({
@@ -214,24 +215,16 @@ export default function SignupPage() {
               ]}
             />
 
-            {/* College Name */}
-            <div className="space-y-0.5 sm:space-y-1">
-              <label className="text-[11px] sm:text-xs font-semibold text-gray-900 block">
-                College / Institution Name <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  name="college"
-                  required
-                  value={formData.college}
-                  onChange={(e) => setFormData(prev => ({ ...prev, college: e.target.value }))}
-                  placeholder="College Name"
-                  className="w-full bg-white/90 text-gray-950 placeholder-gray-400 px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-600/30 text-xs sm:text-xs font-medium placeholder:font-normal transition-all shadow-sm"
-                />
-                <Building2 className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-            </div>
+            {/* College Dropdown */}
+            <CollegeSelect
+              label="College / Institution Name"
+              name="college"
+              required
+              size="sm"
+              value={formData.college}
+              onChange={(val) => setFormData(prev => ({ ...prev, college: val }))}
+              placeholder="Select College / Institution"
+            />
 
             {/* Grid 2: Department & Year of Study */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">

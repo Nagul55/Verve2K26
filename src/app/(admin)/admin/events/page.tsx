@@ -36,7 +36,24 @@ export default async function AdminEventsPage() {
           <tbody className="divide-y divide-[#D9D9DF]">
             {(fests || []).map((fest) => (
               <tr key={fest.id} className="hover:bg-[#F8F8FC] transition-colors">
-                <td className="px-6 py-4 font-bold text-eventrix-black text-lg font-anton tracking-wide uppercase">{fest.name}</td>
+                <td className="px-6 py-4">
+                  <p className="font-bold text-eventrix-black text-lg font-anton tracking-wide uppercase">{fest.name}</p>
+                  <div className="mt-1">
+                    {fest.status === 'LIVE' ? (
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded inline-block">
+                        LIVE
+                      </span>
+                    ) : fest.status === 'PENDING_APPROVAL' ? (
+                      <Link href="/admin/coordinators" className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded inline-flex items-center gap-1 hover:bg-amber-200 transition-colors">
+                        PENDING APPROVAL → Review
+                      </Link>
+                    ) : (
+                      <Link href="/admin/coordinators" className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-700 border border-gray-300 px-2 py-0.5 rounded inline-flex items-center gap-1 hover:bg-gray-200 transition-colors">
+                        DRAFT
+                      </Link>
+                    )}
+                  </div>
+                </td>
                 <td className="px-6 py-4 text-eventrix-muted font-bold text-xs uppercase tracking-widest">{fest.event_type || 'Fest'}</td>
                 <td className="px-6 py-4 text-eventrix-muted">{fest.description}</td>
                 <td className="px-6 py-4">

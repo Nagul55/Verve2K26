@@ -5,6 +5,7 @@ import { createHackathonTeam, joinHackathonTeam } from "@/actions/hackathon.team
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { EventrixSelect } from "@/components/ui/EventrixSelect";
 
 export function HackathonRegistrationClient({ hackathonId, festId, problemStatements, maxTeamSize, minTeamSize }: { 
   hackathonId: string, 
@@ -130,20 +131,17 @@ export function HackathonRegistrationClient({ hackathonId, festId, problemStatem
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Select Problem Statement</label>
-              <select 
+              <EventrixSelect
+                label="Select Problem Statement"
                 value={selectedPS}
-                onChange={(e) => setSelectedPS(e.target.value)}
-                className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender text-sm font-bold text-eventrix-black"
+                onChange={(val) => setSelectedPS(val)}
+                placeholder="-- Select a Problem Statement --"
                 required
-              >
-                <option value="" disabled>-- Select a Problem Statement --</option>
-                {problemStatements.map((ps) => (
-                  <option key={ps.id} value={ps.id}>
-                    {ps.title}
-                  </option>
-                ))}
-              </select>
+                options={problemStatements.map((ps) => ({
+                  value: ps.id,
+                  label: ps.title,
+                }))}
+              />
             </div>
 
             <button 

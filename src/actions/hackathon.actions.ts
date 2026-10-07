@@ -3,6 +3,7 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath, revalidateTag } from "next/cache";
 import { randomUUID } from 'crypto';
+import { getMimeType } from '@/lib/mimeUtils';
 
 const getAdminClient = () => {
   return createSupabaseClient(
@@ -16,6 +17,7 @@ export async function createHackathon(formData: FormData) {
   const data = JSON.parse(formData.get('data') as string);
 
   // 1. Create the parent event in `fests`
+  const initialStatus = data.coordinator_id ? 'PENDING_APPROVAL' : 'DRAFT';
   const { data: festData, error: festError } = await adminClient.from('fests').insert({
     name: data.name,
     description: data.tagline || data.description || '',
@@ -23,7 +25,8 @@ export async function createHackathon(formData: FormData) {
     min_non_technical: 0,
     event_type: 'hackathon',
     logo_url: data.logo_url || null,
-    registration_closes_at: data.registration_closes_date && data.registration_closes_time ? `${data.registration_closes_date}T${data.registration_closes_time}:00Z` : null
+    registration_closes_at: data.registration_closes_date && data.registration_closes_time ? `${data.registration_closes_date}T${data.registration_closes_time}:00Z` : null,
+    status: initialStatus
   }).select('id').single();
 
   if (festError || !festData) {
@@ -103,7 +106,7 @@ export async function createHackathon(formData: FormData) {
     date: data.hackathon_starts_date || '',
     time: data.hackathon_starts_time || '09:00',
     location: data.venue || 'Main Venue',
-    status: 'LIVE'
+    status: initialStatus
   }).select('id').single();
 
   // 4. Upload PDFs and create problem statements
@@ -113,19 +116,21 @@ export async function createHackathon(formData: FormData) {
   for (const [key, value] of formData.entries()) {
     if (key.startsWith('pdf_') && value instanceof File) {
       const fileId = randomUUID();
-      const storagePath = `${hackathonData.id}/${fileId}.pdf`;
+      const ext = value.name.includes('.') ? value.name.substring(value.name.lastIndexOf('.')) : '';
+      const storagePath = `${hackathonData.id}/${fileId}${ext}`;
       
       const buffer = Buffer.from(await value.arrayBuffer());
+      const mimeType = getMimeType(value.name, value.type);
 
       const { error: uploadError } = await adminClient.storage
         .from('hackathon-problem-statements')
         .upload(storagePath, buffer, {
-          contentType: 'application/pdf',
+          contentType: mimeType,
           upsert: false
         });
 
       if (uploadError) {
-        console.error("PDF upload failed:", uploadError);
+        console.error("File upload failed:", uploadError);
         failedUploads.push(value.name);
         continue;
       }
@@ -170,7 +175,11 @@ export async function createHackathon(formData: FormData) {
   try {
     (revalidateTag as any)('fests');
     (revalidateTag as any)('fests-list');
+    (revalidateTag as any)('coordinators');
+    revalidatePath('/admin');
     revalidatePath('/admin/events');
+    revalidatePath('/admin/coordinators');
+    revalidatePath('/admin/sub-events');
     revalidatePath('/events');
   } catch (e) {}
 
@@ -361,6 +370,12 @@ export async function addHackathonPDF(hackathonId: string, formData: FormData) {
   
   if (!file) return { success: false, error: "No file provided" };
 
+  // Max 100MB size limit
+  const MAX_SIZE = 100 * 1024 * 1024;
+  if (file.size > MAX_SIZE) {
+    return { success: false, error: "File exceeds 100MB size limit." };
+  }
+
   const { data: existingPs } = await adminClient.from('hackathon_problem_statements')
     .select('display_order')
     .eq('hackathon_id', hackathonId)
@@ -370,12 +385,14 @@ export async function addHackathonPDF(hackathonId: string, formData: FormData) {
   const nextOrder = existingPs && existingPs.length > 0 ? existingPs[0].display_order + 1 : 1;
 
   const fileId = randomUUID();
-  const storagePath = `${hackathonId}/${fileId}.pdf`;
+  const ext = file.name.includes('.') ? file.name.substring(file.name.lastIndexOf('.')) : '';
+  const storagePath = `${hackathonId}/${fileId}${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
+  const mimeType = getMimeType(file.name, file.type);
 
   const { error: uploadError } = await adminClient.storage
     .from('hackathon-problem-statements')
-    .upload(storagePath, buffer, { contentType: 'application/pdf', upsert: false });
+    .upload(storagePath, buffer, { contentType: mimeType, upsert: false });
 
   if (uploadError) return { success: false, error: uploadError.message };
 
@@ -430,16 +447,24 @@ export async function replaceHackathonPDF(problemStatementId: string, formData: 
   
   if (!file) return { success: false, error: "No file provided" };
 
+  // Max 100MB size limit
+  const MAX_SIZE = 100 * 1024 * 1024;
+  if (file.size > MAX_SIZE) {
+    return { success: false, error: "File exceeds 100MB size limit." };
+  }
+
   const { data: existingPs } = await adminClient.from('hackathon_problem_statements').select('*').eq('id', problemStatementId).single();
   if (!existingPs) return { success: false, error: "Problem statement not found" };
 
   const fileId = randomUUID();
-  const newStoragePath = `${existingPs.hackathon_id}/${fileId}.pdf`;
+  const ext = file.name.includes('.') ? file.name.substring(file.name.lastIndexOf('.')) : '';
+  const newStoragePath = `${existingPs.hackathon_id}/${fileId}${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
+  const mimeType = getMimeType(file.name, file.type);
 
   const { error: uploadError } = await adminClient.storage
     .from('hackathon-problem-statements')
-    .upload(newStoragePath, buffer, { contentType: 'application/pdf', upsert: false });
+    .upload(newStoragePath, buffer, { contentType: mimeType, upsert: false });
 
   if (uploadError) return { success: false, error: uploadError.message };
 
