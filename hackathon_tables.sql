@@ -70,6 +70,27 @@ CREATE TABLE IF NOT EXISTS hackathon_problem_statements (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Create hackathon_teams table
+CREATE TABLE IF NOT EXISTS hackathon_teams (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    hackathon_id UUID REFERENCES hackathons(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    passcode VARCHAR(50) NOT NULL,
+    problem_statement_id UUID REFERENCES hackathon_problem_statements(id) ON DELETE SET NULL,
+    leader_id UUID REFERENCES participants(participant_id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (hackathon_id, name)
+);
+
+-- Create hackathon_team_members table
+CREATE TABLE IF NOT EXISTS hackathon_team_members (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    team_id UUID REFERENCES hackathon_teams(id) ON DELETE CASCADE,
+    participant_id UUID REFERENCES participants(participant_id) ON DELETE CASCADE,
+    joined_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (team_id, participant_id)
+);
+
 -- Allow public read access to fests and hackathons
 -- Enable RLS and setup policies as per your project's security rules
 -- For now we assume policies will be handled or service role is used for backend actions

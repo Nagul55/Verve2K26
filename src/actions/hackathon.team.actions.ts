@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { revalidatePath } from "next/cache";
 
 const getAdminClient = () => {
   return createSupabaseClient(
@@ -18,28 +19,32 @@ export async function getUserHackathonTeam(hackathonId: string) {
   const adminClient = getAdminClient();
   
   // First get the team the user is in
-  const { data: teamData } = await adminClient.from('hackathon_team_members')
+  const { data: teamMemberships } = await adminClient.from('hackathon_team_members')
     .select('team_id, hackathon_teams(*)')
-    .eq('participant_id', user.id)
-    .single();
+    .eq('participant_id', user.id);
 
-  if (teamData && teamData.hackathon_teams && teamData.hackathon_teams.hackathon_id === hackathonId) {
-    const team = teamData.hackathon_teams;
-    
-    // Fetch all members of this team
-    const { data: members } = await adminClient.from('hackathon_team_members')
-      .select('participant_id, joined_at, participants(full_name, email)')
-      .eq('team_id', team.id);
+  if (!teamMemberships || teamMemberships.length === 0) return null;
 
-    return {
-      ...team,
-      members: members || []
-    };
+  for (const record of teamMemberships as any[]) {
+    const rawTeam = record.hackathon_teams;
+    const team = Array.isArray(rawTeam) ? rawTeam[0] : rawTeam;
+
+    if (team && team.hackathon_id === hackathonId) {
+      // Fetch all members of this team
+      const { data: members } = await adminClient.from('hackathon_team_members')
+        .select('participant_id, joined_at, participants(full_name, email)')
+        .eq('team_id', team.id);
+
+      return {
+        ...team,
+        members: members || []
+      };
+    }
   }
+
   return null;
 }
 
-import { revalidatePath } from "next/cache";
 
 export async function createHackathonTeam(hackathonId: string, festId: string, teamName: string, passcode: string, problemStatementId: string) {
   const supabase = await createClient();
