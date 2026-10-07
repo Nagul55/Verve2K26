@@ -103,7 +103,8 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
     prize_2nd: hd.prize_2nd || "",
     prize_3rd: hd.prize_3rd || "",
     special_prizes: hd.special_prizes || "",
-    coordinator_id: hd.coordinator_id || (hackathon.coordinatorDetails?.[0]?.id || "")
+    coordinator_id: hd.coordinator_id || (hackathon.coordinatorDetails?.[0]?.id || ""),
+    status: hackathon.status || "DRAFT"
   });
 
   const [problemStatements, setProblemStatements] = useState<any[]>(
@@ -307,6 +308,13 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Banner / Logo URL (Optional)</label>
                 <input name="logo_url" value={formData.logo_url} onChange={handleChange} className={inputClass} />
               </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Event Status (Visibility)</label>
+                <select name="status" value={formData.status} onChange={handleChange} className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium font-bold text-eventrix-black">
+                  <option value="DRAFT">DRAFT (Hidden from Student Portal)</option>
+                  <option value="LIVE">LIVE (Visible on Student Portal)</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -452,51 +460,141 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
           {/* SECTION F — PROBLEM STATEMENT & ATTACHMENTS */}
           <div className="pt-6 border-t border-[#D9D9DF]">
             <h3 className="font-bold text-eventrix-black uppercase tracking-widest mb-4 text-sm pb-2 border-b border-[#D9D9DF]">
-              Section F — Problem Statement & PDF Documents
+              Section F — Problem Statements
             </h3>
-            <div className="space-y-4">
-              <div className="space-y-2">
+            
+            <div className="space-y-4 mb-6">
+              <div className="space-y-2 mb-6">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Problem Statement / Challenge Description</label>
                 <textarea name="problem_statement_description" value={formData.problem_statement_description} onChange={handleChange} className={textareaClass} />
               </div>
 
-              <div className="space-y-4 pt-2">
-                {problemStatements.map((item, index) => (
-                  <div key={item.id} className="border border-[#D9D9DF] rounded-md p-4 bg-[#F8F8FC] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 min-w-0">
-                      <FileText className="w-6 h-6 text-eventrix-lavender shrink-0" />
-                      <div className="min-w-0">
-                        <h4 className="font-bold text-eventrix-black text-xs">Problem Statement PDF {item.display_order || index + 1}</h4>
-                        <p className="text-[11px] text-eventrix-muted truncate">{item.file_name}</p>
+              {problemStatements.map((ps, index) => (
+                <div key={ps.id} className="border border-[#D9D9DF] rounded-md overflow-hidden bg-[#F8F8FC]">
+                  <div className="p-6 flex items-center justify-between border-b border-[#D9D9DF]">
+                    <div className="flex items-center gap-4">
+                      <FileText className="w-8 h-8 text-eventrix-lavender" />
+                      <div>
+                        <h4 className="font-bold text-eventrix-black text-sm">{ps.title || `Problem Statement ${index + 1}`}</h4>
+                        {ps.file_name ? (
+                          <p className="text-xs text-eventrix-muted mt-1 break-all">{ps.file_name}</p>
+                        ) : (
+                          <p className="text-xs text-eventrix-muted mt-1 break-all italic">Text-Only Problem Statement</p>
+                        )}
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <a href={item.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-white text-eventrix-black px-3 py-1.5 rounded border border-[#D9D9DF] text-[10px] font-bold uppercase tracking-widest hover:bg-[#F8F8FC]">
-                        <Eye className="w-3 h-3" /> View
-                      </a>
-                      <button type="button" onClick={() => handleReplaceClick(item.id)} disabled={loadingPsId === item.id} className="flex items-center gap-1 bg-white text-eventrix-black px-3 py-1.5 rounded border border-[#D9D9DF] text-[10px] font-bold uppercase tracking-widest hover:bg-[#F8F8FC]">
-                        <RefreshCw className={`w-3 h-3 ${loadingPsId === item.id ? 'animate-spin' : ''}`} /> Replace
-                      </button>
-                      <button type="button" onClick={() => handleRemoveFile(item.id)} disabled={loadingPsId === item.id} className="flex items-center gap-1 bg-white text-red-500 px-3 py-1.5 rounded border border-[#D9D9DF] text-[10px] font-bold uppercase tracking-widest hover:bg-red-50">
-                        <Trash2 className="w-3 h-3" /> Delete
+                    
+                    {loadingPsId === ps.id ? (
+                      <span className="text-xs font-bold tracking-widest uppercase text-eventrix-muted flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4 animate-spin" /> Processing...
+                      </span>
+                    ) : (
+                      <div className="flex items-center gap-3 flex-wrap justify-end">
+                        {ps.file_url && (
+                          <>
+                            <a href={ps.file_url} target="_blank" rel="noopener noreferrer" className="text-xs font-bold tracking-widest uppercase text-eventrix-black hover:text-eventrix-lavender transition-colors bg-white px-3 py-2 rounded border border-[#D9D9DF] flex items-center gap-1">
+                              <Eye className="w-3.5 h-3.5" /> View PDF
+                            </a>
+                            <button type="button" onClick={() => handleReplaceClick(ps.id)} className="text-xs font-bold tracking-widest uppercase text-eventrix-black hover:text-eventrix-lavender transition-colors bg-white px-3 py-2 rounded border border-[#D9D9DF] flex items-center gap-1">
+                              <RefreshCw className="w-3.5 h-3.5" /> Replace PDF
+                            </button>
+                          </>
+                        )}
+                        {!ps.file_url && (
+                           <button type="button" onClick={() => handleReplaceClick(ps.id)} className="text-xs font-bold tracking-widest uppercase text-eventrix-black hover:text-eventrix-lavender transition-colors bg-white px-3 py-2 rounded border border-[#D9D9DF] flex items-center gap-1">
+                             <Upload className="w-3.5 h-3.5" /> Attach PDF
+                           </button>
+                        )}
+                        <button type="button" onClick={() => handleRemoveFile(ps.id)} className="text-xs font-bold tracking-widest uppercase text-red-500 hover:text-red-700 transition-colors bg-white px-3 py-2 rounded border border-[#D9D9DF] flex items-center gap-1">
+                          <Trash2 className="w-3.5 h-3.5" /> Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="p-6 bg-white space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Title</label>
+                      <input 
+                        value={ps.title || ""} 
+                        onChange={(e) => {
+                          setProblemStatements(prev => prev.map(p => p.id === ps.id ? { ...p, title: e.target.value } : p));
+                        }}
+                        placeholder="e.g. Smart Traffic Management"
+                        className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Description</label>
+                      <textarea 
+                        value={ps.description || ""} 
+                        onChange={(e) => {
+                          setProblemStatements(prev => prev.map(p => p.id === ps.id ? { ...p, description: e.target.value } : p));
+                        }}
+                        placeholder="Brief description of the problem..."
+                        rows={3}
+                        className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium resize-none" 
+                      />
+                    </div>
+                    <div className="flex justify-end pt-2">
+                      <button 
+                        type="button" 
+                        onClick={async () => {
+                          setLoadingPsId(ps.id);
+                          const { updateProblemStatementDetails } = await import("@/actions/hackathon.actions");
+                          const result = await updateProblemStatementDetails(ps.id, ps.title || "", ps.description || "");
+                          if (result.error) toast.error(result.error);
+                          else toast.success("Details saved!");
+                          setLoadingPsId(null);
+                        }}
+                        disabled={loadingPsId === ps.id}
+                        className="bg-eventrix-black text-eventrix-white px-4 py-2 rounded-md font-bold text-xs tracking-wide uppercase transition-all hover:bg-eventrix-lavender hover:text-eventrix-black disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                      >
+                        <Save className="w-3.5 h-3.5" /> Save Details
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
+              
+              {problemStatements.length === 0 && (
+                <div className="text-center p-6 border border-[#D9D9DF] rounded-md bg-[#F8F8FC]">
+                  <p className="text-sm font-bold text-eventrix-muted">No problem statements uploaded yet.</p>
+                </div>
+              )}
+            </div>
 
-              <input type="file" accept="application/pdf" className="hidden" ref={addFileInputRef} onChange={handleAddFile} />
-              <input type="file" accept="application/pdf" className="hidden" ref={replaceFileInputRef} onChange={handleReplaceFile} />
-
+            <div className="flex flex-col gap-4">
               <button 
                 type="button" 
                 onClick={() => addFileInputRef.current?.click()}
                 className="flex items-center justify-center gap-2 w-full border-2 border-dashed border-[#D9D9DF] rounded-md py-6 hover:border-eventrix-lavender hover:bg-[#F8F8FC] transition-colors group cursor-pointer"
               >
-                <Upload className="w-5 h-5 text-eventrix-muted group-hover:text-eventrix-lavender" />
-                <span className="text-xs font-bold uppercase tracking-widest text-eventrix-muted group-hover:text-eventrix-black">
-                  Add New Problem Statement PDF
+                <Upload className="w-5 h-5 text-eventrix-muted group-hover:text-eventrix-lavender transition-colors" />
+                <span className="text-sm font-bold uppercase tracking-widest text-eventrix-muted group-hover:text-eventrix-black transition-colors">
+                  Upload PDF Problem Statement
+                </span>
+              </button>
+              
+              <button 
+                type="button" 
+                onClick={async () => {
+                  setLoadingPsId("new");
+                  const { addTextProblemStatement } = await import("@/actions/hackathon.actions");
+                  const result = await addTextProblemStatement(hd.id);
+                  if (result.error) toast.error(result.error);
+                  else if (result.record) {
+                    toast.success("Text Problem Statement added!");
+                    setProblemStatements(prev => [...prev, result.record]);
+                  }
+                  setLoadingPsId(null);
+                }}
+                disabled={loadingPsId === "new"}
+                className="flex items-center justify-center gap-2 w-full border-2 border-[#D9D9DF] bg-white rounded-md py-4 hover:border-eventrix-lavender hover:bg-[#F8F8FC] transition-colors group cursor-pointer disabled:opacity-50"
+              >
+                <Plus className="w-5 h-5 text-eventrix-muted group-hover:text-eventrix-lavender transition-colors" />
+                <span className="text-sm font-bold uppercase tracking-widest text-eventrix-muted group-hover:text-eventrix-black transition-colors">
+                  {loadingPsId === "new" ? "Creating..." : "Add Text-Only Problem Statement"}
                 </span>
               </button>
             </div>

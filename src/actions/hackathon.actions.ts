@@ -398,6 +398,32 @@ export async function addHackathonPDF(hackathonId: string, formData: FormData) {
   return { success: true, record };
 }
 
+export async function addTextProblemStatement(hackathonId: string) {
+  const adminClient = getAdminClient();
+  
+  const { data: existingPs } = await adminClient.from('hackathon_problem_statements')
+    .select('display_order')
+    .eq('hackathon_id', hackathonId)
+    .order('display_order', { ascending: false })
+    .limit(1);
+    
+  const nextOrder = existingPs && existingPs.length > 0 ? existingPs[0].display_order + 1 : 1;
+
+  const { data: record, error: psError } = await adminClient.from('hackathon_problem_statements').insert({
+    hackathon_id: hackathonId,
+    title: `Problem Statement ${nextOrder}`,
+    description: "",
+    display_order: nextOrder
+  }).select('*').single();
+
+  if (psError) {
+    return { success: false, error: psError.message };
+  }
+
+  revalidatePath('/admin/events');
+  return { success: true, record };
+}
+
 export async function replaceHackathonPDF(problemStatementId: string, formData: FormData) {
   const adminClient = getAdminClient();
   const file = formData.get('file') as File;
@@ -466,4 +492,20 @@ export async function removeHackathonPDF(problemStatementId: string) {
 
   revalidatePath('/admin/events');
   return { success: true };
+}
+
+export async function updateProblemStatementDetails(problemStatementId: string, title: string, description: string) {
+  const adminClient = getAdminClient();
+  
+  const { data: updatedRecord, error: updateError } = await adminClient.from('hackathon_problem_statements').update({
+    title,
+    description
+  }).eq('id', problemStatementId).select('*').single();
+
+  if (updateError) {
+    return { success: false, error: updateError.message };
+  }
+
+  revalidatePath('/admin/events');
+  return { success: true, record: updatedRecord };
 }

@@ -1,7 +1,7 @@
 import React from "react";
 import { getFests, getSubEvents, getStudentRegisteredEventIds, getSubEventRegistrationCounts } from "@/actions/event.actions";
 import { getHackathon } from "@/actions/hackathon.actions";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { FestEventsClient } from "./FestEventsClient";
 
 export default async function FestEventsPage({ params }: { params: Promise<{ festId: string }> }) {
@@ -11,6 +11,11 @@ export default async function FestEventsPage({ params }: { params: Promise<{ fes
   
   if (!fest) {
     notFound();
+  }
+
+  // If this "fest" is actually a Hackathon, redirect to the dedicated Hackathon portal
+  if (fest.event_type === 'HACKATHON' || fest.event_type === 'hackathon') {
+    redirect(`/hackathons/${fest.id}`);
   }
 
   const events = await getSubEvents(fest.id);

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { CreateEventButton } from "./CreateEventButton";
 
 export default async function AdminEventsPage() {
-  const fests = await getFests();
+  const fests = await getFests(true);
 
   return (
     <div className="space-y-10">

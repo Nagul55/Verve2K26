@@ -107,8 +107,11 @@ export const getCachedFests = unstable_cache(
   { revalidate: 300, tags: ['fests'] }
 );
 
-export async function getFests() {
-  return getCachedFests();
+export async function getFests(includeDrafts: boolean = false) {
+  const fests = await getCachedFests();
+  if (includeDrafts) return fests;
+  // If no status column exists yet, it will be undefined. We assume undefined/null is LIVE for legacy.
+  return fests.filter(f => !f.status || f.status === 'LIVE');
 }
 
 export async function getFestById(festId: string) {
