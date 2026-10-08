@@ -223,6 +223,16 @@ export function HackathonClient({
     return new Date(dateString).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   };
 
+  const getMonthShort = (dateString?: string) => {
+    if (!dateString) return "TBA";
+    return new Date(dateString).toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+  };
+
+  const getDayNumber = (dateString?: string) => {
+    if (!dateString) return "--";
+    return new Date(dateString).getDate();
+  };
+
   // Parse prize pool total
   const prizeTotal = [hackathon.prize_1st, hackathon.prize_2nd, hackathon.prize_3rd]
     .map(p => parseInt(String(p || '').replace(/[^0-9]/g, '')) || 0)
@@ -1272,55 +1282,197 @@ export function HackathonClient({
           </div>
 
           {/* ===================================================================
-              EVENT TIMELINE / MILESTONES
+              EVENT TIMELINE / MILESTONES (CREATIVE STAGE ROADMAP DECK)
               =================================================================== */}
-          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm space-y-5">
-            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-              <CalendarDays className="w-5 h-5 text-violet-600" />
-              <h3 className="font-anton text-xl uppercase tracking-wide text-slate-900">
-                Milestones & Timeline
-              </h3>
-            </div>
-
-            <div className="space-y-5 pl-2">
-              
-              {/* Milestone 1: Registration Opens */}
-              <div className="relative pl-6 border-l-2 border-violet-200 pb-2">
-                <div className="absolute w-3.5 h-3.5 bg-violet-600 rounded-full -left-[7.5px] top-1 ring-4 ring-violet-50" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-violet-700 block mb-0.5">
-                  Registration Opens
-                </span>
-                <p className="text-sm font-bold text-slate-900">
-                  {formatPPP(hackathon.registration_opens_at)}
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">{formatTime(hackathon.registration_opens_at)}</p>
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center">
+                  <CalendarDays className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-anton text-xl uppercase tracking-wide text-slate-900 leading-none">
+                    Event Roadmap
+                  </h3>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Live Schedule & Milestones
+                  </span>
+                </div>
               </div>
 
-              {/* Milestone 2: Registration Closes */}
-              <div className="relative pl-6 border-l-2 border-slate-200 pb-2">
-                <div className={`absolute w-3.5 h-3.5 rounded-full -left-[7.5px] top-1 ring-4 ring-slate-100 ${
-                  isRegistrationClosed ? "bg-slate-400" : "bg-amber-500 animate-pulse"
-                }`} />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-0.5">
-                  Registration Deadline
-                </span>
-                <p className="text-sm font-bold text-slate-900">
-                  {formatPPP(hackathon.registration_closes_at)}
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">{formatTime(hackathon.registration_closes_at)}</p>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200/60">
+                IST (UTC+5:30)
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {/* Milestone 1: Registration Opens */}
+              <div className="group relative overflow-hidden rounded-2xl border p-3.5 transition-all bg-slate-50/50 border-slate-200/90 hover:bg-white hover:border-violet-300 hover:shadow-xs">
+                <div className="flex items-center gap-3">
+                  
+                  {/* Calendar Chip */}
+                  <div className="w-12 h-12 rounded-xl bg-violet-600 text-white flex flex-col items-center justify-center shrink-0 shadow-xs">
+                    <span className="text-[9px] font-extrabold uppercase tracking-widest text-violet-200 leading-none">
+                      {getMonthShort(hackathon.registration_opens_at)}
+                    </span>
+                    <span className="font-anton text-lg leading-tight mt-0.5">
+                      {getDayNumber(hackathon.registration_opens_at)}
+                    </span>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1 mb-0.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-violet-700">
+                        Stage 01 • Launch
+                      </span>
+                      <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                        <Check className="w-2.5 h-2.5" />
+                        Opened
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
+                      Registration Opens
+                    </h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span>{formatTime(hackathon.registration_opens_at)}</span>
+                    </p>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Milestone 2: Registration Closes (Active Highlight Card) */}
+              <div className={`group relative overflow-hidden rounded-2xl border p-3.5 transition-all ${
+                isRegistrationOpen
+                  ? "bg-gradient-to-r from-violet-50/80 via-white to-amber-50/40 border-violet-300/90 shadow-xs ring-1 ring-violet-200/50"
+                  : isRegistrationClosed
+                  ? "bg-slate-50/50 border-slate-200/90"
+                  : "bg-white border-slate-200/90"
+              }`}>
+                <div className="flex items-center gap-3">
+                  
+                  {/* Calendar Chip */}
+                  <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 shadow-xs ${
+                    isRegistrationOpen 
+                      ? "bg-gradient-to-br from-amber-500 to-orange-500 text-white" 
+                      : "bg-slate-800 text-white"
+                  }`}>
+                    <span className="text-[9px] font-extrabold uppercase tracking-widest text-amber-100 leading-none">
+                      {getMonthShort(hackathon.registration_closes_at)}
+                    </span>
+                    <span className="font-anton text-lg leading-tight mt-0.5">
+                      {getDayNumber(hackathon.registration_closes_at)}
+                    </span>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1 mb-0.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                        Stage 02 • Deadline
+                      </span>
+                      {isRegistrationOpen ? (
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.2 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          Live Now
+                        </span>
+                      ) : isRegistrationClosed ? (
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.2 rounded-full bg-slate-200 text-slate-700">
+                          Closed
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.2 rounded-full bg-slate-100 text-slate-500">
+                          Upcoming
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
+                      Registration Closes
+                    </h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span>{formatTime(hackathon.registration_closes_at)}</span>
+                      {isRegistrationOpen && countdown.days > 0 && (
+                        <span className="text-amber-700 font-semibold ml-1">({countdown.days}d left)</span>
+                      )}
+                    </p>
+                  </div>
+
+                </div>
               </div>
 
               {/* Milestone 3: Kickoff */}
-              <div className="relative pl-6">
-                <div className="absolute w-3.5 h-3.5 bg-emerald-500 rounded-full -left-[7.5px] top-1 ring-4 ring-emerald-50 animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block mb-0.5">
-                  Hackathon Kickoff
-                </span>
-                <p className="text-sm font-bold text-slate-900">
-                  {formatPPP(hackathon.hackathon_starts_at)}
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">{formatTime(hackathon.hackathon_starts_at)}</p>
+              <div className="group relative overflow-hidden rounded-2xl border p-3.5 transition-all bg-slate-50/50 border-slate-200/90 hover:bg-white hover:border-emerald-300 hover:shadow-xs">
+                <div className="flex items-center gap-3">
+                  
+                  {/* Calendar Chip */}
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex flex-col items-center justify-center shrink-0 shadow-xs">
+                    <span className="text-[9px] font-extrabold uppercase tracking-widest text-emerald-200 leading-none">
+                      {getMonthShort(hackathon.hackathon_starts_at)}
+                    </span>
+                    <span className="font-anton text-lg leading-tight mt-0.5">
+                      {getDayNumber(hackathon.hackathon_starts_at)}
+                    </span>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1 mb-0.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                        Stage 03 • Action
+                      </span>
+                      <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        Arena Kickoff
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
+                      Hackathon Starts
+                    </h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span>{formatTime(hackathon.hackathon_starts_at)}</span>
+                      <span className="text-slate-500 font-semibold">• {hackathon.mode || "Offline"}</span>
+                    </p>
+                  </div>
+
+                </div>
               </div>
+
+              {/* Milestone 4: Grand Finale (if ends_at exists) */}
+              {hackathon.hackathon_ends_at && (
+                <div className="group relative overflow-hidden rounded-2xl border p-3.5 transition-all bg-slate-50/50 border-slate-200/90 hover:bg-white hover:border-indigo-300 hover:shadow-xs">
+                  <div className="flex items-center gap-3">
+                    
+                    {/* Calendar Chip */}
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-700 text-white flex flex-col items-center justify-center shrink-0 shadow-xs">
+                      <span className="text-[9px] font-extrabold uppercase tracking-widest text-indigo-200 leading-none">
+                        {getMonthShort(hackathon.hackathon_ends_at)}
+                      </span>
+                      <span className="font-anton text-lg leading-tight mt-0.5">
+                        {getDayNumber(hackathon.hackathon_ends_at)}
+                      </span>
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1 mb-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700">
+                          Stage 04 • Grand Finale
+                        </span>
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.2 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          Demo & Awards
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
+                        Hackathon Concludes
+                      </h4>
+                      <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span>{formatTime(hackathon.hackathon_ends_at)}</span>
+                      </p>
+                    </div>
+
+                  </div>
+                </div>
+              )}
 
             </div>
           </div>
