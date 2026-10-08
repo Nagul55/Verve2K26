@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS public.fests (
   min_technical integer DEFAULT 1 NOT NULL,
   min_non_technical integer DEFAULT 1 NOT NULL,
   registration_closes_at timestamp with time zone,
+  allowed_departments text,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -42,6 +43,7 @@ CREATE TABLE IF NOT EXISTS public.sub_events (
   location text NOT NULL,
   capacity integer DEFAULT 50,
   image_type text,
+  whatsapp_group_link text,
   status text DEFAULT 'Pending',
   approved_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   approved_at timestamp with time zone,

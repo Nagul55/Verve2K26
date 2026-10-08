@@ -37,6 +37,7 @@ export default function CreateHackathonPage() {
     venue: "",
     mode: "Offline",
     external_link: "",
+    whatsapp_group_link: "",
     logo_url: "",
     registration_opens_date: "",
     registration_opens_time: "",
@@ -226,6 +227,10 @@ export default function CreateHackathonPage() {
               <div className="space-y-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">External Link / Website (Optional)</label>
                 <input name="external_link" value={formData.external_link} onChange={handleChange} placeholder="https://..." className={inputClass} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">WhatsApp Group Link (Optional)</label>
+                <input name="whatsapp_group_link" value={formData.whatsapp_group_link} onChange={handleChange} placeholder="https://chat.whatsapp.com/..." className={inputClass} />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">Banner / Logo URL (Optional)</label>

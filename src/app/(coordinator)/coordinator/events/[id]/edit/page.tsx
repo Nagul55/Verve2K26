@@ -14,7 +14,8 @@ import {
   FileText, 
   IndianRupee,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  MessageCircle
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -48,6 +49,7 @@ export default function CoordinatorEditSubEventPage({ params }: { params: Promis
     rules: "",
     prize_pool: "",
     fee: "Free",
+    whatsapp_group_link: "",
     contact_info: ""
   });
 
@@ -75,6 +77,7 @@ export default function CoordinatorEditSubEventPage({ params }: { params: Promis
         rules: data.rules || "",
         prize_pool: data.prize_pool || "",
         fee: data.fee || "Free",
+        whatsapp_group_link: data.whatsapp_group_link || "",
         contact_info: data.contact_info || ""
       });
       if (data.resources && Array.isArray(data.resources)) {
@@ -123,6 +126,7 @@ export default function CoordinatorEditSubEventPage({ params }: { params: Promis
         rules: formData.rules,
         prize_pool: formData.prize_pool,
         fee: formData.fee,
+        whatsapp_group_link: formData.whatsapp_group_link,
         contact_info: formData.contact_info,
         resources: resources
       });
@@ -408,6 +412,19 @@ export default function CoordinatorEditSubEventPage({ params }: { params: Promis
                   value={formData.fee} 
                   onChange={handleChange} 
                   placeholder="e.g. Free or ₹100 per team" 
+                  className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
+                />
+              </div>
+
+              <div className="space-y-2 col-span-1 md:col-span-2">
+                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest flex items-center gap-1.5">
+                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600" /> WhatsApp Group Link (Optional)
+                </label>
+                <input 
+                  name="whatsapp_group_link" 
+                  value={formData.whatsapp_group_link} 
+                  onChange={handleChange} 
+                  placeholder="https://chat.whatsapp.com/..." 
                   className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
                 />
               </div>

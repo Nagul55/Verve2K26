@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Calendar, MapPin, Users, ChevronDown, ChevronUp } from "lucide-react";
+import { Calendar, MapPin, Users, ChevronDown, ChevronUp, MessageCircle, ExternalLink } from "lucide-react";
 import { TeamManager } from "./TeamManager";
 
 interface RegistrationEventCardProps {
@@ -12,6 +12,7 @@ interface RegistrationEventCardProps {
   location: string;
   participationType: string;
   teamDetails: any | null;
+  whatsapp_group_link?: string;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
 }
@@ -24,6 +25,7 @@ export function RegistrationEventCard({
   location, 
   participationType, 
   teamDetails,
+  whatsapp_group_link,
   isExpanded = false,
   onToggleExpand
 }: RegistrationEventCardProps) {
@@ -67,6 +69,22 @@ export function RegistrationEventCard({
               <MapPin className="w-3.5 h-3.5 text-[#080A12]" /> {location}
             </div>
           </div>
+
+          {whatsapp_group_link && (
+            <div className="mt-3 pt-2">
+              <a
+                href={whatsapp_group_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition-all border border-emerald-200 cursor-pointer shadow-xs"
+              >
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                Join WhatsApp Group
+                <ExternalLink className="w-3 h-3 opacity-70" />
+              </a>
+            </div>
+          )}
         </div>
 
         {/* Right Indicator */}

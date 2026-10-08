@@ -1,6 +1,7 @@
--- Add event_type to fests
+-- Add event_type and allowed_departments to fests
 ALTER TABLE fests ADD COLUMN IF NOT EXISTS event_type VARCHAR(50) DEFAULT 'fest';
 ALTER TABLE fests ADD COLUMN IF NOT EXISTS logo_url TEXT;
+ALTER TABLE fests ADD COLUMN IF NOT EXISTS allowed_departments TEXT;
 
 -- Create hackathons table
 CREATE TABLE IF NOT EXISTS hackathons (
@@ -54,6 +55,7 @@ CREATE TABLE IF NOT EXISTS hackathons (
     theme TEXT,
     sponsors TEXT,
     submission_guidelines TEXT,
+    whatsapp_group_link TEXT,
 
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()

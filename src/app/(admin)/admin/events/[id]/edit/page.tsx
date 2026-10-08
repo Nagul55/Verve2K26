@@ -7,6 +7,7 @@ import Link from "next/link";
 import { getFestById, updateFest } from "@/actions/event.actions";
 import { toast } from "sonner";
 import { DeadlinePicker } from "@/components/DeadlinePicker";
+import { MultiDepartmentSelect } from "@/components/ui/MultiDepartmentSelect";
 
 export default function AdminEditFestPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -19,7 +20,8 @@ export default function AdminEditFestPage({ params }: { params: Promise<{ id: st
     description: "",
     min_technical: "1",
     min_non_technical: "1",
-    registration_closes_at: ""
+    registration_closes_at: "",
+    allowed_departments: ""
   });
 
   useEffect(() => {
@@ -37,7 +39,8 @@ export default function AdminEditFestPage({ params }: { params: Promise<{ id: st
         description: fest.description || "",
         min_technical: String(fest.min_technical ?? 1),
         min_non_technical: String(fest.min_non_technical ?? 1),
-        registration_closes_at: fest.registration_closes_at || ""
+        registration_closes_at: fest.registration_closes_at || "",
+        allowed_departments: fest.allowed_departments || ""
       });
       setIsLoading(false);
     }
@@ -58,7 +61,8 @@ export default function AdminEditFestPage({ params }: { params: Promise<{ id: st
         formData.description,
         parseInt(formData.min_technical) || 0,
         parseInt(formData.min_non_technical) || 0,
-        formData.registration_closes_at || null
+        formData.registration_closes_at || null,
+        formData.allowed_departments || null
       );
 
       if (error) {
@@ -126,6 +130,14 @@ export default function AdminEditFestPage({ params }: { params: Promise<{ id: st
                 <DeadlinePicker
                   value={formData.registration_closes_at}
                   onChange={(isoValue) => setFormData(prev => ({ ...prev, registration_closes_at: isoValue || "" }))}
+                />
+              </div>
+              <div className="md:col-span-2 space-y-2">
+                <MultiDepartmentSelect
+                  label="Allowed Departments"
+                  value={formData.allowed_departments}
+                  onChange={(val) => setFormData(prev => ({ ...prev, allowed_departments: val }))}
+                  placeholder="Select allowed departments or click 'Select All'"
                 />
               </div>
             </div>

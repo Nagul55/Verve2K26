@@ -8,6 +8,7 @@ import { createFest } from "@/actions/event.actions";
 import { toast } from "sonner";
 import { useFormDraft } from "@/hooks/useFormDraft";
 import { DeadlinePicker } from "@/components/DeadlinePicker";
+import { MultiDepartmentSelect } from "@/components/ui/MultiDepartmentSelect";
 
 export default function CreateFestPage() {
   const router = useRouter();
@@ -20,7 +21,8 @@ export default function CreateFestPage() {
       description: "",
       min_technical: "1",
       min_non_technical: "1",
-      registration_closes_at: ""
+      registration_closes_at: "",
+      allowed_departments: ""
     }
   });
 
@@ -37,7 +39,8 @@ export default function CreateFestPage() {
         formData.description,
         parseInt(formData.min_technical) || 0,
         parseInt(formData.min_non_technical) || 0,
-        formData.registration_closes_at || null
+        formData.registration_closes_at || null,
+        formData.allowed_departments || null
       );
 
       if (error) {
@@ -100,6 +103,14 @@ export default function CreateFestPage() {
                 <DeadlinePicker
                   value={formData.registration_closes_at}
                   onChange={(isoValue) => setFormData(prev => ({ ...prev, registration_closes_at: isoValue || "" }))}
+                />
+              </div>
+              <div className="md:col-span-2 space-y-2">
+                <MultiDepartmentSelect
+                  label="Allowed Departments"
+                  value={formData.allowed_departments}
+                  onChange={(val) => setFormData(prev => ({ ...prev, allowed_departments: val }))}
+                  placeholder="Select allowed departments or click 'Select All'"
                 />
               </div>
             </div>

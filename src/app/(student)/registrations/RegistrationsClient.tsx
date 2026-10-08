@@ -73,6 +73,7 @@ export function RegistrationsClient({ festsMap }: { festsMap: Record<string, any
                       location={reg.location}
                       participationType={reg.participation_type}
                       teamDetails={reg.teamDetails}
+                      whatsapp_group_link={reg.whatsapp_group_link}
                       isExpanded={expandedRegistrationId === reg.id}
                       onToggleExpand={() => setExpandedRegistrationId(expandedRegistrationId === reg.id ? null : reg.id)}
                     />

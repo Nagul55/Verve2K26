@@ -505,6 +505,19 @@ export function HackathonClient({
               <ShieldCheck className="w-4 h-4 mr-2 text-cyan-300" />
               <span>Guidelines</span>
             </Button>
+
+            {hackathon.whatsapp_group_link && (
+              <a
+                href={hackathon.whatsapp_group_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-12 px-5 text-xs sm:text-sm font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 text-white transition-all rounded-2xl flex items-center gap-2 shadow-[0_4px_20px_rgba(16,185,129,0.35)] hover:shadow-[0_6px_25px_rgba(16,185,129,0.5)] cursor-pointer active:scale-95"
+              >
+                <MessageCircle className="w-4 h-4 fill-white/20" />
+                <span>WhatsApp Group</span>
+                <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+              </a>
+            )}
           </div>
 
         </div>
@@ -886,6 +899,19 @@ export function HackathonClient({
                     <UserPlus className="w-3.5 h-3.5" />
                     <span>Invite by Email</span>
                   </Button>
+
+                  {hackathon.whatsapp_group_link && (
+                    <a
+                      href={hackathon.whatsapp_group_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-8.5 px-3 text-xs font-bold rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white shadow-2xs cursor-pointer flex items-center gap-1.5 transition-all"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>Official Group</span>
+                      <ExternalLink className="w-3 h-3 opacity-80" />
+                    </a>
+                  )}
                 </div>
 
               </div>
@@ -945,6 +971,28 @@ export function HackathonClient({
                     <p className="text-xs font-bold text-slate-800">
                       {hackathon.allowed_years}
                     </p>
+                  </div>
+                )}
+                {hackathon.whatsapp_group_link && (
+                  <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl sm:col-span-2 flex items-center justify-between gap-3">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 block mb-0.5">
+                        Official WhatsApp Community
+                      </span>
+                      <p className="text-xs font-semibold text-emerald-950">
+                        Join for live alerts, mentor Q&A, and round updates
+                      </p>
+                    </div>
+                    <a
+                      href={hackathon.whatsapp_group_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider inline-flex items-center gap-1.5 shadow-sm transition-all shrink-0 cursor-pointer"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>Join Group</span>
+                      <ExternalLink className="w-3 h-3 opacity-80" />
+                    </a>
                   </div>
                 )}
               </div>
@@ -1523,6 +1571,47 @@ export function HackathonClient({
 
             </div>
           </div>
+
+          {/* ===================================================================
+              OFFICIAL WHATSAPP GROUP HUB (COMMUNITY)
+              =================================================================== */}
+          {hackathon.whatsapp_group_link && (
+            <div className="bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-7 shadow-lg space-y-4 text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="flex items-center justify-between pb-3.5 border-b border-emerald-500/20 relative z-10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold border border-emerald-500/30">
+                    <MessageCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-anton text-xl uppercase tracking-wide text-white leading-none">
+                      Official WhatsApp Group
+                    </h3>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                      Live Broadcast & Mentors
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-300 leading-relaxed font-normal relative z-10">
+                Join the official hackathon WhatsApp group to receive stage announcements, schedule updates, and live coordinator support.
+              </p>
+
+              <div className="pt-2 relative z-10">
+                <a
+                  href={hackathon.whatsapp_group_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full h-11 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Join Official Group</span>
+                  <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+                </a>
+              </div>
+            </div>
+          )}
 
           {/* ===================================================================
               EVENT COORDINATORS HUB

@@ -15,7 +15,8 @@ import {
   PhoneCall, 
   IndianRupee,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  MessageCircle
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -53,6 +54,7 @@ function AdminSubEventForm() {
       rules: "",
       prize_pool: "",
       fee: "Free",
+      whatsapp_group_link: "",
       contact_info: ""
     }
   });
@@ -97,6 +99,7 @@ function AdminSubEventForm() {
         rules: formData.rules,
         prize_pool: formData.prize_pool,
         fee: formData.fee,
+        whatsapp_group_link: formData.whatsapp_group_link,
         contact_info: formData.contact_info,
         resources: resources
       });
@@ -353,6 +356,19 @@ function AdminSubEventForm() {
                   value={formData.fee} 
                   onChange={handleChange} 
                   placeholder="e.g. Free or ₹100 per team" 
+                  className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
+                />
+              </div>
+
+              <div className="space-y-2 col-span-1 md:col-span-2">
+                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest flex items-center gap-1.5">
+                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600" /> WhatsApp Group Link (Optional)
+                </label>
+                <input 
+                  name="whatsapp_group_link" 
+                  value={formData.whatsapp_group_link} 
+                  onChange={handleChange} 
+                  placeholder="https://chat.whatsapp.com/..." 
                   className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
                 />
               </div>

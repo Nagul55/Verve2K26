@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Calendar, Clock, MapPin, ArrowLeft, ArrowRight, Check, Timer, XCircle, Code, Users, Trophy, GraduationCap, FileText, Download, Phone, Mail } from "lucide-react";
+import { Calendar, Clock, MapPin, ArrowLeft, ArrowRight, Check, Timer, XCircle, Code, Users, Trophy, GraduationCap, FileText, Download, Phone, Mail, MessageCircle, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { EventDetailsModal, SubEvent, parseEventData } from "@/components/EventDetailsModal";
 import { EventStatusBadge } from "@/components/EventStatusBadge";
@@ -30,6 +30,10 @@ export function FestEventsClient({
   const hDetails = hackathonData?.hackathonDetails;
   const pStatements = hackathonData?.problem_statements || [];
   const coords = hackathonData?.coordinatorDetails || [];
+
+  const allowedDeptsList: string[] = fest?.allowed_departments
+    ? fest.allowed_departments.split(',').map((d: string) => d.trim()).filter(Boolean)
+    : [];
 
   useEffect(() => {
     if (!fest.registration_closes_at) return;
@@ -199,6 +203,21 @@ export function FestEventsClient({
               <p className="text-eventrix-muted font-medium max-w-2xl">
                 {fest.description}
               </p>
+              {allowedDeptsList.length > 0 && (
+                <div className="mt-3 flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-bold text-eventrix-muted uppercase tracking-wider flex items-center gap-1">
+                    <GraduationCap className="w-3.5 h-3.5 text-eventrix-lavender" /> Eligible Departments:
+                  </span>
+                  {allowedDeptsList.map((dept) => (
+                    <span
+                      key={dept}
+                      className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#F8F8FC] border border-[#D9D9DF] text-eventrix-black shadow-xs"
+                    >
+                      {dept}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {isFestClosed ? (
@@ -545,6 +564,23 @@ export function FestEventsClient({
                         <MapPin className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.location}
                       </div>
                     </div>
+
+                    {parsed.whatsapp_group_link && (
+                      <div className="mt-3 pt-3 border-t border-[#EBEBF0] flex items-center justify-between">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          <MessageCircle className="w-3 h-3 text-emerald-600" /> WhatsApp Group
+                        </span>
+                        <a
+                          href={parsed.whatsapp_group_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer"
+                        >
+                          Join <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -607,6 +643,23 @@ export function FestEventsClient({
                         <MapPin className="w-3.5 h-3.5 text-eventrix-lavender" /> {event.location}
                       </div>
                     </div>
+
+                    {parsed.whatsapp_group_link && (
+                      <div className="mt-3 pt-3 border-t border-[#EBEBF0] flex items-center justify-between">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          <MessageCircle className="w-3 h-3 text-emerald-600" /> WhatsApp Group
+                        </span>
+                        <a
+                          href={parsed.whatsapp_group_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer"
+                        >
+                          Join <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      </div>
+                    )}
                   </div>
                 );
               })}

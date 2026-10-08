@@ -75,14 +75,23 @@ export async function createHackathon(formData: FormData) {
     prize_2nd: data.prize_2nd || null,
     prize_3rd: data.prize_3rd || null,
     special_prizes: data.special_prizes || null,
-    coordinator_id: data.coordinator_id || null
+    coordinator_id: data.coordinator_id || null,
+    whatsapp_group_link: data.whatsapp_group_link || null
   };
 
-  const { data: hackathonData, error: hackathonError } = await adminClient
+  let { data: hackathonData, error: hackathonError } = await adminClient
     .from('hackathons')
     .insert(hackPayload)
     .select('id')
     .single();
+
+  if (hackathonError && (hackathonError.code === 'PGRST204' || hackathonError.code === '42703' || hackathonError.message?.includes('whatsapp_group_link'))) {
+    console.warn("whatsapp_group_link column missing from hackathons, retrying without it...");
+    delete hackPayload.whatsapp_group_link;
+    const retry = await adminClient.from('hackathons').insert(hackPayload).select('id').single();
+    hackathonData = retry.data;
+    hackathonError = retry.error;
+  }
 
   if (hackathonError || !hackathonData) {
     await adminClient.from('fests').delete().eq('id', festData.id);
@@ -106,6 +115,7 @@ export async function createHackathon(formData: FormData) {
     date: data.hackathon_starts_date || '',
     time: data.hackathon_starts_time || '09:00',
     location: data.venue || 'Main Venue',
+    whatsapp_group_link: data.whatsapp_group_link || null,
     status: initialStatus
   }).select('id').single();
 
@@ -214,6 +224,18 @@ export async function getHackathon(festId: string) {
   const allCoords = await getCoordinators();
   const assignedCoords = allCoords.filter(c => c.event_ids.includes(festId) || (subEvents || []).some(se => c.event_ids.includes(se.id)));
 
+  let hackWaLink = hackathon?.whatsapp_group_link || '';
+  if (!hackWaLink && subEvents && subEvents.length > 0) {
+    hackWaLink = (subEvents[0] as any).whatsapp_group_link || '';
+    if (!hackWaLink && subEvents[0].description) {
+      const waMatch = subEvents[0].description.match(/\[WHATSAPP_GROUP:\s*([^\]]+)\]/i);
+      if (waMatch) hackWaLink = waMatch[1].trim();
+    }
+  }
+  if (hackathon) {
+    hackathon.whatsapp_group_link = hackWaLink || null;
+  }
+
   return {
     ...fest,
     subEvents: subEvents || [],
@@ -279,23 +301,39 @@ export async function updateHackathon(festId: string, data: any) {
     prize_2nd: data.prize_2nd || null,
     prize_3rd: data.prize_3rd || null,
     special_prizes: data.special_prizes || null,
-    coordinator_id: data.coordinator_id || null
+    coordinator_id: data.coordinator_id || null,
+    whatsapp_group_link: data.whatsapp_group_link || null
   };
 
   if (existingHackathon) {
-    const { error: hackathonError } = await adminClient
+    let { error: hackathonError } = await adminClient
       .from('hackathons')
       .update(hackPayload)
       .eq('id', existingHackathon.id);
+
+    if (hackathonError && (hackathonError.code === 'PGRST204' || hackathonError.code === '42703' || hackathonError.message?.includes('whatsapp_group_link'))) {
+      console.warn("whatsapp_group_link column missing from hackathons, retrying without it...");
+      delete hackPayload.whatsapp_group_link;
+      const retry = await adminClient.from('hackathons').update(hackPayload).eq('id', existingHackathon.id);
+      hackathonError = retry.error;
+    }
 
     if (hackathonError) {
       return { success: false, error: hackathonError.message };
     }
   } else {
-    await adminClient.from('hackathons').insert({
+    let { error: insertError } = await adminClient.from('hackathons').insert({
       event_id: festId,
       ...hackPayload
     });
+    if (insertError && (insertError.code === 'PGRST204' || insertError.code === '42703' || insertError.message?.includes('whatsapp_group_link'))) {
+      console.warn("whatsapp_group_link column missing from hackathons, retrying without it...");
+      delete hackPayload.whatsapp_group_link;
+      await adminClient.from('hackathons').insert({
+        event_id: festId,
+        ...hackPayload
+      });
+    }
   }
 
   // Update sub_events entry
@@ -315,7 +353,8 @@ export async function updateHackathon(festId: string, data: any) {
       capacity: totalCap,
       date: data.hackathon_starts_date || '',
       time: data.hackathon_starts_time || '09:00',
-      location: data.venue || 'Main Venue'
+      location: data.venue || 'Main Venue',
+      whatsapp_group_link: data.whatsapp_group_link || null
     }).eq('id', subEvent.id);
   } else {
     const { data: newSub } = await adminClient.from('sub_events').insert({
@@ -330,6 +369,7 @@ export async function updateHackathon(festId: string, data: any) {
       date: data.hackathon_starts_date || '',
       time: data.hackathon_starts_time || '09:00',
       location: data.venue || 'Main Venue',
+      whatsapp_group_link: data.whatsapp_group_link || null,
       status: 'LIVE'
     }).select('id').single();
     targetSubId = newSub?.id;

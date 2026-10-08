@@ -127,7 +127,8 @@ export async function createFest(
   description: string, 
   minTech: number = 0, 
   minNonTech: number = 0,
-  registrationClosesAt?: string | null
+  registrationClosesAt?: string | null,
+  allowedDepartments?: string | null
 ) {
   const adminClient = getAdminClient();
   const payload: any = {
@@ -135,10 +136,17 @@ export async function createFest(
     description,
     min_technical: minTech,
     min_non_technical: minNonTech,
-    registration_closes_at: registrationClosesAt ? new Date(registrationClosesAt).toISOString() : null
+    registration_closes_at: registrationClosesAt ? new Date(registrationClosesAt).toISOString() : null,
+    allowed_departments: allowedDepartments || null
   };
 
-  const { data, error } = await adminClient.from('fests').insert(payload);
+  let { data, error } = await adminClient.from('fests').insert(payload);
+  if (error && (error.code === 'PGRST204' || error.code === '42703' || error.message?.includes('allowed_departments'))) {
+    console.warn("allowed_departments column missing from fests, retrying without it...");
+    delete payload.allowed_departments;
+    const retry = await adminClient.from('fests').insert(payload);
+    error = retry.error;
+  }
   if (error) {
     console.error("Error creating fest in Supabase:", error);
     return { success: false, error: error.message };
@@ -157,7 +165,8 @@ export async function updateFest(
   description: string, 
   minTech: number = 0, 
   minNonTech: number = 0,
-  registrationClosesAt?: string | null
+  registrationClosesAt?: string | null,
+  allowedDepartments?: string | null
 ) {
   const adminClient = getAdminClient();
   const payload: any = {
@@ -165,10 +174,17 @@ export async function updateFest(
     description,
     min_technical: minTech,
     min_non_technical: minNonTech,
-    registration_closes_at: registrationClosesAt ? new Date(registrationClosesAt).toISOString() : null
+    registration_closes_at: registrationClosesAt ? new Date(registrationClosesAt).toISOString() : null,
+    allowed_departments: allowedDepartments || null
   };
 
-  const { error } = await adminClient.from('fests').update(payload).eq('id', festId);
+  let { error } = await adminClient.from('fests').update(payload).eq('id', festId);
+  if (error && (error.code === 'PGRST204' || error.code === '42703' || error.message?.includes('allowed_departments'))) {
+    console.warn("allowed_departments column missing from fests, retrying without it...");
+    delete payload.allowed_departments;
+    const retry = await adminClient.from('fests').update(payload).eq('id', festId);
+    error = retry.error;
+  }
   if (error) {
     console.error("Error updating fest in Supabase:", error);
     return { success: false, error: error.message };
@@ -218,20 +234,36 @@ export async function getSubEvents(festId?: string, includePending: boolean = fa
   if (!includePending) {
     return data
       .filter(e => e.status === 'LIVE' && (eventCoordMap[e.id]?.length || 0) > 0)
-      .map(e => ({
-        ...e,
-        coordinatorNames: eventCoordMap[e.id] || [],
-        coordinatorDetails: eventCoordDetails[e.id] || []
-      }));
+      .map(e => {
+        let waLink = e.whatsapp_group_link || '';
+        if (!waLink && e.description) {
+          const match = e.description.match(/\[WHATSAPP_GROUP:\s*([^\]]+)\]/i);
+          if (match) waLink = match[1].trim();
+        }
+        return {
+          ...e,
+          whatsapp_group_link: waLink,
+          coordinatorNames: eventCoordMap[e.id] || [],
+          coordinatorDetails: eventCoordDetails[e.id] || []
+        };
+      });
   }
 
   // Admin Query (includePending === true): Attach coordinator info & count
-  return data.map(e => ({
-    ...e,
-    coordinatorNames: eventCoordMap[e.id] || [],
-    coordinatorDetails: eventCoordDetails[e.id] || [],
-    coordinatorCount: eventCoordMap[e.id]?.length || 0
-  }));
+  return data.map(e => {
+    let waLink = e.whatsapp_group_link || '';
+    if (!waLink && e.description) {
+      const match = e.description.match(/\[WHATSAPP_GROUP:\s*([^\]]+)\]/i);
+      if (match) waLink = match[1].trim();
+    }
+    return {
+      ...e,
+      whatsapp_group_link: waLink,
+      coordinatorNames: eventCoordMap[e.id] || [],
+      coordinatorDetails: eventCoordDetails[e.id] || [],
+      coordinatorCount: eventCoordMap[e.id]?.length || 0
+    };
+  });
 }
 
 export async function createSubEvent(subEventData: any) {
@@ -257,6 +289,9 @@ export async function createSubEvent(subEventData: any) {
   if (subEventData.prize_pool && subEventData.prize_pool.trim() && !formattedDesc.includes('PRIZES:')) {
     formattedDesc += `\n\nPRIZES:\n${subEventData.prize_pool.trim()}`;
   }
+  if (subEventData.whatsapp_group_link && subEventData.whatsapp_group_link.trim() && !formattedDesc.includes('[WHATSAPP_GROUP:')) {
+    formattedDesc += `\n\n[WHATSAPP_GROUP: ${subEventData.whatsapp_group_link.trim()}]`;
+  }
 
   if (subEventData.resources && Array.isArray(subEventData.resources) && subEventData.resources.length > 0 && !formattedDesc.includes('[EVENT_RESOURCES:')) {
     formattedDesc += `\n\n[EVENT_RESOURCES: ${JSON.stringify(subEventData.resources)}]`;
@@ -275,10 +310,18 @@ export async function createSubEvent(subEventData: any) {
     time: subEventData.time || 'TBD',
     location: subEventData.location,
     capacity: typeof subEventData.capacity === 'number' ? subEventData.capacity : parseInt(subEventData.capacity || '100'),
+    whatsapp_group_link: subEventData.whatsapp_group_link ? subEventData.whatsapp_group_link.trim() : null,
     status: isCoordinator ? 'PENDING_APPROVAL' : 'DRAFT'
   };
 
-  const { data, error } = await adminClient.from('sub_events').insert(cleanPayload).select('id').single();
+  let { data, error } = await adminClient.from('sub_events').insert(cleanPayload).select('id').single();
+  if (error && (error.code === 'PGRST204' || error.code === '42703' || error.message?.includes('whatsapp_group_link'))) {
+    console.warn("whatsapp_group_link column missing from sub_events, retrying without it...");
+    delete cleanPayload.whatsapp_group_link;
+    const retry = await adminClient.from('sub_events').insert(cleanPayload).select('id').single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (!error && data?.id && isCoordinator && user) {
     // Automatically bind the new sub-event ID to the authenticated coordinator
@@ -466,6 +509,14 @@ export async function getSubEventById(subEventId: string) {
     desc = desc.replace(/\n\nRULES & GUIDELINES:\n[\s\S]*?$/, '').trim();
   }
 
+  // Parse whatsapp group link
+  let whatsapp_group_link = (data as any).whatsapp_group_link || '';
+  const waMatch = desc.match(/\[WHATSAPP_GROUP:\s*([^\]]+)\]/i);
+  if (waMatch) {
+    if (!whatsapp_group_link) whatsapp_group_link = waMatch[1].trim();
+    desc = desc.replace(/\[WHATSAPP_GROUP:\s*[^\]]+\]/gi, '').trim();
+  }
+
   // Parse team size tag
   const teamMatch = desc.match(/^\[Team Size:\s*\d+\s*to\s*\d+\s*Members\]\n\n?/);
   if (teamMatch) {
@@ -487,6 +538,7 @@ export async function getSubEventById(subEventId: string) {
     rules,
     prize_pool,
     contact_info,
+    whatsapp_group_link,
     resources,
     coordinatorDetails
   };
@@ -542,6 +594,13 @@ export async function updateSubEvent(subEventId: string, subEventData: any) {
   if (subEventData.contact_info && subEventData.contact_info.trim()) {
     formattedDesc += `\n\nCONTACT: ${subEventData.contact_info.trim()}`;
   }
+  if (subEventData.whatsapp_group_link && subEventData.whatsapp_group_link.trim()) {
+    if (!formattedDesc.includes('[WHATSAPP_GROUP:')) {
+      formattedDesc += `\n\n[WHATSAPP_GROUP: ${subEventData.whatsapp_group_link.trim()}]`;
+    }
+  } else {
+    formattedDesc = formattedDesc.replace(/\[WHATSAPP_GROUP:\s*[^\]]+\]/gi, '').trim();
+  }
   if (subEventData.resources && Array.isArray(subEventData.resources) && subEventData.resources.length > 0) {
     formattedDesc += `\n\n[EVENT_RESOURCES: ${JSON.stringify(subEventData.resources)}]`;
   }
@@ -566,10 +625,17 @@ export async function updateSubEvent(subEventId: string, subEventData: any) {
     time: subEventData.time || 'TBD',
     location: subEventData.location,
     capacity: typeof subEventData.capacity === 'number' ? subEventData.capacity : parseInt(subEventData.capacity || '100'),
+    whatsapp_group_link: subEventData.whatsapp_group_link ? subEventData.whatsapp_group_link.trim() : null,
     status: newStatus
   };
 
-  const { error } = await adminClient.from('sub_events').update(updatePayload).eq('id', subEventId);
+  let { error } = await adminClient.from('sub_events').update(updatePayload).eq('id', subEventId);
+  if (error && (error.code === 'PGRST204' || error.code === '42703' || error.message?.includes('whatsapp_group_link'))) {
+    console.warn("whatsapp_group_link column missing from sub_events, retrying without it...");
+    delete updatePayload.whatsapp_group_link;
+    const retry = await adminClient.from('sub_events').update(updatePayload).eq('id', subEventId);
+    error = retry.error;
+  }
 
   revalidatePath('/admin/sub-events');
   revalidatePath('/coordinator/events');
@@ -984,7 +1050,8 @@ export async function getParticipantRegistrations() {
             participation_type,
             min_candidates,
             max_candidates,
-            capacity
+            capacity,
+            description
           )
         )
       `)
@@ -1059,10 +1126,17 @@ export async function getParticipantRegistrations() {
           isTeamComplete
         } : null;
 
+        let waLink = (rse.sub_events as any).whatsapp_group_link || '';
+        if (!waLink && rse.sub_events.description) {
+          const match = rse.sub_events.description.match(/\[WHATSAPP_GROUP:\s*([^\]]+)\]/i);
+          if (match) waLink = match[1].trim();
+        }
+
         registeredEvents.push({
           ...rse.sub_events,
           festName: reg.fests?.name || 'Fest',
           teamDetails: teamInfo,
+          whatsapp_group_link: waLink,
           isTicketValid: isTeamComplete,
           ticketNumber: `TKT-${reg.id.split('-')[0].toUpperCase()}-${rse.sub_events.id.split('-')[0].toUpperCase()}`
         });
