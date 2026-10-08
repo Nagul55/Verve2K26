@@ -22,6 +22,9 @@ export const metadata: Metadata = {
     shortcut: "/assets/Eventrix logo.svg",
     apple: "/assets/Eventrix logo.svg",
   },
+  verification: {
+    google: "1O0m3AY-JB-lyRDOybaUYDqgnXv3nEKT9C2Ok78LtLY",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
