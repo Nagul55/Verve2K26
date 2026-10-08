@@ -67,7 +67,7 @@ export function HackathonClient({
   currentUserId?: string; 
 }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"overview" | "squad" | "challenges" | "prizes" | "timeline" | "rules">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "squad" | "challenges" | "rules">("overview");
   const [expandedStatement, setExpandedStatement] = useState<string | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -563,30 +563,6 @@ export function HackathonClient({
             }`}>
               {problemStatements.length}
             </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("prizes")}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-2 ${
-              activeTab === "prizes"
-                ? "bg-slate-900 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
-            }`}
-          >
-            <Trophy className="w-4 h-4 text-amber-500" />
-            <span>Prizes & Perks</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("timeline")}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-2 ${
-              activeTab === "timeline"
-                ? "bg-slate-900 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
-            }`}
-          >
-            <Calendar className="w-4 h-4" />
-            <span>Schedule</span>
           </button>
 
           <button
