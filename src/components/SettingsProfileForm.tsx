@@ -30,6 +30,31 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
     showRestoredToast: isEditing,
   });
 
+  // Sync formData with server data when not editing, effectively clearing stale drafts
+  React.useEffect(() => {
+    if (!isEditing) {
+      setFormData({
+        full_name: initialData?.full_name || "",
+        email: initialData?.email || "",
+        mobile: initialData?.mobile || "",
+        college: initialData?.college || "",
+        register_number: initialData?.register_number || "",
+        department: initialData?.department || "",
+        year_of_study: initialData?.year_of_study || "",
+      });
+    }
+  }, [
+    initialData?.full_name,
+    initialData?.email,
+    initialData?.mobile,
+    initialData?.college,
+    initialData?.register_number,
+    initialData?.department,
+    initialData?.year_of_study,
+    isEditing,
+    setFormData
+  ]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.name === 'mobile' ? e.target.value.replace(/\D/g, '').slice(0, 10) : e.target.value;
     setFormData(prev => ({ ...prev, [e.target.name]: val }));

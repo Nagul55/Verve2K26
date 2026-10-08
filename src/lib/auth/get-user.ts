@@ -8,8 +8,8 @@ export interface UserProfile {
   department?: string;
   year_of_study?: string;
   gender?: string;
-  college_name?: string;
-  phone_number?: string;
+  college?: string;
+  mobile?: string;
   register_number?: string;
   avatar_url?: string;
   role?: string;
@@ -38,11 +38,15 @@ export const getCurrentUser = cache(async (): Promise<AuthUserResult> => {
     const role = (user.app_metadata?.role as string) || (user.user_metadata?.role as string) || 'student';
 
     // Fetch user profile efficiently selecting only required fields
-    const { data: profile } = await supabase
+    const { data: profile, error: dbErr } = await supabase
       .from('participants')
-      .select('id, full_name, department, year_of_study, gender, college_name, phone_number, register_number, avatar_url')
+      .select('participant_id, full_name, department, year_of_study, college, mobile, register_number')
       .eq('participant_id', user.id)
       .maybeSingle();
+
+    if (dbErr) {
+      console.error('Error fetching participant data:', dbErr.message);
+    }
 
     const formattedProfile: UserProfile | null = profile
       ? {
@@ -50,11 +54,11 @@ export const getCurrentUser = cache(async (): Promise<AuthUserResult> => {
           full_name: profile.full_name || user.user_metadata?.full_name || 'STUDENT',
           department: profile.department || '',
           year_of_study: profile.year_of_study || '',
-          gender: profile.gender || user.user_metadata?.gender || '',
-          college_name: profile.college_name || '',
-          phone_number: profile.phone_number || '',
+          gender: user.user_metadata?.gender || '',
+          college: profile.college || '',
+          mobile: profile.mobile || '',
           register_number: profile.register_number || '',
-          avatar_url: profile.avatar_url || '',
+          avatar_url: user.user_metadata?.avatar_url || '',
           role: role,
         }
       : {

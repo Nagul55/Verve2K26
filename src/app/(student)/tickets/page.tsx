@@ -18,7 +18,7 @@ export default async function TicketsPage() {
     full_name: profile.full_name,
     department: profile.department,
     year_of_study: profile.year_of_study,
-    college_name: profile.college_name,
+    college_name: profile.college,
     register_number: profile.register_number,
     gender: profile.gender,
   } : null;

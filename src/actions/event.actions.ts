@@ -123,9 +123,9 @@ export async function getFestById(festId: string) {
 }
 
 export async function createFest(
-  name: string, 
-  description: string, 
-  minTech: number = 0, 
+  name: string,
+  description: string,
+  minTech: number = 0,
   minNonTech: number = 0,
   registrationClosesAt?: string | null,
   allowedDepartments?: string | null
@@ -161,9 +161,9 @@ export async function createFest(
 
 export async function updateFest(
   festId: string,
-  name: string, 
-  description: string, 
-  minTech: number = 0, 
+  name: string,
+  description: string,
+  minTech: number = 0,
   minNonTech: number = 0,
   registrationClosesAt?: string | null,
   allowedDepartments?: string | null
@@ -212,7 +212,7 @@ export async function getSubEvents(festId?: string, includePending: boolean = fa
   const adminClient = getAdminClient();
   let query = adminClient.from('sub_events').select('*');
   if (festId) query = query.eq('fest_id', festId);
-  
+
   const { data, error } = await query;
   if (error || !data) return [];
 
@@ -272,7 +272,7 @@ export async function createSubEvent(subEventData: any) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const isCoordinator = user?.app_metadata?.role === 'coordinator';
-  
+
   // Format candidate/team requirements into description if present
   let formattedDesc = subEventData.description || '';
   if (subEventData.participation_type === 'Team' && (subEventData.min_candidates || subEventData.max_candidates)) {
@@ -373,9 +373,9 @@ export async function approveSubEvent(subEventId: string, coordinatorIds?: strin
   const assignedCoords = coords.filter(c => c.event_ids.includes(subEventId));
 
   if (assignedCoords.length === 0) {
-    return { 
-      success: false, 
-      error: "Coordinator required — Assign at least one coordinator before approving this event." 
+    return {
+      success: false,
+      error: "Coordinator required — Assign at least one coordinator before approving this event."
     };
   }
 
@@ -642,8 +642,8 @@ export async function updateSubEvent(subEventId: string, subEventData: any) {
   revalidatePath('/events');
   revalidatePath('/dashboard');
 
-  return { 
-    success: !error, 
+  return {
+    success: !error,
     error: error?.message,
     statusChangedToPending: isCoordinator && currentEvent?.status === 'LIVE'
   };
@@ -754,14 +754,14 @@ export async function registerForEvents(
   teamMembers?: Record<string, string>
 ) {
   const supabase = await createClient();
-  
+
   // 1. Get/Update Participant
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
   const { data: participant } = await supabase.from('participants').select('*').eq('participant_id', user.id).single();
   if (!participant) return { success: false, error: "Participant profile not found. Please update settings first." };
-  
+
   const adminClient = getAdminClient();
 
   // 1.2 FEST REGISTRATION DEADLINE CHECK (SERVER-SIDE MANDATORY)
@@ -776,7 +776,7 @@ export async function registerForEvents(
   }
 
   // 1.5 Validate all Team Member Emails in a single batch query
-  const validMemberParticipants: Record<string, any[]> = {}; 
+  const validMemberParticipants: Record<string, any[]> = {};
 
   if (teamMembers && Object.keys(teamMembers).length > 0) {
     const allEmailsToFetch = Array.from(new Set(
@@ -818,9 +818,9 @@ export async function registerForEvents(
     const conflicts = await getConflictingParticipantsForEvent(adminClient, targetPartIds, subEventId);
     if (conflicts.length > 0) {
       const conflictMsgs = conflicts.map(c => `${c.name} ${c.reason}`).join('; ');
-      return { 
-        success: false, 
-        error: `Cannot register for event: ${conflictMsgs}. Each student can participate only once per event.` 
+      return {
+        success: false,
+        error: `Cannot register for event: ${conflictMsgs}. Each student can participate only once per event.`
       };
     }
   }
@@ -864,9 +864,9 @@ export async function registerForEvents(
         const currentOccupied = occupiedCount || 0;
         if (currentOccupied + requestedSeats > capacity) {
           const remaining = Math.max(0, capacity - currentOccupied);
-          return { 
-            success: false, 
-            error: `Registration closed for "${sub.title}". Insufficient seats available (${remaining} seat(s) remaining, team requested ${requestedSeats} seat(s)).` 
+          return {
+            success: false,
+            error: `Registration closed for "${sub.title}". Insufficient seats available (${remaining} seat(s) remaining, team requested ${requestedSeats} seat(s)).`
           };
         }
       }
@@ -878,15 +878,15 @@ export async function registerForEvents(
         const maxSize = sub.max_candidates || 5;
 
         if (totalTeamSize < minSize) {
-          return { 
-            success: false, 
-            error: `Team size for ${sub.title} must be at least ${minSize} members. Current team size is ${totalTeamSize} (1 Leader + ${membersList.length} member/s).` 
+          return {
+            success: false,
+            error: `Team size for ${sub.title} must be at least ${minSize} members. Current team size is ${totalTeamSize} (1 Leader + ${membersList.length} member/s).`
           };
         }
         if (totalTeamSize > maxSize) {
-          return { 
-            success: false, 
-            error: `Team size for ${sub.title} cannot exceed ${maxSize} members. Current team size is ${totalTeamSize}.` 
+          return {
+            success: false,
+            error: `Team size for ${sub.title} cannot exceed ${maxSize} members. Current team size is ${totalTeamSize}.`
           };
         }
       }
@@ -894,7 +894,7 @@ export async function registerForEvents(
   }
 
   // 2. Create Fest Registration or Get Existing
-  
+
   // Try to insert
   let festRegId;
   const { data: newFestReg, error: festRegError } = await adminClient
@@ -914,7 +914,7 @@ export async function registerForEvents(
       .eq('participant_id', user.id)
       .eq('fest_id', festId)
       .single();
-      
+
     if (existingReg) {
       festRegId = existingReg.id;
     } else {
@@ -974,7 +974,7 @@ export async function registerForEvents(
               participant_id: participant.participant_id,
               status: 'Accepted'
             });
-          
+
           if (tmError1) {
             console.error("CRITICAL ERROR: Failed to add leader to team_members:", tmError1);
           }
@@ -1089,24 +1089,24 @@ export async function getParticipantRegistrations() {
   const userTeams: Record<string, any> = {};
   if (teamsData) {
     teamsData.forEach((tm: any) => {
-       if (tm.teams) {
-         const eventId = tm.teams.sub_event_id || tm.teams.event_id;
-         if (eventId) {
-           userTeams[eventId] = {
-             teamId: tm.teams.team_id,
-             teamName: tm.teams.team_name,
-             isLeader: tm.teams.leader_participant_id === user.id,
-             isLocked: tm.teams.is_locked,
-             members: tm.teams.team_members?.map((m: any) => ({
-               participantId: m.participant_id,
-               name: m.participants?.full_name,
-               email: m.participants?.email,
-               isLeader: m.participant_id === tm.teams.leader_participant_id,
-               status: m.status || 'Accepted'
-             })).filter((m: any) => m.name) || []
-           };
-         }
-       }
+      if (tm.teams) {
+        const eventId = tm.teams.sub_event_id || tm.teams.event_id;
+        if (eventId) {
+          userTeams[eventId] = {
+            teamId: tm.teams.team_id,
+            teamName: tm.teams.team_name,
+            isLeader: tm.teams.leader_participant_id === user.id,
+            isLocked: tm.teams.is_locked,
+            members: tm.teams.team_members?.map((m: any) => ({
+              participantId: m.participant_id,
+              name: m.participants?.full_name,
+              email: m.participants?.email,
+              isLeader: m.participant_id === tm.teams.leader_participant_id,
+              status: m.status || 'Accepted'
+            })).filter((m: any) => m.name) || []
+          };
+        }
+      }
     });
   }
 
@@ -1114,17 +1114,17 @@ export async function getParticipantRegistrations() {
   const registeredEvents: any[] = [];
   data.forEach((reg: any) => {
     reg.registration_sub_events.forEach((rse: any) => {
-        const members = userTeams[rse.sub_events.id]?.members || [];
-        const minCandidates = rse.sub_events.min_candidates || 2;
-        const hasPendingMembers = members.some((m: any) => m.status === 'Pending');
-        const isTeamComplete = rse.sub_events.participation_type !== 'Team' || (!hasPendingMembers && members.length >= minCandidates);
+      const members = userTeams[rse.sub_events.id]?.members || [];
+      const minCandidates = rse.sub_events.min_candidates || 2;
+      const hasPendingMembers = members.some((m: any) => m.status === 'Pending');
+      const isTeamComplete = rse.sub_events.participation_type !== 'Team' || (!hasPendingMembers && members.length >= minCandidates);
 
-        const teamInfo = userTeams[rse.sub_events.id] ? {
-          ...userTeams[rse.sub_events.id],
-          minCandidates,
-          maxCandidates: rse.sub_events.max_candidates || 5,
-          isTeamComplete
-        } : null;
+      const teamInfo = userTeams[rse.sub_events.id] ? {
+        ...userTeams[rse.sub_events.id],
+        minCandidates,
+        maxCandidates: rse.sub_events.max_candidates || 5,
+        isTeamComplete
+      } : null;
 
         let waLink = (rse.sub_events as any).whatsapp_group_link || '';
         if (!waLink && rse.sub_events.description) {
@@ -1188,8 +1188,8 @@ export async function getAdminParticipants() {
   // Ensure participants have at least one valid sub-event booking
   const registeredParticipants = data.filter((p: any) => {
     if (!p.registrations || p.registrations.length === 0) return false;
-    return p.registrations.some((reg: any) => 
-      reg.registration_sub_events && 
+    return p.registrations.some((reg: any) =>
+      reg.registration_sub_events &&
       reg.registration_sub_events.length > 0 &&
       reg.registration_sub_events.some((rse: any) => rse.sub_events)
     );
@@ -1210,7 +1210,7 @@ export async function getCoordinatorParticipants() {
   const adminClient = getAdminClient();
 
   if (!assignedEventIds || assignedEventIds.length === 0) {
-     return [];
+    return [];
   }
 
   const { data, error } = await adminClient
@@ -1245,7 +1245,7 @@ export async function getCoordinatorParticipants() {
     .select('participant_id, event_id')
     .in('event_id', assignedEventIds)
     .eq('status', 'Present');
-    
+
   const presentParticipantSet = new Set(
     (attendanceData || []).map(a => `${a.event_id}_${a.participant_id}`)
   );
@@ -1255,15 +1255,15 @@ export async function getCoordinatorParticipants() {
     const p = row.registrations?.participants;
     const subEventId = row.sub_event_id;
     if (p && p.participant_id) {
-       const key = `${subEventId}_${p.participant_id}`;
-       if (!participantsMap.has(key)) {
-         participantsMap.set(key, {
-           ...p,
-           id: p.participant_id,
-           subEventId: subEventId,
-           isPresent: presentParticipantSet.has(key)
-         });
-       }
+      const key = `${subEventId}_${p.participant_id}`;
+      if (!participantsMap.has(key)) {
+        participantsMap.set(key, {
+          ...p,
+          id: p.participant_id,
+          subEventId: subEventId,
+          isPresent: presentParticipantSet.has(key)
+        });
+      }
     }
   });
 
@@ -1585,7 +1585,7 @@ export async function getSubEventsWithCoordinators(festId?: string) {
 
   const coords = await getCachedCoordinators();
   const eventCoordMap: Record<string, string[]> = {};
-  
+
   coords.forEach(c => {
     c.event_ids.forEach(id => {
       if (!eventCoordMap[id]) eventCoordMap[id] = [];

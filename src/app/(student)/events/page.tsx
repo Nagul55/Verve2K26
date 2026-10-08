@@ -3,11 +3,17 @@ import { getFests } from "@/actions/event.actions";
 import Link from "next/link";
 import { FestCard } from "@/components/FestCard";
 
+import { isUserEligibleForEvent } from "@/lib/utils/eligibility";
+import { getCurrentUser } from "@/lib/auth/get-user";
+
 export default async function EventsPage() {
+  const { profile } = await getCurrentUser();
   const allEvents = await getFests();
-  
-  const regularFests = (allEvents || []).filter(e => e.event_type !== 'hackathon');
-  const hackathons = (allEvents || []).filter(e => e.event_type === 'hackathon');
+
+  const eligibleEvents = (allEvents || []).filter(e => isUserEligibleForEvent(profile?.department, e.allowed_departments));
+
+  const regularFests = eligibleEvents.filter(e => e.event_type !== 'hackathon');
+  const hackathons = eligibleEvents.filter(e => e.event_type === 'hackathon');
 
   return (
     <div className="max-w-6xl mx-auto space-y-16 pb-12">

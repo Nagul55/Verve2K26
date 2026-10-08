@@ -8,7 +8,7 @@ export default async function FestEventsPage({ params }: { params: Promise<{ fes
   const { festId } = await params;
   const fests = await getFests();
   const fest = fests.find(f => f.id === festId);
-  
+
   if (!fest) {
     notFound();
   }
