@@ -62,10 +62,11 @@ function LoginForm() {
       </div>
 
       {/* LEFT SECTION - Form (50% Width on Desktop) */}
-      <div className="w-full lg:w-[50%] h-[100dvh] min-h-[100dvh] p-4 sm:p-6 lg:p-8 xl:p-12 flex flex-col justify-center items-center z-10 relative overflow-hidden">
-        
-        {/* Glassmorphic Card Container */}
-        <div className="max-w-md lg:max-w-md w-full mx-auto bg-white/95 lg:bg-transparent backdrop-blur-2xl lg:backdrop-blur-none p-6 sm:p-8 lg:p-0 rounded-3xl lg:rounded-none shadow-2xl lg:shadow-none border border-white/70 lg:border-none transition-all my-auto">
+      <div className="w-full lg:w-[50%] h-[100dvh] overflow-y-auto overflow-x-hidden z-10 relative custom-scrollbar">
+        <div className="min-h-full w-full py-6 sm:py-8 lg:py-10 px-4 sm:px-6 lg:px-8 xl:px-12 flex flex-col">
+          
+          {/* Glassmorphic Card Container */}
+          <div className="max-w-md lg:max-w-md w-full mx-auto bg-white/95 lg:bg-transparent backdrop-blur-2xl lg:backdrop-blur-none p-6 sm:p-8 lg:p-0 rounded-3xl lg:rounded-none shadow-2xl lg:shadow-none border border-white/70 lg:border-none transition-all my-auto">
           
           {/* Header Title with Logo Directly Beside "Welcome to" */}
           <div className="mb-5 sm:mb-6">
@@ -158,8 +159,8 @@ function LoginForm() {
           </div>
 
         </div>
-
       </div>
+    </div>
 
       {/* RIGHT SECTION - Avatar Image (50% Width on Desktop) */}
       <div className="hidden lg:block w-[50%] h-[100dvh] fixed right-0 top-0 bottom-0 overflow-hidden bg-[#7c3aed] z-0">

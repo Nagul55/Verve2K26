@@ -105,13 +105,14 @@ export default function SignupPage() {
       </div>
 
       {/* LEFT SECTION - Form (50% Width on Desktop) */}
-      <div className="w-full lg:w-[50%] h-[100dvh] min-h-[100dvh] py-2 sm:py-3 lg:py-4 px-4 sm:px-6 lg:px-8 xl:px-10 flex flex-col justify-center items-center z-10 relative overflow-hidden">
-        
-        {/* Glassmorphic Card Container */}
-        <div className="max-w-xl lg:max-w-xl w-full mx-auto bg-white/95 lg:bg-transparent backdrop-blur-2xl lg:backdrop-blur-none p-4 sm:p-5 lg:p-0 rounded-3xl lg:rounded-none shadow-2xl lg:shadow-none border border-white/70 lg:border-none transition-all my-auto">
+      <div className="w-full lg:w-[50%] h-[100dvh] overflow-y-auto overflow-x-hidden z-10 relative custom-scrollbar">
+        <div className="min-h-full w-full py-6 sm:py-8 lg:py-10 px-4 sm:px-6 lg:px-8 xl:px-10 flex flex-col">
+          
+          {/* Glassmorphic Card Container */}
+          <div className="max-w-xl lg:max-w-xl w-full mx-auto bg-white/95 lg:bg-transparent backdrop-blur-2xl lg:backdrop-blur-none p-5 sm:p-6 lg:p-0 rounded-3xl lg:rounded-none shadow-2xl lg:shadow-none border border-white/70 lg:border-none transition-all my-auto">
           
           {/* Header Title with Logo Directly Beside "Join" */}
-          <div className="mb-2 sm:mb-2.5">
+          <div className="mb-6 sm:mb-8">
             <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-950 tracking-tight leading-none drop-shadow-sm">
                 Join
@@ -132,12 +133,12 @@ export default function SignupPage() {
           </div>
 
           {/* Form Inputs */}
-          <form action={clientAction} className="space-y-2 sm:space-y-2.5">
+          <form action={clientAction} className="space-y-4 sm:space-y-5">
             
             {/* Grid 1: Full Name & Phone Number */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
               {/* Full Name Input */}
-              <div className="space-y-0.5 sm:space-y-1">
+              <div className="space-y-1.5 sm:space-y-2">
                 <label className="text-[11px] sm:text-xs font-semibold text-gray-900 block">
                   Full Name <span className="text-red-500">*</span>
                 </label>
@@ -156,7 +157,7 @@ export default function SignupPage() {
               </div>
 
               {/* Phone Number Input */}
-              <div className="space-y-0.5 sm:space-y-1">
+              <div className="space-y-1.5 sm:space-y-2">
                 <label className="text-[11px] sm:text-xs font-semibold text-gray-900 block">
                   Phone Number <span className="text-red-500">*</span>
                 </label>
@@ -182,7 +183,7 @@ export default function SignupPage() {
             </div>
 
             {/* Email Input */}
-            <div className="space-y-0.5 sm:space-y-1">
+            <div className="space-y-1.5 sm:space-y-2">
               <label className="text-[11px] sm:text-xs font-semibold text-gray-900 block">
                 Email Address <span className="text-red-500">*</span>
               </label>
@@ -227,7 +228,7 @@ export default function SignupPage() {
             />
 
             {/* Grid 2: Department & Year of Study */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
               {/* Department Dropdown */}
               <DepartmentSelect
                 label="Department / Branch"
@@ -258,9 +259,9 @@ export default function SignupPage() {
             </div>
 
             {/* Grid 3: Password & Confirm Password */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
               {/* Password Input */}
-              <div className="space-y-0.5 sm:space-y-1">
+              <div className="space-y-1.5 sm:space-y-2">
                 <label className="text-[11px] sm:text-xs font-semibold text-gray-900 block">
                   Password <span className="text-red-500">*</span>
                 </label>
@@ -285,7 +286,7 @@ export default function SignupPage() {
               </div>
 
               {/* Confirm Password Input */}
-              <div className="space-y-0.5 sm:space-y-1">
+              <div className="space-y-1.5 sm:space-y-2">
                 <label className="text-[11px] sm:text-xs font-semibold text-gray-900 block">
                   Confirm Password <span className="text-red-500">*</span>
                 </label>
@@ -314,7 +315,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-2 sm:mt-2.5 bg-eventrix-black text-white font-bold py-2.5 sm:py-3 px-5 rounded-xl transition-all duration-200 shadow-[3px_3px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[3px_3px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs sm:text-xs uppercase tracking-wider"
+              className="w-full mt-4 sm:mt-5 bg-eventrix-black text-white font-bold py-3 sm:py-3.5 px-5 rounded-xl transition-all duration-200 shadow-[3px_3px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[3px_3px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer text-xs sm:text-sm uppercase tracking-wider"
             >
               {isLoading ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -325,7 +326,7 @@ export default function SignupPage() {
 
           </form>
 
-          <div className="mt-2 sm:mt-2.5 text-center text-[11px] sm:text-xs font-medium text-gray-500">
+          <div className="mt-4 sm:mt-5 text-center text-xs sm:text-sm font-medium text-gray-500">
             Already have an account?{' '}
             <Link href="/" className="text-violet-600 font-semibold uppercase tracking-widest hover:text-violet-900 transition-colors">
               Sign In
@@ -333,8 +334,8 @@ export default function SignupPage() {
           </div>
 
         </div>
-
       </div>
+    </div>
 
       {/* RIGHT SECTION - Avatar Image (50% Width on Desktop) */}
       <div className="hidden lg:block w-[50%] h-[100dvh] fixed right-0 top-0 bottom-0 overflow-hidden bg-[#7c3aed] z-0">
