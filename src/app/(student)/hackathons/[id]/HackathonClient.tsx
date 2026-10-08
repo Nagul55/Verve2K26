@@ -319,11 +319,6 @@ export function HackathonClient({
             
             {/* Left Badges */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 text-xs">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-500/15 border border-violet-400/30 text-violet-300 font-bold uppercase tracking-wider backdrop-blur-md">
-                <Sparkles className="w-3.5 h-3.5 text-violet-400" />
-                Verve 2026 Arena
-              </span>
-
               {hackathon.mode && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/25 text-cyan-300 font-semibold uppercase tracking-wider backdrop-blur-md">
                   <MapPin className="w-3.5 h-3.5 text-cyan-400" />
