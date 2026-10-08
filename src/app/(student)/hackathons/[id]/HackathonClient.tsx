@@ -833,85 +833,80 @@ export function HackathonClient({
                 </div>
               </div>
 
-              {/* Squad Passcode & Quick Share Deck (Refined SaaS Design) */}
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-50/70 via-white to-indigo-50/40 border border-violet-200/80 p-5 sm:p-6 shadow-xs space-y-4">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-                  
-                  {/* Left: Passcode Vault */}
-                  <div className="space-y-2 max-w-md">
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center">
-                        <Lock className="w-3.5 h-3.5" />
-                      </span>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-violet-900">
-                        Squad Passcode & Direct Join Code
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={handleCopyCode}
-                        className="group flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white border-2 border-violet-200 hover:border-violet-400 shadow-xs transition-all cursor-pointer"
-                        title="Click to copy passcode"
-                      >
-                        <span className="font-mono text-2xl sm:text-3xl font-extrabold tracking-[0.25em] text-slate-900 select-all group-hover:text-violet-700 transition-colors">
-                          {userTeam.passcode || "------"}
-                        </span>
-                        {hasCopiedCode ? (
-                          <Check className="w-5 h-5 text-emerald-600 shrink-0" />
-                        ) : (
-                          <Copy className="w-4 h-4 text-slate-400 group-hover:text-violet-600 shrink-0 transition-colors" />
-                        )}
-                      </button>
-
-                      <p className="text-xs text-slate-500 leading-relaxed min-w-[180px] flex-1">
-                        Teammates can use this code when registering to join your squad directly.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Right: Action Buttons */}
-                  <div className="flex items-center gap-2.5 flex-wrap shrink-0">
-                    <Button
-                      size="sm"
+              {/* Compact Squad Passcode & Invite Strip */}
+              <div className="p-3.5 sm:p-4 rounded-xl bg-slate-50/90 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                
+                {/* Left: Refined Passcode Badge */}
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-md bg-violet-100 text-violet-700 flex items-center justify-center shrink-0">
+                      <Lock className="w-3 h-3" />
+                    </span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Passcode:
+                    </span>
+                    <button
+                      type="button"
                       onClick={handleCopyCode}
-                      variant="outline"
-                      className="bg-white hover:bg-slate-50 text-slate-700 border-slate-300 font-bold text-xs uppercase tracking-wider h-11 px-4 rounded-xl flex items-center gap-2 cursor-pointer shadow-2xs transition-all"
+                      className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white border border-slate-200 hover:border-violet-300 text-slate-800 shadow-2xs transition-all cursor-pointer group"
+                      title="Click to copy passcode"
                     >
+                      <span className="font-mono text-sm font-bold tracking-wider text-slate-900 group-hover:text-violet-600 transition-colors">
+                        {userTeam.passcode || "------"}
+                      </span>
                       {hasCopiedCode ? (
-                        <>
-                          <Check className="w-4 h-4 text-emerald-600" />
-                          <span className="text-emerald-700">Copied!</span>
-                        </>
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                       ) : (
-                        <>
-                          <Copy className="w-4 h-4 text-slate-500" />
-                          <span>Copy Passcode</span>
-                        </>
+                        <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-violet-600 shrink-0 transition-colors" />
                       )}
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      onClick={handleShareWhatsApp}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider h-11 px-4.5 rounded-xl flex items-center gap-2 shadow-xs cursor-pointer transition-all"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      <span>Share on WhatsApp</span>
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      onClick={() => setIsInviteModalOpen(true)}
-                      className="bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs uppercase tracking-wider h-11 px-4.5 rounded-xl flex items-center gap-2 shadow-xs cursor-pointer transition-all"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                      <span>Invite by Email</span>
-                    </Button>
+                    </button>
                   </div>
 
+                  <span className="text-[11px] text-slate-400 hidden md:inline">
+                    • Share with teammates to join directly
+                  </span>
                 </div>
+
+                {/* Right: Compact Action Buttons */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCopyCode}
+                    className="h-8.5 px-3 text-xs font-bold rounded-lg bg-white border-slate-200 text-slate-700 hover:bg-slate-100/80 shadow-2xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    {hasCopiedCode ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="text-emerald-700">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Copy Code</span>
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    onClick={handleShareWhatsApp}
+                    className="h-8.5 px-3 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-2xs cursor-pointer flex items-center gap-1.5 transition-all"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    onClick={() => setIsInviteModalOpen(true)}
+                    className="h-8.5 px-3 text-xs font-bold rounded-lg bg-violet-600 hover:bg-violet-500 text-white shadow-2xs cursor-pointer flex items-center gap-1.5 transition-all"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Invite by Email</span>
+                  </Button>
+                </div>
+
               </div>
 
             </div>
