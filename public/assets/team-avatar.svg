@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="teamGradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C3AED" />
+      <stop offset="50%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+    <linearGradient id="teamGradAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C4B5FD" />
+      <stop offset="100%" stop-color="#93C5FD" />
+    </linearGradient>
+    <linearGradient id="teamGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#4F46E5" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Background Container with rounded squircle -->
+  <rect width="120" height="120" rx="32" fill="url(#teamGradBg)" filter="url(#glow)" />
+  
+  <!-- Subtle cyber circuit border line -->
+  <rect x="3" y="3" width="114" height="114" rx="29" stroke="white" stroke-opacity="0.25" stroke-width="2" />
+
+  <!-- Background decorative tech elements -->
+  <circle cx="60" cy="60" r="44" stroke="white" stroke-opacity="0.08" stroke-width="1.5" stroke-dasharray="4 4" />
+  
+  <!-- Central Leader Crown / Sparkle -->
+  <path d="M54 27L60 21L66 27L63 31H57L54 27Z" fill="url(#teamGold)" />
+  <circle cx="60" cy="22" r="2" fill="#FEF08A" />
+
+  <!-- Left Member -->
+  <g opacity="0.88">
+    <circle cx="34" cy="52" r="10" fill="url(#teamGradAccent)" />
+    <path d="M19 82C19 72.0589 27.0589 66 37 66C41.8 66 45.8 67.8 48.5 70.8C44.5 73.8 42 78.5 42 84H21C19.8954 84 19 83.1046 19 82Z" fill="white" fill-opacity="0.85" />
+  </g>
+
+  <!-- Right Member -->
+  <g opacity="0.88">
+    <circle cx="86" cy="52" r="10" fill="url(#teamGradAccent)" />
+    <path d="M101 82C101 72.0589 92.9411 66 83 66C78.2 66 74.2 67.8 71.5 70.8C75.5 73.8 78 78.5 78 84H99C100.105 84 101 83.1046 101 82Z" fill="white" fill-opacity="0.85" />
+  </g>
+
+  <!-- Center Team Leader (Front & Elevated) -->
+  <circle cx="60" cy="44" r="14" fill="#FFFFFF" />
+  <circle cx="60" cy="44" r="11" fill="url(#teamGradAccent)" />
+  <path d="M37 93C37 79.1929 47.2975 70 60 70C72.7025 70 83 79.1929 83 93C83 94.6569 81.6569 96 80 96H40C38.3431 96 37 94.6569 37 93Z" fill="#FFFFFF" />
+
+  <!-- Code / Cyber Emblem on Central Chest -->
+  <path d="M54 81L50 85L54 89" stroke="#6366F1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M66 81L70 85L66 89" stroke="#6366F1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M62 80L58 90" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" />
+</svg>

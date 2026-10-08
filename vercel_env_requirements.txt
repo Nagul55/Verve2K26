@@ -5,5 +5,6 @@ When deploying to Vercel, you must add the following Environment Variables in yo
 3. SUPABASE_SERVICE_ROLE_KEY
 4. RESEND_API_KEY
 5. UNSPLASH_ACCESS_KEY
+6. NEXT_PUBLIC_APP_URL (set to https://sona-eventrix-itads.vercel.app)
 
 You can copy the exact values from your local `.env.local` file. Make sure not to skip any, as they are required for the database, authentication, and email services to work correctly in production.
