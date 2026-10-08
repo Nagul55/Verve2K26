@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSearchParams } from "next/navigation";
 import { login } from "@/actions/auth.actions";
 import { Eye, EyeOff, Mail } from 'lucide-react';
@@ -53,10 +54,12 @@ function LoginForm() {
       
       {/* MOBILE & TABLET BACKGROUND AVATAR IMAGE */}
       <div className="lg:hidden fixed inset-0 z-0">
-        <img
+        <Image
           src="/images/mobile-hero-bg.webp"
           alt="Eventrix Mobile Hero Background"
-          className="w-full h-full object-cover object-center"
+          fill
+          priority
+          className="object-cover object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-purple-950/50 via-purple-900/35 to-black/70 backdrop-blur-[1px]"></div>
       </div>
@@ -164,10 +167,12 @@ function LoginForm() {
 
       {/* RIGHT SECTION - Avatar Image (50% Width on Desktop) */}
       <div className="hidden lg:block w-[50%] h-[100dvh] fixed right-0 top-0 bottom-0 overflow-hidden bg-[#7c3aed] z-0">
-        <img
+        <Image
           src="/images/mobile-hero-bg.webp"
           alt="Eventrix Avatar Illustration"
-          className="w-full h-full object-cover object-center transition-all duration-300"
+          fill
+          priority
+          className="object-cover object-center transition-all duration-300"
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
         <div className="absolute inset-0 bg-purple-900/10 pointer-events-none"></div>
