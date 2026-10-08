@@ -1100,64 +1100,140 @@ export function HackathonClient({
 
           {/* TAB 4: RULES & CRITERIA */}
           {(activeTab === "rules" || activeTab === "overview") && (
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
-              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-7">
+              <div className="flex items-center gap-3 pb-5 border-b border-slate-100">
                 <div className="w-11 h-11 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center font-bold">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
                   <h2 className="font-anton text-2xl sm:text-3xl text-slate-900 uppercase tracking-wide">
-                    Rules & Code of Conduct
+                    Rules & Guidelines
                   </h2>
                   <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Important Compliance & Judging Framework
+                    Important Compliance, Participation & Judging Framework
                   </span>
                 </div>
               </div>
 
-              {hackathon.rules ? (
-                <div className="text-slate-600 text-sm leading-relaxed whitespace-pre-line font-normal">
-                  {hackathon.rules}
+              {/* 1. Rules & Regulations / Code of Conduct */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-violet-500" />
+                  <h3 className="font-anton text-base sm:text-lg text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-violet-600" />
+                    Rules & Code of Conduct
+                  </h3>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-violet-700 block">
-                      1. Squad Composition
-                    </span>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      All squads must consist of {minTeamMembers} to {maxTeamMembers} registered students. Inter-departmental squads are encouraged.
-                    </p>
-                  </div>
 
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-violet-700 block">
-                      2. Originality Policy
-                    </span>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      All core code and digital prototypes must be built fresh during the official hackathon development window.
-                    </p>
+                {hackathon.rules ? (
+                  <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 sm:p-6 text-slate-700 text-sm leading-relaxed whitespace-pre-line font-normal">
+                    {hackathon.rules}
                   </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-violet-700 block">
+                        1. Squad Composition
+                      </span>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        All squads must consist of {minTeamMembers} to {maxTeamMembers} registered students. Inter-departmental squads are encouraged.
+                      </p>
+                    </div>
 
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-violet-700 block">
-                      3. Hardware & BYOD
-                    </span>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      Participants should bring personal laptops, chargers, and any specialized IoT hardware kits required for their demo.
-                    </p>
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-violet-700 block">
+                        2. Originality Policy
+                      </span>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        All core code and digital prototypes must be built fresh during the official hackathon development window.
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-violet-700 block">
+                        3. Hardware & BYOD
+                      </span>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        Participants should bring personal laptops, chargers, and any specialized IoT hardware kits required for their demo.
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-violet-700 block">
+                        4. Final Jury Review
+                      </span>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        Submissions will be evaluated on technical depth, problem-solving innovation, UI/UX polish, and business viability.
+                      </p>
+                    </div>
                   </div>
+                )}
+              </div>
 
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-violet-700 block">
-                      4. Final Jury Review
-                    </span>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      Submissions will be evaluated on technical depth, problem-solving innovation, UI/UX polish, and business viability.
-                    </p>
+              {/* 2. Participation Guidelines */}
+              {hackathon.participation_guidelines && (
+                <div className="space-y-3 pt-6 border-t border-slate-100">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                    <h3 className="font-anton text-base sm:text-lg text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                      <Users className="w-4 h-4 text-blue-600" />
+                      Participation Guidelines
+                    </h3>
+                  </div>
+                  <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 sm:p-6 text-slate-700 text-sm leading-relaxed whitespace-pre-line font-normal">
+                    {hackathon.participation_guidelines}
                   </div>
                 </div>
               )}
+
+              {/* 3. Submission Guidelines */}
+              {hackathon.submission_guidelines && (
+                <div className="space-y-3 pt-6 border-t border-slate-100">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <h3 className="font-anton text-base sm:text-lg text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                      <FileCode2 className="w-4 h-4 text-emerald-600" />
+                      Submission Guidelines
+                    </h3>
+                  </div>
+                  <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 sm:p-6 text-slate-700 text-sm leading-relaxed whitespace-pre-line font-normal">
+                    {hackathon.submission_guidelines}
+                  </div>
+                </div>
+              )}
+
+              {/* 4. Judging Criteria */}
+              {hackathon.judging_criteria && (
+                <div className="space-y-3 pt-6 border-t border-slate-100">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <h3 className="font-anton text-base sm:text-lg text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                      <Award className="w-4 h-4 text-amber-600" />
+                      Judging Criteria
+                    </h3>
+                  </div>
+                  <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 sm:p-6 text-slate-700 text-sm leading-relaxed whitespace-pre-line font-normal">
+                    {hackathon.judging_criteria}
+                  </div>
+                </div>
+              )}
+
+              {/* 5. Code of Conduct (if separate) */}
+              {hackathon.code_of_conduct && (
+                <div className="space-y-3 pt-6 border-t border-slate-100">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-2 h-2 rounded-full bg-rose-500" />
+                    <h3 className="font-anton text-base sm:text-lg text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-rose-600" />
+                      Code of Conduct
+                    </h3>
+                  </div>
+                  <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 sm:p-6 text-slate-700 text-sm leading-relaxed whitespace-pre-line font-normal">
+                    {hackathon.code_of_conduct}
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
 
