@@ -43,27 +43,38 @@ export async function TopNavbar() {
         </div>
         
         <div className="flex items-center gap-2 border-l border-[#D9D9DF] pl-3 sm:pl-4 h-9 sm:h-10">
-          <UserAvatar
-            user={{ role, gender: profile.gender }}
-            alt="User Profile"
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover shrink-0 border border-[#D9D9DF]"
-          />
-          <div className="hidden sm:block ml-0.5 max-w-[120px] lg:max-w-[200px] truncate">
-            <p className="font-bold text-eventrix-black text-xs uppercase tracking-wide truncate">{profile.full_name}</p>
-            {(profile.department || profile.year_of_study) && (
-              <p className="text-[10px] text-eventrix-muted mt-0.5 truncate">{profile.year_of_study} {profile.department}</p>
-            )}
-          </div>
-          
-          <Link 
-            href={role === 'admin' ? '/admin/settings' : role === 'coordinator' ? '/coordinator/settings' : '/settings'} 
-            title="Settings" 
-            className="text-eventrix-muted hover:text-eventrix-black transition-colors hidden sm:block"
-          >
-            <Settings className="w-4 h-4" />
-          </Link>
-          
-          <LogoutButton variant="icon" />
+          {!user ? (
+            <Link 
+              href="/signup" 
+              className="text-sm font-bold text-eventrix-white bg-eventrix-black hover:bg-eventrix-lavender hover:text-eventrix-black transition-colors px-4 py-2 rounded-lg ml-2"
+            >
+              Sign In
+            </Link>
+          ) : (
+            <>
+              <UserAvatar
+                user={{ role, gender: profile.gender }}
+                alt="User Profile"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover shrink-0 border border-[#D9D9DF]"
+              />
+              <div className="hidden sm:block ml-0.5 max-w-[120px] lg:max-w-[200px] truncate">
+                <p className="font-bold text-eventrix-black text-xs uppercase tracking-wide truncate">{profile.full_name}</p>
+                {(profile.department || profile.year_of_study) && (
+                  <p className="text-[10px] text-eventrix-muted mt-0.5 truncate">{profile.year_of_study} {profile.department}</p>
+                )}
+              </div>
+              
+              <Link 
+                href={role === 'admin' ? '/admin/settings' : role === 'coordinator' ? '/coordinator/settings' : '/settings'} 
+                title="Settings" 
+                className="text-eventrix-muted hover:text-eventrix-black transition-colors hidden sm:block"
+              >
+                <Settings className="w-4 h-4" />
+              </Link>
+              
+              <LogoutButton variant="icon" />
+            </>
+          )}
         </div>
       </div>
     </header>

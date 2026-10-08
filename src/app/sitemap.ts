@@ -9,14 +9,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     {
       url: `${baseUrl}/`,
       lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 1.0,
-    },
-    {
-      url: `${baseUrl}/explore`,
-      lastModified: new Date(),
       changeFrequency: 'daily',
-      priority: 0.9,
+      priority: 1.0,
     }
   ];
 
@@ -27,7 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     for (const fest of fests) {
       const isHackathon = fest.event_type?.toLowerCase() === 'hackathon';
-      const path = isHackathon ? `/explore/hackathons/${fest.id}` : `/explore/events/${fest.id}`;
+      const path = isHackathon ? `/hackathons/${fest.id}` : `/events/${fest.id}`;
       
       routes.push({
         url: `${baseUrl}${path}`,

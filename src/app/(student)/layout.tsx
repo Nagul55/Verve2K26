@@ -8,16 +8,15 @@ import { redirect } from "next/navigation";
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const { user } = await getCurrentUser();
 
-  if (!user) {
-    redirect('/');
-  }
-
+  // We no longer redirect to '/' here.
+  // Middleware.ts now strictly protects all private routes (/dashboard, /settings, /tickets, etc.)
+  // This allows /events and /hackathons to be publicly accessible for SEO.
   // Allow admins and coordinators to view the student dashboard if they want,
   // but guarantee that unauthenticated users are kicked out.
   
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <EventrixSidebar />
+      <EventrixSidebar isLoggedIn={!!user} />
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         <TopNavbar />
         <main className="flex-1 overflow-y-auto scroll-smooth flex flex-col justify-between">

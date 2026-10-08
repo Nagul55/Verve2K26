@@ -7,7 +7,7 @@ import { Home, Calendar, Users, Ticket, FileText, Settings, BellRing } from "luc
 import { EventrixLogo } from "@/components/EventrixLogo";
 import { LogoutButton } from "@/components/LogoutButton";
 
-export function EventrixSidebar() {
+export function EventrixSidebar({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
   const pathname = usePathname();
 
   const navItems = [
@@ -51,9 +51,11 @@ export function EventrixSidebar() {
           })}
           </nav>
         
-          <div className="px-4 mt-8">
-            <LogoutButton variant="sidebar" />
-          </div>
+          {isLoggedIn && (
+            <div className="px-4 mt-8">
+              <LogoutButton variant="sidebar" />
+            </div>
+          )}
         </div>
 
       <div className="p-8 mb-4 shrink-0">

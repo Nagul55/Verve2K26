@@ -39,7 +39,14 @@ export async function middleware(request: NextRequest) {
   const isAuthRoute = pathname.startsWith('/auth') || pathname === '/login';
   const isAdminRoute = pathname.startsWith('/admin');
   const isCoordinatorRoute = pathname.startsWith('/coordinator');
-  const isStudentRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/tickets') || pathname.startsWith('/settings');
+  const isStudentRoute = 
+    pathname.startsWith('/dashboard') || 
+    pathname.startsWith('/tickets') || 
+    pathname.startsWith('/settings') ||
+    pathname.startsWith('/teams') ||
+    pathname.startsWith('/registrations') ||
+    pathname.startsWith('/certificates') ||
+    pathname.startsWith('/invitations');
 
   if (!claims && (isAdminRoute || isCoordinatorRoute || isStudentRoute)) {
     const url = request.nextUrl.clone();
