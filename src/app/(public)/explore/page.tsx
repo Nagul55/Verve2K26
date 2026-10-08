@@ -5,10 +5,15 @@ import { Metadata } from 'next';
 import { Calendar, MapPin } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Explore Events & Hackathons',
-  description: 'Discover upcoming events, symposiums, and hackathons at Sona College of Technology.',
+  title: 'Sona College Events & Hackathons | Eventrix',
+  description: 'Discover upcoming technical symposiums, hackathons, and cultural fests at Sona College of Technology. Join Eventrix to explore, register, and showcase your skills.',
   alternates: {
     canonical: '/explore',
+  },
+  openGraph: {
+    title: 'Sona College Events & Hackathons | Eventrix',
+    description: 'Discover upcoming technical symposiums, hackathons, and cultural fests at Sona College of Technology. Join Eventrix to explore, register, and showcase your skills.',
+    type: 'website',
   }
 };
 
@@ -22,10 +27,12 @@ export default async function ExplorePage() {
 
   return (
     <div className="space-y-12">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">Discover Sona Events</h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Explore the latest hackathons, technical symposiums, and cultural fests at Sona College of Technology.
+      <div className="text-center space-y-6 max-w-4xl mx-auto py-8">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight">
+          Sona College of Technology Events & Hackathons
+        </h1>
+        <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
+          Welcome to Eventrix, the official event discovery and management platform for Sona College of Technology. Explore our upcoming hackathons, technical symposiums, workshops, and cultural fests. Browse event details, check registration deadlines, and participate to showcase your technical and creative skills.
         </p>
       </div>
 
@@ -48,9 +55,24 @@ export default async function ExplorePage() {
                 <div className="p-6 flex-1 flex flex-col">
                   <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-1">{h.name}</h3>
                   <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-1">{h.description}</p>
-                  <div className="flex items-center text-sm text-gray-500 gap-2 font-medium">
-                    <Calendar className="w-4 h-4 text-violet-600" />
-                    <span>Closes {h.registration_closes_at ? new Date(h.registration_closes_at).toLocaleDateString() : 'TBA'}</span>
+                  <div className="flex flex-col gap-2 mt-4 text-sm text-gray-500 font-medium">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-violet-600" />
+                      <span>{h.hackathons?.[0]?.hackathon_starts_at ? new Date(h.hackathons[0].hackathon_starts_at).toLocaleDateString() : 'TBA'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-violet-600" />
+                      <span>{h.hackathons?.[0]?.venue || 'Sona College of Technology'}</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      {(!h.registration_closes_at || new Date(h.registration_closes_at) > new Date()) ? (
+                        <span className="text-green-600">Registrations Open</span>
+                      ) : (
+                        <span className="text-red-500">Registrations Closed</span>
+                      )}
+                    </span>
                   </div>
                 </div>
               </Link>
@@ -77,9 +99,24 @@ export default async function ExplorePage() {
                 <div className="p-6 flex-1 flex flex-col">
                   <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-1">{e.name}</h3>
                   <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-1">{e.description}</p>
-                  <div className="flex items-center text-sm text-gray-500 gap-2 font-medium">
-                    <Calendar className="w-4 h-4 text-blue-600" />
-                    <span>Closes {e.registration_closes_at ? new Date(e.registration_closes_at).toLocaleDateString() : 'TBA'}</span>
+                  <div className="flex flex-col gap-2 mt-4 text-sm text-gray-500 font-medium">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-blue-600" />
+                      <span>{e.registration_closes_at ? `Reg. Closes: ${new Date(e.registration_closes_at).toLocaleDateString()}` : 'TBA'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-blue-600" />
+                      <span>Sona College of Technology</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      {(!e.registration_closes_at || new Date(e.registration_closes_at) > new Date()) ? (
+                        <span className="text-green-600">Registrations Open</span>
+                      ) : (
+                        <span className="text-red-500">Registrations Closed</span>
+                      )}
+                    </span>
                   </div>
                 </div>
               </Link>
