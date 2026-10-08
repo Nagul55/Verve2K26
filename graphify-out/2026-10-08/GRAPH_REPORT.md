@@ -1,17 +1,14 @@
 # Graph Report - Verve2K26  (2026-10-08)
 
 ## Corpus Check
-- cluster-only mode — file stats not available
+- 190 files · ~153,430 words
+- Verdict: corpus is large enough that graph structure adds value.
+- Unclassified: 3 file(s) not represented in the graph (top: (none) 2, .css 1)
 
 ## Summary
 - 667 nodes · 1663 edges · 47 communities (24 shown, 23 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 5 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
-
-## Graph Freshness
-- Built from commit: `0de1bf04`
-- Run `git rev-parse HEAD` and compare to check if the graph is stale.
-- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - Core UI Components
@@ -31,29 +28,29 @@
 - Profile Settings
 - Database Audit Scripts
 - Registration Core Services
-- select.tsx
-- app/layout.tsx
-- ScannerClient.tsx
-- dotenv
-- add_hackathon_columns.ts
-- scripts
-- SubeventCoordinatorSelector.tsx
-- seed.ts
-- eslint.config.mjs
-- @supabase/ssr
-- check_hackathon_table.ts
-- execute_production_reset.ts
-- inspect_all_columns.ts
-- inspect_all_tables.ts
-- test_add_column.ts
-- test_db_closes_at.ts
-- test_fests_all.ts
-- test_query.ts
-- test_rpc.ts
-- test_update_fallback.ts
-- verify_deadline_persistence.ts
-- postcss.config.mjs
-- vercel.json
+- Community 17
+- Community 18
+- Community 19
+- Community 20
+- Community 21
+- Community 22
+- Community 23
+- Community 24
+- Community 25
+- Community 26
+- Community 27
+- Community 28
+- Community 29
+- Community 30
+- Community 31
+- Community 32
+- Community 33
+- Community 34
+- Community 35
+- Community 36
+- Community 37
+- Community 38
+- Community 40
 
 ## God Nodes (most connected - your core abstractions)
 1. `react` - 95 edges
@@ -70,14 +67,14 @@
 ## Surprising Connections (you probably didn't know these)
 - `verifyGetFests()` --calls--> `getFests()`  [EXTRACTED]
   scratch/verify_get_fests.ts → src/actions/event.actions.ts
-- `EventrixResourceUploaderProps` --references--> `EventResourceItem`  [EXTRACTED]
-  src/components/ui/EventrixResourceUploader.tsx → src/actions/resource.actions.ts
+- `login()` --calls--> `createClient()`  [EXTRACTED]
+  src/actions/auth.actions.ts → src/lib/supabase/server.ts
+- `SignupPage()` --calls--> `signup()`  [EXTRACTED]
+  src/app/(auth)/signup/page.tsx → src/actions/auth.actions.ts
 - `signout()` --calls--> `createClient()`  [EXTRACTED]
   src/actions/auth.actions.ts → src/lib/supabase/server.ts
-- `Dashboard()` --calls--> `getParticipantRegistrations()`  [EXTRACTED]
-  src/app/(student)/dashboard/page.tsx → src/actions/event.actions.ts
-- `TeamManager()` --calls--> `updateRegisteredTeam()`  [EXTRACTED]
-  src/app/(student)/registrations/TeamManager.tsx → src/actions/team.actions.ts
+- `loadFest()` --calls--> `getFestById()`  [EXTRACTED]
+  src/app/(admin)/admin/events/[id]/edit/page.tsx → src/actions/event.actions.ts
 
 ## Import Cycles
 - None detected.
@@ -152,53 +149,53 @@ Nodes (3): adminClient, adminClient, adminClient
 Cohesion: 0.29
 Nodes (7): qrcode, resend, POST(), supabase, resend, sendTicketEmail(), generateTicketQR()
 
-### Community 17 - "select.tsx"
+### Community 17 - "Community 17"
 Cohesion: 0.24
 Nodes (3): SelectContent(), SelectScrollDownButton(), SelectScrollUpButton()
 
-### Community 18 - "app/layout.tsx"
+### Community 18 - "Community 18"
 Cohesion: 0.28
 Nodes (6): next-themes, anton, inter, metadata, RootLayout(), Toaster()
 
-### Community 19 - "ScannerClient.tsx"
+### Community 19 - "Community 19"
 Cohesion: 0.38
 Nodes (4): html5-qrcode, QRScannerPage(), ScannerClient(), ScannerClientProps
 
-### Community 21 - "add_hackathon_columns.ts"
+### Community 21 - "Community 21"
 Cohesion: 0.33
 Nodes (3): pg, match, { Client }
 
-### Community 22 - "scripts"
+### Community 22 - "Community 22"
 Cohesion: 0.40
 Nodes (5): scripts, build, dev, lint, start
 
-### Community 23 - "SubeventCoordinatorSelector.tsx"
+### Community 23 - "Community 23"
 Cohesion: 0.40
 Nodes (3): CoordinatorItem, SubeventCoordinatorSelector(), SubeventCoordinatorSelectorProps
 
-### Community 25 - "eslint.config.mjs"
+### Community 25 - "Community 25"
 Cohesion: 0.50
 Nodes (3): eslintConfig, eslint, eslint-config-next
 
 ## Knowledge Gaps
-- **198 isolated node(s):** `RegistrationEventCardProps`, `EventrixLogoProps`, `FeaturedEventCardProps`, `LogoutButtonProps`, `AuthUserResult` (+193 more)
+- **198 isolated node(s):** `$schema`, `style`, `rsc`, `tsx`, `config` (+193 more)
   These have ≤1 connection - possible missing edges. (Counts symbols only; 254 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **23 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `react` connect `Core UI Components` to `Student Events Dashboard`, `Event Admin Actions`, `Registration Core`, `Event Creation Forms`, `Date Utils`, `User Management`, `Package Metadata`, `Toast Component`, `Profile Settings`, `select.tsx`, `ScannerClient.tsx`, `SubeventCoordinatorSelector.tsx`?**
+- **Why does `react` connect `Core UI Components` to `Student Events Dashboard`, `Event Admin Actions`, `Registration Core`, `Event Creation Forms`, `Date Utils`, `User Management`, `Package Metadata`, `Toast Component`, `Profile Settings`, `Community 17`, `Community 19`, `Community 23`?**
   _High betweenness centrality (0.242) - this node is a cross-community bridge._
-- **What connects `RegistrationEventCardProps`, `EventrixLogoProps`, `FeaturedEventCardProps` to the rest of the system?**
+- **What connects `$schema`, `style`, `rsc` to the rest of the system?**
   _198 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Core UI Components` be split into smaller, more focused modules?**
   _Cohesion score 0.06846635367762129 - nodes in this community are weakly interconnected._
-- **Why does `@supabase/supabase-js` connect `Event Admin Actions` to `Core UI Components`, `Registration Core`, `Event Creation Forms`, `Date Utils`, `User Management`, `Package Metadata`, `Profile Settings`, `Database Audit Scripts`, `Registration Core Services`, `dotenv`, `seed.ts`, `check_hackathon_table.ts`, `execute_production_reset.ts`, `inspect_all_columns.ts`, `inspect_all_tables.ts`, `test_add_column.ts`, `test_db_closes_at.ts`, `test_fests_all.ts`, `test_query.ts`, `test_rpc.ts`, `test_update_fallback.ts`, `verify_deadline_persistence.ts`?**
+- **Why does `@supabase/supabase-js` connect `Event Admin Actions` to `Core UI Components`, `Registration Core`, `Event Creation Forms`, `Date Utils`, `User Management`, `Package Metadata`, `Profile Settings`, `Database Audit Scripts`, `Registration Core Services`, `Community 20`, `Community 24`, `Community 27`, `Community 28`, `Community 29`, `Community 30`, `Community 31`, `Community 32`, `Community 33`, `Community 34`, `Community 35`, `Community 36`, `Community 37`?**
   _High betweenness centrality (0.139) - this node is a cross-community bridge._
 - **Should `Student Events Dashboard` be split into smaller, more focused modules?**
   _Cohesion score 0.06956521739130435 - nodes in this community are weakly interconnected._
-- **Why does `next` connect `Student Events Dashboard` to `Core UI Components`, `Event Admin Actions`, `Registration Core`, `Event Creation Forms`, `Date Utils`, `User Management`, `Package Metadata`, `Profile Settings`, `Registration Core Services`, `app/layout.tsx`, `@supabase/ssr`?**
+- **Why does `next` connect `Student Events Dashboard` to `Core UI Components`, `Event Admin Actions`, `Registration Core`, `Event Creation Forms`, `Date Utils`, `User Management`, `Package Metadata`, `Profile Settings`, `Registration Core Services`, `Community 18`, `Community 26`?**
   _High betweenness centrality (0.133) - this node is a cross-community bridge._
 - **Should `Event Admin Actions` be split into smaller, more focused modules?**
   _Cohesion score 0.07111501316944688 - nodes in this community are weakly interconnected._

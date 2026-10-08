@@ -126,8 +126,8 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
 
       <div className="space-y-8">
         {/* Section 1: Personal Info */}
-        <div className="bg-white border-2 border-[#D9D9DF] rounded-xl overflow-hidden transition-colors focus-within:border-eventrix-black shadow-sm">
-          <div className="bg-gray-50 px-8 py-5 border-b-2 border-[#D9D9DF] flex items-center gap-4">
+        <div className="bg-white border-2 border-[#D9D9DF] rounded-xl transition-colors focus-within:border-eventrix-black shadow-sm">
+          <div className="bg-gray-50 px-8 py-5 border-b-2 border-[#D9D9DF] rounded-t-[10px] flex items-center gap-4">
             <UserAvatar
               user={initialData}
               alt="User Avatar"
@@ -153,8 +153,8 @@ export function SettingsProfileForm({ initialData, userId, showAcademic = true }
 
         {/* Section 2: Academic Info */}
         {showAcademic && (
-          <div className="bg-white border-2 border-[#D9D9DF] rounded-xl overflow-hidden transition-colors focus-within:border-eventrix-black shadow-sm">
-            <div className="bg-gray-50 px-8 py-5 border-b-2 border-[#D9D9DF]">
+          <div className="bg-white border-2 border-[#D9D9DF] rounded-xl transition-colors focus-within:border-eventrix-black shadow-sm">
+            <div className="bg-gray-50 px-8 py-5 border-b-2 border-[#D9D9DF] rounded-t-[10px]">
               <h3 className="font-anton text-2xl uppercase tracking-wide text-eventrix-black">Academic Details</h3>
             </div>
             <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
