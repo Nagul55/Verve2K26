@@ -630,20 +630,69 @@ export function HackathonClient({
                   </div>
                 </div>
 
-                <div className="sm:text-right bg-slate-50 border border-slate-200/70 p-3.5 rounded-2xl min-w-[200px]">
-                  <div className="flex items-center justify-between sm:justify-end gap-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    <span>Squad Capacity</span>
-                    <span className="text-slate-900 font-extrabold">{teamMemberCount} / {maxTeamMembers}</span>
+                <div className="bg-gradient-to-br from-slate-50 via-white to-violet-50/30 border border-slate-200/90 p-4 rounded-2xl min-w-[240px] shadow-sm space-y-2.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-violet-600" />
+                      Squad Slots
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-xs font-mono font-extrabold text-slate-900 bg-white border border-slate-200/80 px-2 py-0.5 rounded-lg shadow-2xs">
+                      <span>{teamMemberCount}</span>
+                      <span className="text-slate-400">/</span>
+                      <span>{maxTeamMembers}</span>
+                    </span>
                   </div>
-                  <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-                    <div 
-                      className="bg-gradient-to-r from-violet-600 to-indigo-600 h-full rounded-full transition-all duration-500"
-                      style={{ width: `${teamProgressPercent}%` }}
-                    />
+
+                  {/* Segmented Slot Capsule Bar */}
+                  <div className="flex items-center gap-1.5 w-full">
+                    {Array.from({ length: maxTeamMembers }).map((_, slotIndex) => {
+                      const isFilled = slotIndex < teamMemberCount;
+                      const isPending = !isFilled && slotIndex < teamMemberCount + pendingCount;
+                      
+                      return (
+                        <div
+                          key={`slot-cap-${slotIndex}`}
+                          className={`flex-1 h-3 rounded-full transition-all duration-300 relative overflow-hidden ${
+                            isFilled
+                              ? "bg-gradient-to-r from-violet-600 to-indigo-600 shadow-[0_1px_6px_rgba(124,58,237,0.35)]"
+                              : isPending
+                              ? "bg-amber-400 border border-amber-300 animate-pulse shadow-[0_1px_4px_rgba(245,158,11,0.25)]"
+                              : "bg-slate-200/70 border border-dashed border-slate-300"
+                          }`}
+                          title={
+                            isFilled 
+                              ? `Slot ${slotIndex + 1}: Confirmed Member`
+                              : isPending 
+                              ? `Slot ${slotIndex + 1}: Invitation Pending`
+                              : `Slot ${slotIndex + 1}: Open Vacancy`
+                          }
+                        >
+                          {isFilled && (
+                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.3)_50%,transparent_75%)] bg-[length:12px_12px]" />
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1.5 sm:text-right">
-                    {emptySlotsCount > 0 ? `${emptySlotsCount} slot${emptySlotsCount > 1 ? 's' : ''} remaining` : "Squad is completely full!"}
-                  </p>
+
+                  <div className="flex items-center justify-between text-[11px] pt-0.5">
+                    <span className="text-slate-500 font-medium">
+                      {emptySlotsCount > 0 ? (
+                        <span className="text-violet-700 font-bold flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-violet-600 animate-pulse" />
+                          {emptySlotsCount} slot{emptySlotsCount > 1 ? "s" : ""} open
+                        </span>
+                      ) : (
+                        <span className="text-emerald-700 font-bold flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          Squad locked & full
+                        </span>
+                      )}
+                    </span>
+                    <span className="font-bold text-slate-400 font-mono text-[10px]">
+                      {teamProgressPercent}%
+                    </span>
+                  </div>
                 </div>
               </div>
 
