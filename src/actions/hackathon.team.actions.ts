@@ -106,7 +106,7 @@ export async function createHackathonTeam(hackathonId: string, festId: string, t
     return { success: false, error: memberError.message };
   }
 
-  // Sync to teams and team_members for unified invitation support
+  // Sync to teams, team_members, registrations, and registration_sub_events
   try {
     const { data: subEvent } = await adminClient.from('sub_events').select('id').eq('fest_id', festId).maybeSingle();
     if (subEvent) {
@@ -124,12 +124,54 @@ export async function createHackathonTeam(hackathonId: string, festId: string, t
         status: 'Accepted',
         membership_status: 'Active'
       }, { onConflict: 'team_id,participant_id' });
+
+      // Ensure fest registration and registration_sub_events for the leader
+      let festRegId: string | null = null;
+      const { data: existingReg } = await adminClient
+        .from('registrations')
+        .select('id')
+        .eq('participant_id', user.id)
+        .eq('fest_id', festId)
+        .maybeSingle();
+
+      if (existingReg) {
+        festRegId = existingReg.id;
+      } else {
+        const { data: newReg } = await adminClient
+          .from('registrations')
+          .insert({ participant_id: user.id, fest_id: festId })
+          .select('id')
+          .single();
+        if (newReg) festRegId = newReg.id;
+      }
+
+      if (festRegId) {
+        const { data: existingSub } = await adminClient
+          .from('registration_sub_events')
+          .select('id')
+          .eq('registration_id', festRegId)
+          .eq('sub_event_id', subEvent.id)
+          .maybeSingle();
+
+        if (!existingSub) {
+          await adminClient.from('registration_sub_events').insert({
+            registration_id: festRegId,
+            sub_event_id: subEvent.id
+          });
+        }
+      }
     }
   } catch (e) {
-    console.warn("Could not sync hackathon team to events teams table:", e);
+    console.warn("Could not sync hackathon team to events tables:", e);
   }
 
   revalidatePath(`/hackathons/${festId}`);
+  revalidatePath('/registrations');
+  revalidatePath('/tickets');
+  revalidatePath('/dashboard');
+  revalidatePath('/coordinator/participants');
+  revalidatePath('/coordinator/attendance');
+  revalidatePath('/admin/participants');
   return { success: true, teamId: newTeam.id };
 }
 
@@ -190,7 +232,7 @@ export async function joinHackathonTeam(hackathonId: string, festId: string, tea
     return { success: false, error: memberError.message };
   }
 
-  // Also sync member to team_members table
+  // Also sync member to team_members, registrations, and registration_sub_events
   try {
     await adminClient.from('team_members').upsert({
       team_id: team.id,
@@ -198,11 +240,55 @@ export async function joinHackathonTeam(hackathonId: string, festId: string, tea
       status: 'Accepted',
       membership_status: 'Active'
     }, { onConflict: 'team_id,participant_id' });
+
+    const { data: subEvent } = await adminClient.from('sub_events').select('id').eq('fest_id', festId).maybeSingle();
+    if (subEvent) {
+      let festRegId: string | null = null;
+      const { data: existingReg } = await adminClient
+        .from('registrations')
+        .select('id')
+        .eq('participant_id', user.id)
+        .eq('fest_id', festId)
+        .maybeSingle();
+
+      if (existingReg) {
+        festRegId = existingReg.id;
+      } else {
+        const { data: newReg } = await adminClient
+          .from('registrations')
+          .insert({ participant_id: user.id, fest_id: festId })
+          .select('id')
+          .single();
+        if (newReg) festRegId = newReg.id;
+      }
+
+      if (festRegId) {
+        const { data: existingSub } = await adminClient
+          .from('registration_sub_events')
+          .select('id')
+          .eq('registration_id', festRegId)
+          .eq('sub_event_id', subEvent.id)
+          .maybeSingle();
+
+        if (!existingSub) {
+          await adminClient.from('registration_sub_events').insert({
+            registration_id: festRegId,
+            sub_event_id: subEvent.id
+          });
+        }
+      }
+    }
   } catch (e) {
-    console.warn("Could not sync member to team_members table:", e);
+    console.warn("Could not sync member to team_members / registrations table:", e);
   }
 
   revalidatePath(`/hackathons/${festId}`);
+  revalidatePath('/registrations');
+  revalidatePath('/tickets');
+  revalidatePath('/dashboard');
+  revalidatePath('/coordinator/participants');
+  revalidatePath('/coordinator/attendance');
+  revalidatePath('/admin/participants');
   return { success: true, teamId: team.id };
 }
 

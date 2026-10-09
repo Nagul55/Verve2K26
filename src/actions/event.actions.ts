@@ -1112,8 +1112,12 @@ export async function getParticipantRegistrations() {
 
   // Flatten the result
   const registeredEvents: any[] = [];
-  data.forEach((reg: any) => {
-    reg.registration_sub_events.forEach((rse: any) => {
+  const processedEventIds = new Set<string>();
+
+  (data || []).forEach((reg: any) => {
+    (reg.registration_sub_events || []).forEach((rse: any) => {
+      if (!rse.sub_events) return;
+      processedEventIds.add(rse.sub_events.id);
       const members = userTeams[rse.sub_events.id]?.members || [];
       const minCandidates = rse.sub_events.min_candidates || 2;
       const hasPendingMembers = members.some((m: any) => m.status === 'Pending');
@@ -1126,22 +1130,77 @@ export async function getParticipantRegistrations() {
         isTeamComplete
       } : null;
 
-        let waLink = (rse.sub_events as any).whatsapp_group_link || '';
-        if (!waLink && rse.sub_events.description) {
-          const match = rse.sub_events.description.match(/\[WHATSAPP_GROUP:\s*([^\]]+)\]/i);
-          if (match) waLink = match[1].trim();
-        }
+      let waLink = (rse.sub_events as any).whatsapp_group_link || '';
+      if (!waLink && rse.sub_events.description) {
+        const match = rse.sub_events.description.match(/\[WHATSAPP_GROUP:\s*([^\]]+)\]/i);
+        if (match) waLink = match[1].trim();
+      }
 
-        registeredEvents.push({
-          ...rse.sub_events,
-          festName: reg.fests?.name || 'Fest',
-          teamDetails: teamInfo,
-          whatsapp_group_link: waLink,
-          isTicketValid: isTeamComplete,
-          ticketNumber: `TKT-${reg.id.split('-')[0].toUpperCase()}-${rse.sub_events.id.split('-')[0].toUpperCase()}`
-        });
+      registeredEvents.push({
+        ...rse.sub_events,
+        festName: reg.fests?.name || 'Fest',
+        teamDetails: teamInfo,
+        whatsapp_group_link: waLink,
+        isTicketValid: isTeamComplete,
+        ticketNumber: `TKT-${reg.id.split('-')[0].toUpperCase()}-${rse.sub_events.id.split('-')[0].toUpperCase()}`
+      });
     });
   });
+
+  // Ensure any sub_events where user has an active team membership are also included
+  const missingEventIds = Object.keys(userTeams).filter(id => !processedEventIds.has(id));
+  if (missingEventIds.length > 0) {
+    const { data: missingSubEvents } = await adminClient
+      .from('sub_events')
+      .select(`
+        id,
+        title,
+        category,
+        date,
+        location,
+        time,
+        participation_type,
+        min_candidates,
+        max_candidates,
+        capacity,
+        description,
+        whatsapp_group_link,
+        fests (
+          id,
+          name
+        )
+      `)
+      .in('id', missingEventIds);
+
+    (missingSubEvents || []).forEach((sub: any) => {
+      const members = userTeams[sub.id]?.members || [];
+      const minCandidates = sub.min_candidates || 2;
+      const hasPendingMembers = members.some((m: any) => m.status === 'Pending');
+      const isTeamComplete = sub.participation_type !== 'Team' || (!hasPendingMembers && members.length >= minCandidates);
+
+      const teamInfo = userTeams[sub.id] ? {
+        ...userTeams[sub.id],
+        minCandidates,
+        maxCandidates: sub.max_candidates || 5,
+        isTeamComplete
+      } : null;
+
+      let waLink = sub.whatsapp_group_link || '';
+      if (!waLink && sub.description) {
+        const match = sub.description.match(/\[WHATSAPP_GROUP:\s*([^\]]+)\]/i);
+        if (match) waLink = match[1].trim();
+      }
+
+      registeredEvents.push({
+        ...sub,
+        festName: sub.fests?.name || 'Fest',
+        teamDetails: teamInfo,
+        whatsapp_group_link: waLink,
+        isTicketValid: isTeamComplete,
+        ticketNumber: `TKT-TEAM-${sub.id.split('-')[0].toUpperCase()}`
+      });
+    });
+  }
 
   return registeredEvents;
 }
@@ -1265,6 +1324,44 @@ export async function getCoordinatorParticipants() {
         });
       }
     }
+  });
+
+  // Also include participants in teams for assignedEventIds
+  const { data: teamMembersData } = await adminClient
+    .from('teams')
+    .select(`
+      event_id,
+      team_members (
+        status,
+        participants (
+          participant_id,
+          full_name,
+          email,
+          register_number,
+          mobile,
+          college,
+          department,
+          year_of_study
+        )
+      )
+    `)
+    .in('event_id', assignedEventIds);
+
+  (teamMembersData || []).forEach((t: any) => {
+    (t.team_members || []).forEach((tm: any) => {
+      const p: any = Array.isArray(tm.participants) ? tm.participants[0] : tm.participants;
+      if (tm.status === 'Accepted' && p && p.participant_id) {
+        const key = `${t.event_id}_${p.participant_id}`;
+        if (!participantsMap.has(key)) {
+          participantsMap.set(key, {
+            ...p,
+            id: p.participant_id,
+            subEventId: t.event_id,
+            isPresent: presentParticipantSet.has(key)
+          });
+        }
+      }
+    });
   });
 
   return Array.from(participantsMap.values());
@@ -1412,6 +1509,53 @@ export async function getCoordinatorEventsWithParticipants(): Promise<Coordinato
         });
       }
     });
+
+    // Also include participants from teams associated with this event
+    const { data: eventTeamsData } = await adminClient
+      .from('teams')
+      .select(`
+        team_id,
+        leader_participant_id,
+        team_members (
+          participant_id,
+          status,
+          participants (
+            participant_id,
+            full_name,
+            email,
+            register_number,
+            mobile,
+            college,
+            department,
+            year_of_study
+          )
+        )
+      `)
+      .eq('event_id', event.id);
+
+    if (eventTeamsData) {
+      for (const t of eventTeamsData) {
+        for (const tm of (t.team_members || [])) {
+          const p: any = Array.isArray(tm.participants) ? tm.participants[0] : tm.participants;
+          if (tm.status === 'Accepted' && p && p.participant_id && !seenPartIds.has(p.participant_id)) {
+            seenPartIds.add(p.participant_id);
+            const isPresent = presentSet.has(p.participant_id);
+            participants.push({
+              registrationId: '',
+              participantId: p.participant_id,
+              fullName: p.full_name || 'N/A',
+              email: p.email || 'N/A',
+              registerNumber: p.register_number || 'N/A',
+              mobile: p.mobile || 'N/A',
+              college: p.college || 'N/A',
+              department: p.department || 'N/A',
+              yearOfStudy: p.year_of_study || '',
+              attendanceStatus: isPresent ? 'PRESENT' : 'PENDING'
+            });
+          }
+        }
+      }
+    }
 
     const presentCount = participants.filter(p => p.attendanceStatus === 'PRESENT').length;
     const pendingCount = participants.filter(p => p.attendanceStatus === 'PENDING').length;
