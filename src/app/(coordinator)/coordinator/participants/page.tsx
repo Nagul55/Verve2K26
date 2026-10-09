@@ -12,7 +12,8 @@ import {
   ChevronRight, 
   Calendar, 
   MapPin, 
-  AlertCircle 
+  AlertCircle,
+  X 
 } from "lucide-react";
 import { 
   getCoordinatorEventsWithParticipants, 
@@ -36,6 +37,9 @@ export default function CoordinatorParticipantsPage() {
   const [collapsedEvents, setCollapsedEvents] = useState<Record<string, boolean>>({});
   // Processing state for attendance toggle buttons: { [`${eventId}_${participantId}`]: boolean }
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  
+  // Selected team for popup modal
+  const [selectedTeam, setSelectedTeam] = useState<{eventId: string, teamId: string, teamName: string} | null>(null);
 
   useEffect(() => {
     loadData();
@@ -114,6 +118,12 @@ export default function CoordinatorParticipantsPage() {
       [eventId]: !prev[eventId]
     }));
   };
+
+  const activeModalMembers = selectedTeam 
+    ? eventGroups
+        .find(g => g.event.id === selectedTeam.eventId)
+        ?.participants.filter(p => p.teamId === selectedTeam.teamId) || []
+    : [];
 
   return (
     <div className="space-y-8 pb-12">
@@ -341,76 +351,151 @@ export default function CoordinatorParticipantsPage() {
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-[#D9D9DF]">
-                              {filteredParticipants.map((p) => {
-                                const isPresent = p.attendanceStatus === 'PRESENT';
-                                const key = `${eventId}_${p.participantId}`;
-                                const isBusy = !!actionLoading[key];
+                              {(() => {
+                                const rows: any[] = [];
+                                const teamMap = new Map<string, EventParticipant[]>();
+                                
+                                filteredParticipants.forEach(p => {
+                                  if (p.teamId) {
+                                    if (!teamMap.has(p.teamId)) {
+                                      teamMap.set(p.teamId, []);
+                                    }
+                                    teamMap.get(p.teamId)!.push(p);
+                                  } else {
+                                    rows.push({ type: 'individual', data: p });
+                                  }
+                                });
 
-                                return (
-                                  <tr key={p.participantId} className="hover:bg-[#F9F9FC] transition-colors">
-                                    <td className="px-5 py-4 font-bold text-eventrix-black">
-                                      <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-[#EEEEF5] border border-[#D9D9DF] flex items-center justify-center font-anton text-eventrix-purple text-xs shrink-0 uppercase">
-                                          {p.fullName ? p.fullName.charAt(0) : 'P'}
-                                        </div>
-                                        <div>
-                                          <div className="text-sm font-bold text-eventrix-black">{p.fullName}</div>
-                                          <div className="text-[11px] font-medium text-eventrix-muted">{p.email}</div>
-                                        </div>
-                                      </div>
-                                    </td>
-                                    <td className="px-5 py-4 font-medium text-eventrix-muted">
-                                      <span className="bg-[#F8F8FC] border border-[#D9D9DF] px-2 py-1 rounded font-mono text-[11px]">
-                                        {p.registerNumber}
-                                      </span>
-                                    </td>
-                                    <td className="px-5 py-4 text-eventrix-muted font-medium">
-                                      {p.mobile !== 'N/A' ? (
-                                        <div className="flex items-center gap-1.5 text-[11px]">
-                                          <Phone className="w-3.5 h-3.5 text-eventrix-muted shrink-0" />
-                                          <span>{p.mobile}</span>
-                                        </div>
-                                      ) : (
-                                        <span className="text-[11px] text-eventrix-muted font-mono">N/A</span>
-                                      )}
-                                    </td>
-                                    <td className="px-5 py-4 text-eventrix-muted">
-                                      <div className="font-bold text-eventrix-black text-xs line-clamp-1">{p.college}</div>
-                                      <div className="text-[11px] text-eventrix-muted line-clamp-1">{p.department}</div>
-                                    </td>
-                                    <td className="px-5 py-4">
-                                      {isPresent ? (
-                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px] uppercase tracking-wider">
-                                          <CheckCircle2 className="w-3.5 h-3.5" /> Checked In
-                                        </span>
-                                      ) : (
-                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[11px] uppercase tracking-wider">
-                                          <Clock className="w-3.5 h-3.5" /> Pending
-                                        </span>
-                                      )}
-                                    </td>
-                                    <td className="px-5 py-4 text-right">
-                                      <button
-                                        onClick={() => handleToggleAttendance(eventId, p.participantId, p.attendanceStatus)}
-                                        disabled={isBusy}
-                                        className={`px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer ${
-                                          isPresent
-                                            ? 'bg-[#F8F8FC] border border-[#D9D9DF] text-eventrix-black hover:bg-[#EEEEF5]'
-                                            : 'bg-eventrix-black text-white hover:bg-[#2A2A38]'
-                                        }`}
-                                      >
-                                        {isBusy ? (
-                                          <RefreshCw className="w-3.5 h-3.5 animate-spin mx-auto" />
-                                        ) : isPresent ? (
-                                          'Undo Check-In'
-                                        ) : (
-                                          'Mark Present'
-                                        )}
-                                      </button>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
+                                teamMap.forEach((members, teamId) => {
+                                  rows.push({ type: 'team', teamId, teamName: members[0].teamName, members });
+                                });
+
+                                return rows.map((row) => {
+                                  if (row.type === 'team') {
+                                    const allPresent = row.members.every((m: any) => m.attendanceStatus === 'PRESENT');
+                                    const presentCount = row.members.filter((m: any) => m.attendanceStatus === 'PRESENT').length;
+                                    const uniqueColleges = Array.from(new Set(row.members.map((m: any) => m.college))).filter(Boolean);
+                                    const collegeDisplay = uniqueColleges.length === 1 ? uniqueColleges[0] : `${uniqueColleges.length} Colleges`;
+                                    
+                                    return (
+                                      <tr key={`team_${row.teamId}`} className="hover:bg-[#F9F9FC] transition-colors">
+                                        <td className="px-5 py-4 font-bold text-eventrix-black">
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-md bg-[#F0E6FF] border border-eventrix-purple/30 flex items-center justify-center font-anton text-eventrix-purple text-xs shrink-0 uppercase">
+                                              T
+                                            </div>
+                                            <div>
+                                              <div className="text-sm font-bold text-eventrix-black">{row.teamName}</div>
+                                              <div className="text-[11px] font-medium text-eventrix-muted">Team Event</div>
+                                            </div>
+                                          </div>
+                                        </td>
+                                        <td className="px-5 py-4 font-medium text-eventrix-muted">
+                                          <span className="bg-[#F8F8FC] border border-[#D9D9DF] px-2 py-1 rounded font-mono text-[11px]">
+                                            {row.members.length} Members
+                                          </span>
+                                        </td>
+                                        <td className="px-5 py-4 text-eventrix-muted font-medium">
+                                          -
+                                        </td>
+                                        <td className="px-5 py-4 text-eventrix-muted">
+                                          <div className="font-bold text-eventrix-black text-xs line-clamp-1">{collegeDisplay as React.ReactNode}</div>
+                                        </td>
+                                        <td className="px-5 py-4">
+                                          {allPresent ? (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px] uppercase tracking-wider">
+                                              <CheckCircle2 className="w-3.5 h-3.5" /> All Present
+                                            </span>
+                                          ) : (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[11px] uppercase tracking-wider">
+                                              <Clock className="w-3.5 h-3.5" /> {presentCount}/{row.members.length} Present
+                                            </span>
+                                          )}
+                                        </td>
+                                        <td className="px-5 py-4 text-right">
+                                          <button
+                                            type="button"
+                                            onClick={() => setSelectedTeam({ eventId, teamId: row.teamId, teamName: row.teamName })}
+                                            className="px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all bg-[#F0E6FF] text-eventrix-purple border border-eventrix-purple/20 hover:bg-eventrix-purple hover:text-white cursor-pointer"
+                                          >
+                                            View Team
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    );
+                                  } else {
+                                    const p = row.data;
+                                    const isPresent = p.attendanceStatus === 'PRESENT';
+                                    const key = `${eventId}_${p.participantId}`;
+                                    const isBusy = !!actionLoading[key];
+
+                                    return (
+                                      <tr key={p.participantId} className="hover:bg-[#F9F9FC] transition-colors">
+                                        <td className="px-5 py-4 font-bold text-eventrix-black">
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-[#EEEEF5] border border-[#D9D9DF] flex items-center justify-center font-anton text-eventrix-purple text-xs shrink-0 uppercase">
+                                              {p.fullName ? p.fullName.charAt(0) : 'P'}
+                                            </div>
+                                            <div>
+                                              <div className="text-sm font-bold text-eventrix-black">{p.fullName}</div>
+                                              <div className="text-[11px] font-medium text-eventrix-muted">{p.email}</div>
+                                            </div>
+                                          </div>
+                                        </td>
+                                        <td className="px-5 py-4 font-medium text-eventrix-muted">
+                                          <span className="bg-[#F8F8FC] border border-[#D9D9DF] px-2 py-1 rounded font-mono text-[11px]">
+                                            {p.registerNumber}
+                                          </span>
+                                        </td>
+                                        <td className="px-5 py-4 text-eventrix-muted font-medium">
+                                          {p.mobile !== 'N/A' ? (
+                                            <div className="flex items-center gap-1.5 text-[11px]">
+                                              <Phone className="w-3.5 h-3.5 text-eventrix-muted shrink-0" />
+                                              <span>{p.mobile}</span>
+                                            </div>
+                                          ) : (
+                                            <span className="text-[11px] text-eventrix-muted font-mono">N/A</span>
+                                          )}
+                                        </td>
+                                        <td className="px-5 py-4 text-eventrix-muted">
+                                          <div className="font-bold text-eventrix-black text-xs line-clamp-1">{p.college}</div>
+                                          <div className="text-[11px] text-eventrix-muted line-clamp-1">{p.department}</div>
+                                        </td>
+                                        <td className="px-5 py-4">
+                                          {isPresent ? (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px] uppercase tracking-wider">
+                                              <CheckCircle2 className="w-3.5 h-3.5" /> Checked In
+                                            </span>
+                                          ) : (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[11px] uppercase tracking-wider">
+                                              <Clock className="w-3.5 h-3.5" /> Pending
+                                            </span>
+                                          )}
+                                        </td>
+                                        <td className="px-5 py-4 text-right">
+                                          <button
+                                            onClick={() => handleToggleAttendance(eventId, p.participantId, p.attendanceStatus)}
+                                            disabled={isBusy}
+                                            className={`px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer ${
+                                              isPresent
+                                                ? 'bg-[#F8F8FC] border border-[#D9D9DF] text-eventrix-black hover:bg-[#EEEEF5]'
+                                                : 'bg-eventrix-black text-white hover:bg-[#2A2A38]'
+                                            }`}
+                                          >
+                                            {isBusy ? (
+                                              <RefreshCw className="w-3.5 h-3.5 animate-spin mx-auto" />
+                                            ) : isPresent ? (
+                                              'Undo Check-In'
+                                            ) : (
+                                              'Mark Present'
+                                            )}
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    );
+                                  }
+                                });
+                              })()}
                             </tbody>
                           </table>
                         </div>
@@ -421,6 +506,79 @@ export default function CoordinatorParticipantsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Team Details Modal */}
+      {selectedTeam && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg overflow-hidden border border-[#D9D9DF]">
+            <div className="flex items-center justify-between p-4 border-b border-[#D9D9DF] bg-[#F8F8FC]">
+              <div>
+                <h3 className="font-anton text-xl text-eventrix-black uppercase tracking-wide">
+                  Team: <span className="text-eventrix-purple">{selectedTeam.teamName}</span>
+                </h3>
+                <p className="text-xs font-medium text-eventrix-muted">
+                  {activeModalMembers.length} member{activeModalMembers.length !== 1 ? 's' : ''} in this event
+                </p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setSelectedTeam(null)}
+                className="p-1.5 hover:bg-black/5 rounded transition-colors text-eventrix-muted cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-0 max-h-[60vh] overflow-y-auto">
+              <ul className="divide-y divide-[#D9D9DF]">
+                {activeModalMembers.map(m => (
+                  <li key={m.participantId} className="p-4 hover:bg-[#F9F9FC] transition-colors flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-[#EEEEF5] border border-[#D9D9DF] flex items-center justify-center font-anton text-eventrix-purple text-xs shrink-0 uppercase mt-0.5">
+                      {m.fullName ? m.fullName.charAt(0) : 'M'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <div className="text-sm font-bold text-eventrix-black truncate">{m.fullName}</div>
+                          <div className="mt-1 text-[11px] text-eventrix-muted">
+                            <span className="font-bold text-eventrix-black">{m.college}</span>
+                            <span className="mx-1">•</span>
+                            <span>{m.department}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 shrink-0">
+                          {m.attendanceStatus === 'PRESENT' ? (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
+                              Present
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">
+                              Pending
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleToggleAttendance(selectedTeam.eventId, m.participantId, m.attendanceStatus)}
+                            disabled={!!actionLoading[`${selectedTeam.eventId}_${m.participantId}`]}
+                            className={`text-xs font-bold px-3 py-1.5 rounded uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer ${
+                              m.attendanceStatus === 'PRESENT'
+                                ? 'bg-[#F8F8FC] text-eventrix-black border border-[#D9D9DF] hover:bg-[#EEEEF5]'
+                                : 'bg-eventrix-black text-white hover:bg-[#2A2A38]'
+                            }`}
+                          >
+                            {!!actionLoading[`${selectedTeam.eventId}_${m.participantId}`] ? '...' : (m.attendanceStatus === 'PRESENT' ? 'Undo Check-In' : 'Mark Present')}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       )}
     </div>

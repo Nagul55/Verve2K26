@@ -387,13 +387,22 @@ export async function deleteUserAccount(userId: string) {
   try {
     const adminClient = getAdminClient();
 
-    // 1. Delete associated registrations & attendance records
+    // 1. Delete associated registrations, attendance & team records
     await adminClient.from('attendance').delete().eq('participant_id', userId);
     await adminClient.from('event_registrations').delete().eq('participant_id', userId);
     await adminClient.from('registrations').delete().eq('participant_id', userId);
+    
+    // Delete from team_members first
+    await adminClient.from('team_members').delete().eq('participant_id', userId);
+    
+    // If they were a team leader, delete the team as well
+    await adminClient.from('teams').delete().eq('leader_participant_id', userId);
 
     // 2. Delete from participants profile table
-    await adminClient.from('participants').delete().eq('participant_id', userId);
+    const { error: partError } = await adminClient.from('participants').delete().eq('participant_id', userId);
+    if (partError) {
+      console.error("Error deleting participant row:", partError);
+    }
 
     // 3. Delete from Supabase Auth (auth.users)
     const { error } = await adminClient.auth.admin.deleteUser(userId);

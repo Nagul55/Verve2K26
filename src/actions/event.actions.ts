@@ -1378,6 +1378,8 @@ export interface EventParticipant {
   department: string;
   yearOfStudy: string;
   attendanceStatus: 'PRESENT' | 'PENDING';
+  teamName?: string;
+  teamId?: string;
 }
 
 export interface CoordinatorEventGroup {
@@ -1515,6 +1517,7 @@ export async function getCoordinatorEventsWithParticipants(): Promise<Coordinato
       .from('teams')
       .select(`
         team_id,
+        team_name,
         leader_participant_id,
         team_members (
           participant_id,
@@ -1537,21 +1540,32 @@ export async function getCoordinatorEventsWithParticipants(): Promise<Coordinato
       for (const t of eventTeamsData) {
         for (const tm of (t.team_members || [])) {
           const p: any = Array.isArray(tm.participants) ? tm.participants[0] : tm.participants;
-          if (tm.status === 'Accepted' && p && p.participant_id && !seenPartIds.has(p.participant_id)) {
-            seenPartIds.add(p.participant_id);
-            const isPresent = presentSet.has(p.participant_id);
-            participants.push({
-              registrationId: '',
-              participantId: p.participant_id,
-              fullName: p.full_name || 'N/A',
-              email: p.email || 'N/A',
-              registerNumber: p.register_number || 'N/A',
-              mobile: p.mobile || 'N/A',
-              college: p.college || 'N/A',
-              department: p.department || 'N/A',
-              yearOfStudy: p.year_of_study || '',
-              attendanceStatus: isPresent ? 'PRESENT' : 'PENDING'
-            });
+          if (tm.status === 'Accepted' && p && p.participant_id) {
+            if (seenPartIds.has(p.participant_id)) {
+              // Participant already added by regData, just update their team info
+              const existingPart = participants.find(part => part.participantId === p.participant_id);
+              if (existingPart) {
+                existingPart.teamName = t.team_name;
+                existingPart.teamId = t.team_id;
+              }
+            } else {
+              seenPartIds.add(p.participant_id);
+              const isPresent = presentSet.has(p.participant_id);
+              participants.push({
+                registrationId: '',
+                participantId: p.participant_id,
+                fullName: p.full_name || 'N/A',
+                email: p.email || 'N/A',
+                registerNumber: p.register_number || 'N/A',
+                mobile: p.mobile || 'N/A',
+                college: p.college || 'N/A',
+                department: p.department || 'N/A',
+                yearOfStudy: p.year_of_study || '',
+                attendanceStatus: isPresent ? 'PRESENT' : 'PENDING',
+                teamName: t.team_name,
+                teamId: t.team_id
+              });
+            }
           }
         }
       }
