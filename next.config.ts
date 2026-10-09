@@ -1,6 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: '/explore',
+        destination: '/',
+        permanent: true, // 308 redirect
+      },
+      {
+        source: '/explore/:path*',
+        destination: '/',
+        permanent: true,
+      },
+    ];
+  },
   serverExternalPackages: [],
   experimental: {
     serverActions: {
