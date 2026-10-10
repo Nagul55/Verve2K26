@@ -62,6 +62,8 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
 
   const formatDateOnly = (str?: string) => {
     if (!str) return "";
+    const parts = parseISTDeadlineParts(str);
+    if (parts) return parts.date;
     try { return str.split('T')[0]; } catch(e) { return ""; }
   };
 
@@ -224,7 +226,10 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
     }
 
     startTransition(async () => {
-      const result = await updateHackathon(festId, formData);
+      const result = await updateHackathon(festId, {
+        ...formData,
+        problemStatements
+      });
 
       if (result.error) {
         toast.error(result.error);
@@ -233,7 +238,7 @@ export function EditHackathonForm({ hackathon, festId }: { hackathon: any; festI
         setTimeout(() => {
           router.push('/admin/events');
           router.refresh();
-        }, 1200);
+        }, 800);
       }
     });
   };

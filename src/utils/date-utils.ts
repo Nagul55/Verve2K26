@@ -60,6 +60,62 @@ export function buildISTDeadlineISO(date: string, time: string, period: 'AM' | '
 }
 
 /**
+ * Converts Date string (YYYY-MM-DD or DD-MM-YYYY) and Time string (HH:mm 24-hour or 12-hour AM/PM)
+ * into an accurate UTC ISO timestamp corresponding to Asia/Kolkata (IST).
+ */
+export function buildISTDateTimeISO(dateStr?: string | null, timeStr?: string | null): string | null {
+  if (!dateStr || !dateStr.trim()) return null;
+  const cleanDate = dateStr.trim();
+
+  // If already an ISO string with time (e.g. from DB), parse directly
+  if (cleanDate.includes('T')) {
+    const d = new Date(cleanDate);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  }
+
+  let hours24 = 0;
+  let minutes = 0;
+  const cleanTime = (timeStr || '').trim();
+
+  if (cleanTime) {
+    if (cleanTime.includes('AM') || cleanTime.includes('PM')) {
+      const [t, period] = cleanTime.split(/\s+/);
+      const [h, m] = (t || '').split(':').map(Number);
+      let hour = isNaN(h) ? 0 : h;
+      minutes = isNaN(m) ? 0 : m;
+      if (period?.toUpperCase() === 'PM' && hour < 12) hour += 12;
+      if (period?.toUpperCase() === 'AM' && hour === 12) hour = 0;
+      hours24 = hour;
+    } else {
+      const [h, m] = cleanTime.split(':').map(Number);
+      hours24 = isNaN(h) ? 0 : h;
+      minutes = isNaN(m) ? 0 : m;
+    }
+  }
+
+  let year: number, month: number, day: number;
+  if (cleanDate.includes('-')) {
+    const parts = cleanDate.split('-').map(Number);
+    if (parts.length !== 3) return null;
+    if (parts[0] > 1000) {
+      [year, month, day] = parts;
+    } else {
+      [day, month, year] = parts;
+    }
+  } else {
+    return null;
+  }
+
+  if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const isoWithISTOffset = `${year}-${pad(month)}-${pad(day)}T${pad(hours24)}:${pad(minutes)}:00+05:30`;
+  const parsed = new Date(isoWithISTOffset);
+  return isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+/**
  * Parses an ISO deadline string or DB timestamp string into IST components:
  * - date (YYYY-MM-DD)
  * - time (HH:mm 12-hour)

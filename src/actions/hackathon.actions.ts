@@ -4,6 +4,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath, revalidateTag } from "next/cache";
 import { randomUUID } from 'crypto';
 import { getMimeType } from '@/lib/mimeUtils';
+import { buildISTDateTimeISO } from '@/utils/date-utils';
 
 const getAdminClient = () => {
   return createSupabaseClient(
@@ -18,6 +19,14 @@ export async function createHackathon(formData: FormData) {
 
   // 1. Create the parent event in `fests`
   const initialStatus = data.coordinator_id ? 'PENDING_APPROVAL' : 'DRAFT';
+  const regClosesAt = buildISTDateTimeISO(data.registration_closes_date, data.registration_closes_time);
+  const regOpensAt = buildISTDateTimeISO(data.registration_opens_date, data.registration_opens_time);
+  const startsAt = buildISTDateTimeISO(data.hackathon_starts_date, data.hackathon_starts_time) || new Date().toISOString();
+  const endsAt = buildISTDateTimeISO(data.hackathon_ends_date, data.hackathon_ends_time) || new Date().toISOString();
+  const abstractDeadline = data.abstract_submission_date ? buildISTDateTimeISO(data.abstract_submission_date, '23:59') : null;
+  const projectDeadline = data.project_submission_date ? buildISTDateTimeISO(data.project_submission_date, '23:59') : null;
+  const demoPitchDate = data.demo_pitch_date ? buildISTDateTimeISO(data.demo_pitch_date, '23:59') : null;
+
   const { data: festData, error: festError } = await adminClient.from('fests').insert({
     name: data.name,
     description: data.tagline || data.description || '',
@@ -25,8 +34,9 @@ export async function createHackathon(formData: FormData) {
     min_non_technical: 0,
     event_type: 'hackathon',
     logo_url: data.logo_url || null,
-    registration_closes_at: data.registration_closes_date && data.registration_closes_time ? `${data.registration_closes_date}T${data.registration_closes_time}:00Z` : null,
-    status: initialStatus
+    registration_closes_at: regClosesAt,
+    status: initialStatus,
+    allowed_departments: data.allowed_departments || null
   }).select('id').single();
 
   if (festError || !festData) {
@@ -44,13 +54,13 @@ export async function createHackathon(formData: FormData) {
     venue: data.venue || null,
     mode: data.mode || 'Offline',
     external_link: data.external_link || null,
-    registration_opens_at: data.registration_opens_date && data.registration_opens_time ? `${data.registration_opens_date}T${data.registration_opens_time}:00Z` : null,
-    registration_closes_at: data.registration_closes_date && data.registration_closes_time ? `${data.registration_closes_date}T${data.registration_closes_time}:00Z` : null,
-    hackathon_starts_at: data.hackathon_starts_date && data.hackathon_starts_time ? `${data.hackathon_starts_date}T${data.hackathon_starts_time}:00Z` : `${data.hackathon_starts_date || new Date().toISOString().split('T')[0]}T09:00:00Z`,
-    hackathon_ends_at: data.hackathon_ends_date && data.hackathon_ends_time ? `${data.hackathon_ends_date}T${data.hackathon_ends_time}:00Z` : `${data.hackathon_ends_date || new Date().toISOString().split('T')[0]}T17:00:00Z`,
-    abstract_submission_deadline: data.abstract_submission_date ? `${data.abstract_submission_date}T00:00:00Z` : null,
-    project_submission_deadline: data.project_submission_date ? `${data.project_submission_date}T00:00:00Z` : null,
-    demo_pitch_date: data.demo_pitch_date ? `${data.demo_pitch_date}T00:00:00Z` : null,
+    registration_opens_at: regOpensAt,
+    registration_closes_at: regClosesAt,
+    hackathon_starts_at: startsAt,
+    hackathon_ends_at: endsAt,
+    abstract_submission_deadline: abstractDeadline,
+    project_submission_deadline: projectDeadline,
+    demo_pitch_date: demoPitchDate,
     maximum_teams: parseInt(data.maximum_teams || '50', 10),
     minimum_team_size: parseInt(data.minimum_team_size || '1', 10),
     maximum_team_size: parseInt(data.maximum_team_size || '4', 10),
@@ -75,6 +85,7 @@ export async function createHackathon(formData: FormData) {
     prize_2nd: data.prize_2nd || null,
     prize_3rd: data.prize_3rd || null,
     special_prizes: data.special_prizes || null,
+    prize_special: data.special_prizes || null,
     coordinator_id: data.coordinator_id || null,
     whatsapp_group_link: data.whatsapp_group_link || null
   };
@@ -241,25 +252,43 @@ export async function getHackathon(festId: string) {
     subEvents: subEvents || [],
     hackathonDetails: hackathon || null,
     problem_statements: statements,
-    coordinatorDetails: assignedCoords.map(c => ({ name: c.name, phone: c.phone, email: c.email }))
+    coordinatorDetails: assignedCoords.map(c => ({ id: c.id, name: c.name, phone: c.phone, email: c.email }))
   };
 }
 
 export async function updateHackathon(festId: string, data: any) {
   const adminClient = getAdminClient();
 
+  const regClosesAt = buildISTDateTimeISO(data.registration_closes_date, data.registration_closes_time);
+  const regOpensAt = buildISTDateTimeISO(data.registration_opens_date, data.registration_opens_time);
+  const startsAt = buildISTDateTimeISO(data.hackathon_starts_date, data.hackathon_starts_time) || new Date().toISOString();
+  const endsAt = buildISTDateTimeISO(data.hackathon_ends_date, data.hackathon_ends_time) || new Date().toISOString();
+  const abstractDeadline = data.abstract_submission_date ? buildISTDateTimeISO(data.abstract_submission_date, '23:59') : null;
+  const projectDeadline = data.project_submission_date ? buildISTDateTimeISO(data.project_submission_date, '23:59') : null;
+  const demoPitchDate = data.demo_pitch_date ? buildISTDateTimeISO(data.demo_pitch_date, '23:59') : null;
+
+  const eventStatus = data.status || 'DRAFT';
+
+  // 1. Update fests record (including status and allowed_departments)
   const { error: festError } = await adminClient.from('fests').update({
     name: data.name,
     description: data.tagline || data.description || '',
     logo_url: data.logo_url || null,
-    registration_closes_at: data.registration_closes_date && data.registration_closes_time ? `${data.registration_closes_date}T${data.registration_closes_time}:00Z` : null
+    registration_closes_at: regClosesAt,
+    status: eventStatus,
+    allowed_departments: data.allowed_departments || null
   }).eq('id', festId);
 
   if (festError) {
     return { success: false, error: festError.message };
   }
 
-  const { data: existingHackathon } = await adminClient.from('hackathons').select('id').eq('event_id', festId).single();
+  // 2. Fetch existing hackathon details
+  const { data: existingHackathon } = await adminClient
+    .from('hackathons')
+    .select('id, coordinator_id')
+    .eq('event_id', festId)
+    .maybeSingle();
 
   const hackPayload: any = {
     tagline: data.tagline || null,
@@ -270,13 +299,13 @@ export async function updateHackathon(festId: string, data: any) {
     venue: data.venue || null,
     mode: data.mode || 'Offline',
     external_link: data.external_link || null,
-    registration_opens_at: data.registration_opens_date && data.registration_opens_time ? `${data.registration_opens_date}T${data.registration_opens_time}:00Z` : null,
-    registration_closes_at: data.registration_closes_date && data.registration_closes_time ? `${data.registration_closes_date}T${data.registration_closes_time}:00Z` : null,
-    hackathon_starts_at: data.hackathon_starts_date && data.hackathon_starts_time ? `${data.hackathon_starts_date}T${data.hackathon_starts_time}:00Z` : `${data.hackathon_starts_date || new Date().toISOString().split('T')[0]}T09:00:00Z`,
-    hackathon_ends_at: data.hackathon_ends_date && data.hackathon_ends_time ? `${data.hackathon_ends_date}T${data.hackathon_ends_time}:00Z` : `${data.hackathon_ends_date || new Date().toISOString().split('T')[0]}T17:00:00Z`,
-    abstract_submission_deadline: data.abstract_submission_date ? `${data.abstract_submission_date}T00:00:00Z` : null,
-    project_submission_deadline: data.project_submission_date ? `${data.project_submission_date}T00:00:00Z` : null,
-    demo_pitch_date: data.demo_pitch_date ? `${data.demo_pitch_date}T00:00:00Z` : null,
+    registration_opens_at: regOpensAt,
+    registration_closes_at: regClosesAt,
+    hackathon_starts_at: startsAt,
+    hackathon_ends_at: endsAt,
+    abstract_submission_deadline: abstractDeadline,
+    project_submission_deadline: projectDeadline,
+    demo_pitch_date: demoPitchDate,
     maximum_teams: parseInt(data.maximum_teams || '50', 10),
     minimum_team_size: parseInt(data.minimum_team_size || '1', 10),
     maximum_team_size: parseInt(data.maximum_team_size || '4', 10),
@@ -301,6 +330,7 @@ export async function updateHackathon(festId: string, data: any) {
     prize_2nd: data.prize_2nd || null,
     prize_3rd: data.prize_3rd || null,
     special_prizes: data.special_prizes || null,
+    prize_special: data.special_prizes || null,
     coordinator_id: data.coordinator_id || null,
     whatsapp_group_link: data.whatsapp_group_link || null
   };
@@ -336,7 +366,7 @@ export async function updateHackathon(festId: string, data: any) {
     }
   }
 
-  // Update sub_events entry
+  // 3. Update or create sub_events entry with matching status
   const maxTeams = parseInt(data.maximum_teams || '50', 10);
   const maxTeamSize = parseInt(data.maximum_team_size || '4', 10);
   const totalCap = maxTeams * maxTeamSize;
@@ -354,7 +384,8 @@ export async function updateHackathon(festId: string, data: any) {
       date: data.hackathon_starts_date || '',
       time: data.hackathon_starts_time || '09:00',
       location: data.venue || 'Main Venue',
-      whatsapp_group_link: data.whatsapp_group_link || null
+      whatsapp_group_link: data.whatsapp_group_link || null,
+      status: eventStatus
     }).eq('id', subEvent.id);
   } else {
     const { data: newSub } = await adminClient.from('sub_events').insert({
@@ -370,31 +401,73 @@ export async function updateHackathon(festId: string, data: any) {
       time: data.hackathon_starts_time || '09:00',
       location: data.venue || 'Main Venue',
       whatsapp_group_link: data.whatsapp_group_link || null,
-      status: 'LIVE'
+      status: eventStatus
     }).select('id').single();
     targetSubId = newSub?.id;
   }
 
-  if (data.coordinator_id) {
-    const { updateCoordinatorAssignments } = await import("./auth.actions");
-    const targetIds = [festId, ...(targetSubId ? [targetSubId] : [])];
-
-    const { data: userData } = await adminClient.auth.admin.getUserById(data.coordinator_id);
-    if (userData?.user) {
-      const existingIds: string[] = Array.isArray(userData.user.app_metadata?.coordinating_event_ids)
-        ? userData.user.app_metadata.coordinating_event_ids
-        : userData.user.app_metadata?.coordinating_event_id ? [userData.user.app_metadata.coordinating_event_id] : [];
-      
-      const newIds = Array.from(new Set([...existingIds, ...targetIds]));
-      await updateCoordinatorAssignments(data.coordinator_id, newIds);
+  // 4. Update any problem statements that were changed on the form
+  if (Array.isArray(data.problemStatements) && data.problemStatements.length > 0) {
+    for (const ps of data.problemStatements) {
+      if (ps.id) {
+        await adminClient.from('hackathon_problem_statements').update({
+          title: ps.title || '',
+          description: ps.description || ''
+        }).eq('id', ps.id);
+      }
     }
   }
 
+  // 5. Handle coordinator reassignment / removal cleanly
+  const oldCoordinatorId = existingHackathon?.coordinator_id;
+  if (oldCoordinatorId && oldCoordinatorId !== data.coordinator_id) {
+    try {
+      const { updateCoordinatorAssignments } = await import("./auth.actions");
+      const { data: oldUserData } = await adminClient.auth.admin.getUserById(oldCoordinatorId);
+      if (oldUserData?.user) {
+        const existingIds: string[] = Array.isArray(oldUserData.user.app_metadata?.coordinating_event_ids)
+          ? oldUserData.user.app_metadata.coordinating_event_ids
+          : oldUserData.user.app_metadata?.coordinating_event_id ? [oldUserData.user.app_metadata.coordinating_event_id] : [];
+        const updatedIds = existingIds.filter(id => id !== festId && id !== targetSubId);
+        await updateCoordinatorAssignments(oldCoordinatorId, updatedIds);
+      }
+    } catch (e) {
+      console.warn("Could not unassign old coordinator:", e);
+    }
+  }
+
+  if (data.coordinator_id) {
+    try {
+      const { updateCoordinatorAssignments } = await import("./auth.actions");
+      const targetIds = [festId, ...(targetSubId ? [targetSubId] : [])];
+
+      const { data: userData } = await adminClient.auth.admin.getUserById(data.coordinator_id);
+      if (userData?.user) {
+        const existingIds: string[] = Array.isArray(userData.user.app_metadata?.coordinating_event_ids)
+          ? userData.user.app_metadata.coordinating_event_ids
+          : userData.user.app_metadata?.coordinating_event_id ? [userData.user.app_metadata.coordinating_event_id] : [];
+        
+        const newIds = Array.from(new Set([...existingIds, ...targetIds]));
+        await updateCoordinatorAssignments(data.coordinator_id, newIds);
+      }
+    } catch (e) {
+      console.warn("Could not assign new coordinator:", e);
+    }
+  }
+
+  // 6. Comprehensive cache invalidation
   try {
     (revalidateTag as any)('fests');
     (revalidateTag as any)('fests-list');
+    (revalidateTag as any)('coordinators');
+    revalidatePath('/admin');
     revalidatePath('/admin/events');
+    revalidatePath('/admin/events/edit-hackathon');
+    revalidatePath(`/admin/events/edit-hackathon?id=${festId}`);
+    revalidatePath(`/hackathons/${festId}`);
+    revalidatePath(`/hackathons/${festId}/register`);
     revalidatePath('/events');
+    revalidatePath('/dashboard');
   } catch (e) {}
 
   return { success: true };
