@@ -11,6 +11,8 @@ import { RegistrationTicket } from "@/components/RegistrationTicket";
 import { PromoBanner } from "@/components/PromoBanner";
 import { getSubEvents, getFests, getParticipantRegistrations } from "@/actions/event.actions";
 import { getUnsplashImage } from "@/actions/image.actions";
+import { getCurrentUser } from "@/lib/auth/get-user";
+import { isUserEligibleForEvent } from "@/lib/utils/eligibility";
 
 // Render dynamic visual for the featured cards based on Unsplash
 const renderDynamicVisual = (imageUrl: string | null) => {
@@ -25,15 +27,18 @@ const renderDynamicVisual = (imageUrl: string | null) => {
 };
 
 export default async function Dashboard() {
-  const [fests, registeredEvents] = await Promise.all([
+  const [fests, registeredEvents, { profile }] = await Promise.all([
     getFests(),
-    getParticipantRegistrations()
+    getParticipantRegistrations(),
+    getCurrentUser()
   ]);
-  const activeFest = fests && fests.length > 0 ? fests[0] : null;
+
+  const eligibleFests = (fests || []).filter(e => isUserEligibleForEvent(profile?.department, e.allowed_departments));
+  const activeFest = eligibleFests && eligibleFests.length > 0 ? eligibleFests[0] : null;
   const events = activeFest ? await getSubEvents(activeFest.id) : [];
 
-  // Try fetching images in parallel for the first 3 fests
-  const featuredFests = (fests || []).slice(0, 3);
+  // Fetch images in parallel for the first 3 eligible fests
+  const featuredFests = (eligibleFests || []).slice(0, 3);
   const festsWithImages = await Promise.all(
     featuredFests.map(async (fest, index) => {
       const query = `campus college festival ${fest.name}`;
@@ -70,6 +75,13 @@ export default async function Dashboard() {
                   registrationClosesAt={fest.registration_closes_at}
                 />
               ))}
+              {festsWithImages.length === 0 && (
+                <div className="col-span-full p-8 text-center border-2 border-dashed border-[#D9D9DF] rounded-md bg-[#F8F8FC]">
+                  <p className="text-eventrix-muted font-bold text-sm uppercase tracking-widest">
+                    No fests are currently available for your department ({profile?.department || 'Not Specified'}).
+                  </p>
+                </div>
+              )}
             </div>
           </section>
 

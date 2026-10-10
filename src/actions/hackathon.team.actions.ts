@@ -52,7 +52,7 @@ export async function getUserHackathonTeam(hackathonId: string) {
   return null;
 }
 
-export async function createHackathonTeam(hackathonId: string, festId: string, teamName: string, passcode: string, problemStatementId: string) {
+export async function createHackathonTeam(hackathonId: string, festId: string, teamName: string, passcode: string, problemStatementId?: string | null) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

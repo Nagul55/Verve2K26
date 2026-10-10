@@ -21,6 +21,16 @@ export default async function RegistrationsPage({ params }: { params: Promise<{ 
   }
 
   const activeFest = fests.find(f => f.id === festId) || fests[0];
+
+  const { getCurrentUser } = await import("@/lib/auth/get-user");
+  const { isUserEligibleForEvent } = await import("@/lib/utils/eligibility");
+  const { redirect } = await import("next/navigation");
+  const { profile } = await getCurrentUser();
+
+  if (!isUserEligibleForEvent(profile?.department, activeFest.allowed_departments)) {
+    redirect('/events');
+  }
+
   const events = await getSubEvents(activeFest.id);
 
   if (!events || events.length === 0) {

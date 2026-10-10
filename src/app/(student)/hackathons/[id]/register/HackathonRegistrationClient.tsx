@@ -5,7 +5,6 @@ import { createHackathonTeam, joinHackathonTeam } from "@/actions/hackathon.team
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { EventrixSelect } from "@/components/ui/EventrixSelect";
 
 export function HackathonRegistrationClient({ hackathonId, festId, problemStatements, maxTeamSize, minTeamSize }: { 
   hackathonId: string, 
@@ -21,7 +20,6 @@ export function HackathonRegistrationClient({ hackathonId, festId, problemStatem
   // Create Team State
   const [createTeamName, setCreateTeamName] = useState("");
   const [createPasscode, setCreatePasscode] = useState("");
-  const [selectedPS, setSelectedPS] = useState("");
 
   useEffect(() => {
     // Generate a random 6-character alphanumeric passcode
@@ -39,13 +37,13 @@ export function HackathonRegistrationClient({ hackathonId, festId, problemStatem
 
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!createTeamName || !createPasscode || !selectedPS) {
-      toast.error("Please fill in all fields to create a team.");
+    if (!createTeamName.trim() || !createPasscode.trim()) {
+      toast.error("Please fill in team name and passcode.");
       return;
     }
 
     setLoading(true);
-    const result = await createHackathonTeam(hackathonId, festId, createTeamName, createPasscode, selectedPS);
+    const result = await createHackathonTeam(hackathonId, festId, createTeamName.trim(), createPasscode.trim());
     setLoading(false);
 
     if (result.success) {
@@ -80,7 +78,7 @@ export function HackathonRegistrationClient({ hackathonId, festId, problemStatem
       <CardHeader className="bg-eventrix-black text-white rounded-t-xl text-center py-8">
         <CardTitle className="font-anton tracking-widest uppercase text-3xl">Team Formation</CardTitle>
         <CardDescription className="text-gray-300">
-          Create a new team and select your problem statement, or join an existing team using their passcode.
+          Create a new team, or join an existing team using their passcode.
           <br/>
           Team Size Requirement: {minTeamSize} to {maxTeamSize} members.
         </CardDescription>
@@ -127,20 +125,6 @@ export function HackathonRegistrationClient({ hackathonId, festId, problemStatem
                 className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender text-sm font-bold text-eventrix-black" 
                 placeholder="Create a secure passcode"
                 required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <EventrixSelect
-                label="Select Problem Statement"
-                value={selectedPS}
-                onChange={(val) => setSelectedPS(val)}
-                placeholder="-- Select a Problem Statement --"
-                required
-                options={problemStatements.map((ps) => ({
-                  value: ps.id,
-                  label: ps.title,
-                }))}
               />
             </div>
 

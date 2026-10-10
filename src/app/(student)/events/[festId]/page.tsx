@@ -55,6 +55,14 @@ export default async function FestEventsPage({ params }: { params: Promise<{ fes
     redirect(`/hackathons/${fest.id}`);
   }
 
+  const { getCurrentUser } = await import("@/lib/auth/get-user");
+  const { isUserEligibleForEvent } = await import("@/lib/utils/eligibility");
+  const { profile } = await getCurrentUser();
+
+  if (!isUserEligibleForEvent(profile?.department, fest.allowed_departments)) {
+    redirect('/events');
+  }
+
   const events = await getSubEvents(fest.id);
   const registeredIds = await getStudentRegisteredEventIds();
   const registrationCounts = await getSubEventRegistrationCounts();

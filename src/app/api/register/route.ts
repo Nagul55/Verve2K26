@@ -33,12 +33,18 @@ export async function POST(req: Request) {
     if (selectedEventIds && selectedEventIds.length > 0) {
       const { data: subEventsInfo } = await supabase
         .from('sub_events')
-        .select('id, title, capacity, fest_id, fests(registration_closes_at)')
+        .select('id, title, capacity, fest_id, fests(registration_closes_at, allowed_departments)')
         .in('id', selectedEventIds);
 
-      const deadline = (subEventsInfo?.[0] as any)?.fests?.registration_closes_at;
+      const festData = (subEventsInfo?.[0] as any)?.fests;
+      const deadline = festData?.registration_closes_at;
       if (deadline && new Date() >= new Date(deadline)) {
         return NextResponse.json({ error: 'Registration for this fest has closed.' }, { status: 400 });
+      }
+
+      const { isUserEligibleForEvent } = await import('@/lib/utils/eligibility');
+      if (!isUserEligibleForEvent(department, festData?.allowed_departments)) {
+        return NextResponse.json({ error: 'You are not eligible for this fest based on your department.' }, { status: 400 });
       }
 
       for (const sub of (subEventsInfo || [])) {
