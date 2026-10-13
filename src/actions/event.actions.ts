@@ -1072,7 +1072,8 @@ export async function getParticipantRegistrations() {
             status,
             participants (
               full_name,
-              email
+              email,
+              mobile
             )
           )
         )
@@ -1101,6 +1102,7 @@ export async function getParticipantRegistrations() {
               participantId: m.participant_id,
               name: m.participants?.full_name,
               email: m.participants?.email,
+              mobile: m.participants?.mobile || 'N/A',
               isLeader: m.participant_id === tm.teams.leader_participant_id,
               status: m.status || 'Accepted'
             })).filter((m: any) => m.name) || []

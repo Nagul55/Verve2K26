@@ -796,7 +796,7 @@ export function HackathonClient({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   
                   {/* Verified Members */}
-                  {userTeam.members?.map((member: any) => {
+                  {userTeam.members?.map((member: any, memberIdx: number) => {
                     const isTeamLeader = member.participant_id === userTeam.leader_id;
 
                     return (
@@ -804,7 +804,10 @@ export function HackathonClient({
                         key={member.participant_id} 
                         className="flex items-center justify-between p-4 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/50 hover:border-violet-300 hover:shadow-sm transition-all"
                       >
-                        <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="w-5 h-5 rounded-md bg-violet-100 text-violet-700 font-mono font-bold text-[10px] flex items-center justify-center shrink-0">
+                            #{memberIdx + 1}
+                          </span>
                           <div className="relative shrink-0">
                             <UserAvatar
                               user={member.participants}
@@ -833,6 +836,12 @@ export function HackathonClient({
                             <p className="text-xs text-slate-500 truncate mt-0.5">
                               {member.participants?.email || ""}
                             </p>
+                            {member.participants?.mobile && (
+                              <p className="text-[11px] text-slate-500 truncate mt-0.5 flex items-center gap-1 font-mono">
+                                <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                <span>{member.participants.mobile}</span>
+                              </p>
+                            )}
                           </div>
                         </div>
 

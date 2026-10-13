@@ -342,6 +342,7 @@ export default function CoordinatorParticipantsPage() {
                           <table className="w-full text-left text-xs min-w-[700px]">
                             <thead className="bg-[#F8F8FC] border-b border-[#D9D9DF] text-eventrix-muted font-bold uppercase tracking-wider">
                               <tr>
+                                <th className="px-4 py-3 w-16 text-center">S.No</th>
                                 <th className="px-5 py-3">Participant</th>
                                 <th className="px-5 py-3">Register No.</th>
                                 <th className="px-5 py-3">Contact</th>
@@ -370,7 +371,7 @@ export default function CoordinatorParticipantsPage() {
                                   rows.push({ type: 'team', teamId, teamName: members[0].teamName, members });
                                 });
 
-                                return rows.map((row) => {
+                                return rows.map((row, index) => {
                                   if (row.type === 'team') {
                                     const allPresent = row.members.every((m: any) => m.attendanceStatus === 'PRESENT');
                                     const presentCount = row.members.filter((m: any) => m.attendanceStatus === 'PRESENT').length;
@@ -379,6 +380,9 @@ export default function CoordinatorParticipantsPage() {
                                     
                                     return (
                                       <tr key={`team_${row.teamId}`} className="hover:bg-[#F9F9FC] transition-colors">
+                                        <td className="px-4 py-4 text-center font-mono font-bold text-eventrix-muted text-xs">
+                                          {index + 1}
+                                        </td>
                                         <td className="px-5 py-4 font-bold text-eventrix-black">
                                           <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-md bg-[#F0E6FF] border border-eventrix-purple/30 flex items-center justify-center font-anton text-eventrix-purple text-xs shrink-0 uppercase">
@@ -396,7 +400,17 @@ export default function CoordinatorParticipantsPage() {
                                           </span>
                                         </td>
                                         <td className="px-5 py-4 text-eventrix-muted font-medium">
-                                          -
+                                          {(() => {
+                                            const leadMobile = row.members.find((m: any) => m.mobile && m.mobile !== 'N/A')?.mobile;
+                                            return leadMobile ? (
+                                              <div className="flex items-center gap-1.5 text-[11px]">
+                                                <Phone className="w-3.5 h-3.5 text-eventrix-muted shrink-0" />
+                                                <span>{leadMobile}</span>
+                                              </div>
+                                            ) : (
+                                              <span>-</span>
+                                            );
+                                          })()}
                                         </td>
                                         <td className="px-5 py-4 text-eventrix-muted">
                                           <div className="font-bold text-eventrix-black text-xs line-clamp-1">{collegeDisplay as React.ReactNode}</div>
@@ -431,6 +445,9 @@ export default function CoordinatorParticipantsPage() {
 
                                     return (
                                       <tr key={p.participantId} className="hover:bg-[#F9F9FC] transition-colors">
+                                        <td className="px-4 py-4 text-center font-mono font-bold text-eventrix-muted text-xs">
+                                          {index + 1}
+                                        </td>
                                         <td className="px-5 py-4 font-bold text-eventrix-black">
                                           <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-full bg-[#EEEEF5] border border-[#D9D9DF] flex items-center justify-center font-anton text-eventrix-purple text-xs shrink-0 uppercase">
@@ -533,15 +550,51 @@ export default function CoordinatorParticipantsPage() {
             
             <div className="p-0 max-h-[60vh] overflow-y-auto">
               <ul className="divide-y divide-[#D9D9DF]">
-                {activeModalMembers.map(m => (
-                  <li key={m.participantId} className="p-4 hover:bg-[#F9F9FC] transition-colors flex items-start gap-3">
+                {activeModalMembers.map((m, index) => (
+                  <li key={m.participantId} className="p-4 hover:bg-[#F9F9FC] transition-colors flex items-start gap-3.5">
+                    {/* S.No Badge */}
+                    <div className="w-7 h-7 rounded-md bg-[#F0E6FF] border border-eventrix-purple/30 text-eventrix-purple font-mono font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                      #{index + 1}
+                    </div>
+
+                    {/* Member Initial Avatar */}
                     <div className="w-8 h-8 rounded-full bg-[#EEEEF5] border border-[#D9D9DF] flex items-center justify-center font-anton text-eventrix-purple text-xs shrink-0 uppercase mt-0.5">
                       {m.fullName ? m.fullName.charAt(0) : 'M'}
                     </div>
+
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <div className="text-sm font-bold text-eventrix-black truncate">{m.fullName}</div>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-sm font-bold text-eventrix-black truncate">
+                            {m.fullName}
+                          </div>
+
+                          {/* Contact & Register Number details */}
+                          <div className="mt-1 flex items-center gap-2 flex-wrap">
+                            {m.mobile && m.mobile !== 'N/A' ? (
+                              <a
+                                href={`tel:${m.mobile}`}
+                                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 px-2 py-0.5 rounded transition-colors"
+                                title="Click to call participant"
+                              >
+                                <Phone className="w-3 h-3 text-emerald-600 shrink-0" />
+                                <span>{m.mobile}</span>
+                              </a>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-eventrix-muted bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
+                                <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                <span>No phone</span>
+                              </span>
+                            )}
+
+                            {m.registerNumber && m.registerNumber !== 'N/A' && (
+                              <span className="text-[11px] font-mono text-eventrix-muted bg-[#F8F8FC] border border-[#D9D9DF] px-1.5 py-0.5 rounded">
+                                {m.registerNumber}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* College & Department */}
                           <div className="mt-1 text-[11px] text-eventrix-muted">
                             <span className="font-bold text-eventrix-black">{m.college}</span>
                             <span className="mx-1">•</span>
@@ -549,7 +602,7 @@ export default function CoordinatorParticipantsPage() {
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0 pt-0.5">
                           {m.attendanceStatus === 'PRESENT' ? (
                             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
                               Present

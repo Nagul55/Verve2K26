@@ -32,12 +32,12 @@ export async function getUserHackathonTeam(hackathonId: string) {
     if (team && team.hackathon_id === hackathonId) {
       // Fetch all accepted members of this team
       const { data: members } = await adminClient.from('hackathon_team_members')
-        .select('participant_id, joined_at, participants(participant_id, full_name, email)')
+        .select('participant_id, joined_at, participants(participant_id, full_name, email, mobile)')
         .eq('team_id', team.id);
 
       // Fetch pending invitations from team_members
       const { data: pendingMembers } = await adminClient.from('team_members')
-        .select('participant_id, joined_at, status, participants(participant_id, full_name, email)')
+        .select('participant_id, joined_at, status, participants(participant_id, full_name, email, mobile)')
         .eq('team_id', team.id)
         .eq('status', 'Pending');
 

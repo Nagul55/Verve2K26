@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Users, Edit3, UserPlus, Save, X } from "lucide-react";
+import { Users, Edit3, UserPlus, Save, X, Phone } from "lucide-react";
 import { updateRegisteredTeam } from "@/actions/team.actions";
 import { toast } from "sonner";
 
@@ -137,20 +137,33 @@ export function TeamManager({ teamDetails }: { teamDetails: any }) {
 
         {!isEditing ? (
           <div className="space-y-2">
-            {teamDetails.members.map((member: any) => (
-              <div key={member.participantId || member.email} className="flex items-center justify-between bg-white border border-[#D9D9DE] p-2.5 rounded-sm">
-                <div>
-                  <p className="text-xs font-bold text-[#080A12] flex items-center gap-1.5">
-                    {member.name}
-                    {member.isLeader && (
-                      <span className="bg-[#080A12] text-white text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded">
-                        Team Leader
-                      </span>
-                    )}
-                  </p>
-                  <p className={`text-[10px] font-bold mt-0.5 ${member.status === 'Accepted' || member.isLeader ? 'text-green-600' : 'text-orange-500'}`}>
-                    {member.isLeader ? 'Leader' : member.status}
-                  </p>
+            {teamDetails.members.map((member: any, idx: number) => (
+              <div key={member.participantId || member.email} className="flex items-center justify-between bg-white border border-[#D9D9DF] p-2.5 rounded-sm">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-5 h-5 rounded bg-[#F0E6FF] border border-[#A98BFF]/30 text-[#A98BFF] font-mono font-bold text-[10px] flex items-center justify-center shrink-0">
+                    #{idx + 1}
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-[#080A12] flex items-center gap-1.5">
+                      {member.name}
+                      {member.isLeader && (
+                        <span className="bg-[#080A12] text-white text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded">
+                          Team Leader
+                        </span>
+                      )}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <p className={`text-[10px] font-bold ${member.status === 'Accepted' || member.isLeader ? 'text-green-600' : 'text-orange-500'}`}>
+                        {member.isLeader ? 'Leader' : member.status}
+                      </p>
+                      {member.mobile && member.mobile !== 'N/A' && (
+                        <span className="text-[10px] font-mono text-gray-500 flex items-center gap-1">
+                          <Phone className="w-2.5 h-2.5 text-gray-400" />
+                          {member.mobile}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
