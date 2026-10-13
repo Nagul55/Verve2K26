@@ -50,7 +50,7 @@ export default function CoordinatorsPage() {
       mobile: "",
       email: "",
       gender: "",
-      college: "",
+      college: "Sona College of Technology, Salem",
       department: "",
       yearOfStudy: "1st Year",
       password: "",
@@ -575,6 +575,7 @@ export default function CoordinatorsPage() {
                     label="College / Institution Name"
                     name="college"
                     required
+                    onlyHostCollege={true}
                     value={formData.college}
                     onChange={(val) => setFormData((prev) => ({ ...prev, college: val }))}
                     placeholder="Select College / Institution"

@@ -4,6 +4,8 @@ export interface College {
   city: string;
 }
 
+export const HOST_COLLEGE_NAME = "Sona College of Technology, Salem";
+
 export const TAMILNADU_COLLEGES: College[] = [
   // Top / Host College
   { name: "Sona College of Technology, Salem", shortName: "Sona", city: "Salem" },

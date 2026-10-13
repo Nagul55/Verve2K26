@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import { EventrixSelect, SelectOption } from "./EventrixSelect";
-import { TAMILNADU_COLLEGES, COLLEGE_SELECT_OPTIONS } from "@/data/colleges";
+import { TAMILNADU_COLLEGES, COLLEGE_SELECT_OPTIONS, HOST_COLLEGE_NAME } from "@/data/colleges";
 
 export interface CollegeSelectProps {
   value?: string;
@@ -16,6 +16,8 @@ export interface CollegeSelectProps {
   className?: string;
   buttonClassName?: string;
   size?: "sm" | "md" | "lg";
+  onlyHostCollege?: boolean;
+  searchable?: boolean;
 }
 
 export function CollegeSelect({
@@ -30,9 +32,21 @@ export function CollegeSelect({
   className = "",
   buttonClassName = "",
   size = "md",
+  onlyHostCollege = true,
+  searchable,
 }: CollegeSelectProps) {
-  // Add custom college option if existing value isn't in predefined list
+  // If onlyHostCollege is true, only "Sona College of Technology, Salem" is displayed
   const options: SelectOption[] = useMemo(() => {
+    if (onlyHostCollege) {
+      return [
+        {
+          value: HOST_COLLEGE_NAME,
+          label: HOST_COLLEGE_NAME,
+          description: "Salem • Sona",
+        },
+      ];
+    }
+
     const list: SelectOption[] = [...COLLEGE_SELECT_OPTIONS];
 
     if (value && value.trim() !== "") {
@@ -52,7 +66,7 @@ export function CollegeSelect({
       }
     }
     return list;
-  }, [value]);
+  }, [value, onlyHostCollege]);
 
   const resolvedValue = useMemo(() => {
     if (!value) return "";
@@ -62,10 +76,17 @@ export function CollegeSelect({
     const shortMatch = TAMILNADU_COLLEGES.find(
       (c) => c.shortName && c.shortName.toLowerCase() === value.toLowerCase()
     );
-    if (shortMatch) return shortMatch.name;
+    if (shortMatch) {
+      if (onlyHostCollege && !shortMatch.name.toLowerCase().includes("sona college of technology")) {
+        return "";
+      }
+      return shortMatch.name;
+    }
 
-    return value;
-  }, [value, options]);
+    return onlyHostCollege ? HOST_COLLEGE_NAME : value;
+  }, [value, options, onlyHostCollege]);
+
+  const isSearchable = searchable !== undefined ? searchable : !onlyHostCollege;
 
   return (
     <div className={className}>
@@ -79,8 +100,8 @@ export function CollegeSelect({
         disabled={disabled}
         required={required}
         error={error}
-        searchable={true}
-        searchPlaceholder="Search Tamil Nadu colleges (e.g. Sona, PSG, CEG, Salem)..."
+        searchable={isSearchable}
+        searchPlaceholder={onlyHostCollege ? "Search college..." : "Search Tamil Nadu colleges (e.g. Sona, PSG, CEG, Salem)..."}
         size={size}
         buttonClassName={buttonClassName}
       />

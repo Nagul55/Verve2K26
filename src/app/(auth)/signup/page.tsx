@@ -19,7 +19,7 @@ export default function SignupPage() {
       email: '',
       gender: '',
       mobile: '',
-      college: '',
+      college: 'Sona College of Technology, Salem',
       department: '',
       yearOfStudy: '1st Year',
       password: '',
@@ -28,6 +28,13 @@ export default function SignupPage() {
     excludeKeys: ['password', 'confirmPassword'],
     showRestoredToast: false,
   });
+
+  // Ensure Sona College of Technology, Salem is prefilled
+  React.useEffect(() => {
+    if (!formData.college) {
+      setFormData(prev => ({ ...prev, college: 'Sona College of Technology, Salem' }));
+    }
+  }, [formData.college, setFormData]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -225,6 +232,7 @@ export default function SignupPage() {
               name="college"
               required
               size="sm"
+              onlyHostCollege={true}
               value={formData.college}
               onChange={(val) => setFormData(prev => ({ ...prev, college: val }))}
               placeholder="Select College / Institution"
