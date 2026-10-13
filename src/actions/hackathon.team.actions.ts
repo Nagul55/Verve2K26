@@ -495,3 +495,272 @@ export async function cancelHackathonInvitation(teamId: string, participantId: s
   return { success: true };
 }
 
+export async function removeHackathonTeamMember(teamId: string, memberParticipantId: string, festId?: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  const adminClient = getAdminClient();
+
+  // 1. Fetch team
+  const { data: team, error: teamErr } = await adminClient
+    .from('hackathon_teams')
+    .select('id, leader_id, hackathon_id, hackathons(event_id)')
+    .eq('id', teamId)
+    .single();
+
+  if (teamErr || !team) {
+    return { success: false, error: "Squad not found." };
+  }
+
+  // 2. Only leader can remove members
+  if (team.leader_id !== user.id) {
+    return { success: false, error: "Only the squad leader can remove teammates." };
+  }
+
+  // 3. Leader cannot remove themselves
+  if (memberParticipantId === user.id) {
+    return { success: false, error: "Squad leader cannot be removed. You can disband the squad instead." };
+  }
+
+  // 4. Remove from hackathon_team_members
+  const { error: hMemberErr } = await adminClient
+    .from('hackathon_team_members')
+    .delete()
+    .eq('team_id', teamId)
+    .eq('participant_id', memberParticipantId);
+
+  if (hMemberErr) {
+    return { success: false, error: hMemberErr.message };
+  }
+
+  // 5. Remove from team_members
+  await adminClient
+    .from('team_members')
+    .delete()
+    .eq('team_id', teamId)
+    .eq('participant_id', memberParticipantId);
+
+  // 6. Clean up registration_sub_events for this participant and fest
+  const resolvedFestId = festId || (team.hackathons as any)?.event_id;
+  if (resolvedFestId) {
+    try {
+      const { data: subEvent } = await adminClient
+        .from('sub_events')
+        .select('id')
+        .eq('fest_id', resolvedFestId)
+        .maybeSingle();
+
+      if (subEvent) {
+        const { data: reg } = await adminClient
+          .from('registrations')
+          .select('id')
+          .eq('participant_id', memberParticipantId)
+          .eq('fest_id', resolvedFestId)
+          .maybeSingle();
+
+        if (reg) {
+          await adminClient
+            .from('registration_sub_events')
+            .delete()
+            .eq('registration_id', reg.id)
+            .eq('sub_event_id', subEvent.id);
+        }
+      }
+    } catch (e) {
+      console.warn("Could not unregister sub_event for removed member:", e);
+    }
+  }
+
+  if (resolvedFestId) {
+    revalidatePath(`/hackathons/${resolvedFestId}`);
+  }
+  revalidatePath('/registrations');
+  revalidatePath('/tickets');
+  revalidatePath('/dashboard');
+  revalidatePath('/coordinator/participants');
+  revalidatePath('/admin/participants');
+
+  return { success: true, message: "Teammate removed from squad." };
+}
+
+export async function leaveHackathonTeam(teamId: string, festId?: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  const adminClient = getAdminClient();
+
+  // 1. Fetch team
+  const { data: team, error: teamErr } = await adminClient
+    .from('hackathon_teams')
+    .select('id, leader_id, hackathon_id, hackathons(event_id)')
+    .eq('id', teamId)
+    .single();
+
+  if (teamErr || !team) {
+    return { success: false, error: "Squad not found." };
+  }
+
+  // 2. If user is the leader, they must disband instead of leave
+  if (team.leader_id === user.id) {
+    return { success: false, error: "As squad leader, you cannot leave the squad. You can disband the squad instead." };
+  }
+
+  // 3. Remove from hackathon_team_members
+  const { error: hMemberErr } = await adminClient
+    .from('hackathon_team_members')
+    .delete()
+    .eq('team_id', teamId)
+    .eq('participant_id', user.id);
+
+  if (hMemberErr) {
+    return { success: false, error: hMemberErr.message };
+  }
+
+  // 4. Remove from team_members
+  await adminClient
+    .from('team_members')
+    .delete()
+    .eq('team_id', teamId)
+    .eq('participant_id', user.id);
+
+  // 5. Clean up sub_event registration
+  const resolvedFestId = festId || (team.hackathons as any)?.event_id;
+  if (resolvedFestId) {
+    try {
+      const { data: subEvent } = await adminClient
+        .from('sub_events')
+        .select('id')
+        .eq('fest_id', resolvedFestId)
+        .maybeSingle();
+
+      if (subEvent) {
+        const { data: reg } = await adminClient
+          .from('registrations')
+          .select('id')
+          .eq('participant_id', user.id)
+          .eq('fest_id', resolvedFestId)
+          .maybeSingle();
+
+        if (reg) {
+          await adminClient
+            .from('registration_sub_events')
+            .delete()
+            .eq('registration_id', reg.id)
+            .eq('sub_event_id', subEvent.id);
+        }
+      }
+    } catch (e) {
+      console.warn("Could not unregister sub_event for leaving member:", e);
+    }
+  }
+
+  if (resolvedFestId) {
+    revalidatePath(`/hackathons/${resolvedFestId}`);
+  }
+  revalidatePath('/registrations');
+  revalidatePath('/tickets');
+  revalidatePath('/dashboard');
+  revalidatePath('/coordinator/participants');
+  revalidatePath('/admin/participants');
+
+  return { success: true, message: "You have left the squad." };
+}
+
+export async function disbandHackathonTeam(teamId: string, festId?: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  const adminClient = getAdminClient();
+
+  // 1. Fetch team
+  const { data: team, error: teamErr } = await adminClient
+    .from('hackathon_teams')
+    .select('id, leader_id, hackathon_id, hackathons(event_id)')
+    .eq('id', teamId)
+    .single();
+
+  if (teamErr || !team) {
+    return { success: false, error: "Squad not found." };
+  }
+
+  // 2. Only leader can disband
+  if (team.leader_id !== user.id) {
+    return { success: false, error: "Only the squad leader can disband the squad." };
+  }
+
+  // 3. Get all member participant IDs to unregister
+  const { data: members } = await adminClient
+    .from('hackathon_team_members')
+    .select('participant_id')
+    .eq('team_id', teamId);
+
+  const resolvedFestId = festId || (team.hackathons as any)?.event_id;
+
+  if (resolvedFestId && members && members.length > 0) {
+    try {
+      const { data: subEvent } = await adminClient
+        .from('sub_events')
+        .select('id')
+        .eq('fest_id', resolvedFestId)
+        .maybeSingle();
+
+      if (subEvent) {
+        for (const m of members) {
+          const { data: reg } = await adminClient
+            .from('registrations')
+            .select('id')
+            .eq('participant_id', m.participant_id)
+            .eq('fest_id', resolvedFestId)
+            .maybeSingle();
+
+          if (reg) {
+            await adminClient
+              .from('registration_sub_events')
+              .delete()
+              .eq('registration_id', reg.id)
+              .eq('sub_event_id', subEvent.id);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Could not unregister sub_events for disbanding squad:", e);
+    }
+  }
+
+  // 4. Delete memberships and invitations
+  await adminClient.from('hackathon_team_members').delete().eq('team_id', teamId);
+  await adminClient.from('team_members').delete().eq('team_id', teamId);
+
+  // 5. Delete teams record and hackathon_teams record
+  await adminClient.from('teams').delete().eq('team_id', teamId);
+  const { error: deleteTeamErr } = await adminClient.from('hackathon_teams').delete().eq('id', teamId);
+
+  if (deleteTeamErr) {
+    return { success: false, error: deleteTeamErr.message };
+  }
+
+  if (resolvedFestId) {
+    revalidatePath(`/hackathons/${resolvedFestId}`);
+  }
+  revalidatePath('/registrations');
+  revalidatePath('/tickets');
+  revalidatePath('/dashboard');
+  revalidatePath('/coordinator/participants');
+  revalidatePath('/admin/participants');
+
+  return { success: true, message: "Squad disbanded successfully." };
+}
+
+

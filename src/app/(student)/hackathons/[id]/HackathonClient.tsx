@@ -43,13 +43,23 @@ import {
   ArrowUpRight,
   Search,
   CheckCircle,
-  Compass
+  Compass,
+  UserMinus,
+  Trash2,
+  LogOut,
+  AlertTriangle
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { sendHackathonInvitation, cancelHackathonInvitation } from "@/actions/hackathon.team.actions";
+import { 
+  sendHackathonInvitation, 
+  cancelHackathonInvitation,
+  removeHackathonTeamMember,
+  leaveHackathonTeam,
+  disbandHackathonTeam
+} from "@/actions/hackathon.team.actions";
 import { UserAvatar } from "@/components/UserAvatar";
 import { TeamAvatar } from "@/components/TeamAvatar";
 
@@ -75,6 +85,13 @@ export function HackathonClient({
   const [hasCopiedCode, setHasCopiedCode] = useState(false);
   const [hasCopiedLink, setHasCopiedLink] = useState(false);
   const [searchProblem, setSearchProblem] = useState("");
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: "remove_member" | "leave_team" | "disband_team";
+    memberId?: string;
+    memberName?: string;
+  } | null>(null);
+  const [isPerformingAction, setIsPerformingAction] = useState(false);
 
   const [countdown, setCountdown] = useState<{
     days: number;
@@ -208,6 +225,46 @@ export function HackathonClient({
     }
   };
 
+  const handleConfirmAction = async () => {
+    if (!confirmModal || !userTeam) return;
+
+    setIsPerformingAction(true);
+    try {
+      if (confirmModal.type === "remove_member" && confirmModal.memberId) {
+        const res = await removeHackathonTeamMember(userTeam.id, confirmModal.memberId, fest.id);
+        if (res.success) {
+          toast.success(res.message || "Teammate removed from squad.");
+          setConfirmModal(null);
+          router.refresh();
+        } else {
+          toast.error(res.error || "Failed to remove member");
+        }
+      } else if (confirmModal.type === "leave_team") {
+        const res = await leaveHackathonTeam(userTeam.id, fest.id);
+        if (res.success) {
+          toast.success(res.message || "You have left the squad.");
+          setConfirmModal(null);
+          router.refresh();
+        } else {
+          toast.error(res.error || "Failed to leave squad");
+        }
+      } else if (confirmModal.type === "disband_team") {
+        const res = await disbandHackathonTeam(userTeam.id, fest.id);
+        if (res.success) {
+          toast.success(res.message || "Squad disbanded successfully.");
+          setConfirmModal(null);
+          router.refresh();
+        } else {
+          toast.error(res.error || "Failed to disband squad");
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong.");
+    } finally {
+      setIsPerformingAction(false);
+    }
+  };
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return "TBA";
     return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
@@ -245,6 +302,7 @@ export function HackathonClient({
   const minTeamMembers = hackathon.minimum_team_size || 1;
   const emptySlotsCount = Math.max(0, maxTeamMembers - (teamMemberCount + pendingCount));
   const teamProgressPercent = Math.min(100, Math.round((teamMemberCount / maxTeamMembers) * 100));
+  const isCurrentLeader = Boolean(currentUserId && userTeam?.leader_id && currentUserId === userTeam.leader_id);
 
   const filteredProblemStatements = (problemStatements || []).filter((ps) => {
     if (!searchProblem.trim()) return true;
@@ -692,19 +750,47 @@ export function HackathonClient({
 
               {/* Roster Grid */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-violet-600" />
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
                       Squad Roster ({teamMemberCount + pendingCount}/{maxTeamMembers})
                     </span>
                   </div>
-                  {pendingCount > 0 && (
-                    <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full flex items-center gap-1.5">
-                      <Clock className="w-3 h-3 animate-pulse" />
-                      {pendingCount} Pending Invite{pendingCount > 1 ? "s" : ""}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {pendingCount > 0 && (
+                      <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+                        <Clock className="w-3 h-3 animate-pulse" />
+                        {pendingCount} Pending Invite{pendingCount > 1 ? "s" : ""}
+                      </span>
+                    )}
+
+                    {isCurrentLeader ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setConfirmModal({ isOpen: true, type: "disband_team" })}
+                        className="text-xs text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 font-bold px-3 h-7.5 rounded-xl cursor-pointer flex items-center gap-1.5 transition-all shadow-2xs"
+                        title="Disband this squad permanently"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                        <span>Disband Squad</span>
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setConfirmModal({ isOpen: true, type: "leave_team" })}
+                        className="text-xs text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 font-bold px-3 h-7.5 rounded-xl cursor-pointer flex items-center gap-1.5 transition-all shadow-2xs"
+                        title="Leave this squad"
+                      >
+                        <LogOut className="w-3.5 h-3.5 text-rose-500" />
+                        <span>Leave Squad</span>
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -750,13 +836,53 @@ export function HackathonClient({
                           </div>
                         </div>
 
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0 ml-2 ${
-                          isTeamLeader 
-                            ? "bg-amber-50 text-amber-800 border border-amber-200/80" 
-                            : "bg-slate-100 text-slate-700 border border-slate-200"
-                        }`}>
-                          {isTeamLeader ? "Leader" : "Member"}
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg ${
+                            isTeamLeader 
+                              ? "bg-amber-50 text-amber-800 border border-amber-200/80" 
+                              : "bg-slate-100 text-slate-700 border border-slate-200"
+                          }`}>
+                            {isTeamLeader ? "Leader" : "Member"}
+                          </span>
+
+                          {/* Leader can remove any non-leader teammate */}
+                          {isCurrentLeader && !isTeamLeader && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setConfirmModal({
+                                isOpen: true,
+                                type: "remove_member",
+                                memberId: member.participant_id,
+                                memberName: member.participants?.full_name || member.participants?.email || "Teammate"
+                              })}
+                              className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 font-bold px-2.5 h-7.5 rounded-lg cursor-pointer flex items-center gap-1 transition-all border border-transparent hover:border-rose-200"
+                              title="Remove teammate from squad"
+                            >
+                              <UserMinus className="w-3.5 h-3.5 text-rose-500" />
+                              <span>Remove</span>
+                            </Button>
+                          )}
+
+                          {/* Member can leave the squad from their own card */}
+                          {!isCurrentLeader && member.participant_id === currentUserId && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setConfirmModal({
+                                isOpen: true,
+                                type: "leave_team"
+                              })}
+                              className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 font-bold px-2.5 h-7.5 rounded-lg cursor-pointer flex items-center gap-1 transition-all border border-transparent hover:border-rose-200"
+                              title="Leave squad"
+                            >
+                              <LogOut className="w-3.5 h-3.5 text-rose-500" />
+                              <span>Leave</span>
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -1737,6 +1863,105 @@ export function HackathonClient({
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          REMOVE / LEAVE / DISBAND TEAM CONFIRMATION MODAL
+          ========================================================================= */}
+      {confirmModal?.isOpen && userTeam && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+            
+            <button 
+              onClick={() => { if (!isPerformingAction) setConfirmModal(null); }}
+              disabled={isPerformingAction}
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 transition-colors p-1.5 rounded-xl hover:bg-slate-100 cursor-pointer disabled:opacity-50"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="flex items-center gap-3.5 mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold shadow-sm shrink-0">
+                {confirmModal.type === "remove_member" && <UserMinus className="w-6 h-6" />}
+                {confirmModal.type === "leave_team" && <LogOut className="w-6 h-6" />}
+                {confirmModal.type === "disband_team" && <Trash2 className="w-6 h-6" />}
+              </div>
+              <div>
+                <h3 className="font-anton text-2xl text-slate-900 uppercase tracking-wide">
+                  {confirmModal.type === "remove_member" && "Remove Teammate"}
+                  {confirmModal.type === "leave_team" && "Leave Squad"}
+                  {confirmModal.type === "disband_team" && "Disband Squad"}
+                </h3>
+                <p className="text-xs font-semibold text-slate-500">Squad: {userTeam.name}</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-600 mb-6 leading-relaxed font-normal">
+              {confirmModal.type === "remove_member" && (
+                <>
+                  Are you sure you want to remove <strong className="text-slate-900">{confirmModal.memberName}</strong> from the squad? They will lose access to the squad, and their slot will become available for new invites.
+                </>
+              )}
+              {confirmModal.type === "leave_team" && (
+                <>
+                  Are you sure you want to leave <strong className="text-slate-900">{userTeam.name}</strong>? You will be removed from this squad and will need a passcode or new invitation to rejoin.
+                </>
+              )}
+              {confirmModal.type === "disband_team" && (
+                <>
+                  Are you sure you want to disband <strong className="text-slate-900">{userTeam.name}</strong>? This will permanently delete the squad, cancel all invitations, and remove all teammates. <span className="text-rose-600 font-bold">This action cannot be undone.</span>
+                </>
+              )}
+            </p>
+
+            <div className="pt-2 flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConfirmModal(null)}
+                disabled={isPerformingAction}
+                className="border-slate-300 text-slate-700 font-bold text-xs uppercase tracking-wider h-11 px-5 rounded-xl cursor-pointer"
+              >
+                Cancel
+              </Button>
+              
+              <Button
+                type="button"
+                onClick={handleConfirmAction}
+                disabled={isPerformingAction}
+                className="bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold text-xs uppercase tracking-wider h-11 px-6 rounded-xl shadow-sm flex items-center gap-2 cursor-pointer transition-all border border-rose-400/30"
+              >
+                {isPerformingAction ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    {confirmModal.type === "remove_member" && (
+                      <>
+                        <UserMinus className="w-4 h-4" />
+                        <span>Remove Member</span>
+                      </>
+                    )}
+                    {confirmModal.type === "leave_team" && (
+                      <>
+                        <LogOut className="w-4 h-4" />
+                        <span>Leave Squad</span>
+                      </>
+                    )}
+                    {confirmModal.type === "disband_team" && (
+                      <>
+                        <Trash2 className="w-4 h-4" />
+                        <span>Disband Squad</span>
+                      </>
+                    )}
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       )}
