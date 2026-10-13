@@ -34,6 +34,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { CoordinatorEventSelector } from "@/components/CoordinatorEventSelector";
 import { EventrixSelect } from "@/components/ui/EventrixSelect";
 import { DepartmentSelect } from "@/components/ui/DepartmentSelect";
+import { CollegeSelect } from "@/components/ui/CollegeSelect";
 
 export default function CoordinatorsPage() {
   const [activeTab, setActiveTab] = useState<"manage" | "add">("manage");
@@ -569,18 +570,14 @@ export default function CoordinatorsPage() {
                 />
 
                 {/* College / Institution Name */}
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest">
-                    College / Institution Name <span className="text-red-500">*</span>
-                  </label>
-                  <input 
-                    type="text"
-                    name="college" 
-                    value={formData.college} 
-                    onChange={handleChange} 
-                    required 
-                    placeholder="College Name" 
-                    className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
+                <div className="md:col-span-2">
+                  <CollegeSelect
+                    label="College / Institution Name"
+                    name="college"
+                    required
+                    value={formData.college}
+                    onChange={(val) => setFormData((prev) => ({ ...prev, college: val }))}
+                    placeholder="Select College / Institution"
                   />
                 </div>
 
