@@ -24,8 +24,21 @@ export async function GET(request: Request) {
     const adminClient = getAdminClient();
 
     // Check if user exists or create account
-    const { data: listData } = await adminClient.auth.admin.listUsers();
-    let targetUser = listData?.users.find(u => u.email?.toLowerCase() === msEmail.toLowerCase());
+    let allUsers: any[] = [];
+    let page = 1;
+    const perPage = 1000;
+    let hasMore = true;
+    while (hasMore) {
+      const { data: listData, error } = await adminClient.auth.admin.listUsers({ page, perPage });
+      if (error || !listData?.users || listData.users.length === 0) {
+        hasMore = false;
+      } else {
+        allUsers = allUsers.concat(listData.users);
+        if (listData.users.length < perPage) hasMore = false;
+        else page++;
+      }
+    }
+    let targetUser = allUsers.find(u => u.email?.toLowerCase() === msEmail.toLowerCase());
 
     if (!targetUser) {
       const { data: newUser } = await adminClient.auth.admin.createUser({

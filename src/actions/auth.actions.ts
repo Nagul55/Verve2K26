@@ -13,6 +13,48 @@ const getAdminClient = () => {
   );
 };
 
+export async function getAllAuthUsers(adminClient: any) {
+  let allUsers: any[] = [];
+  let page = 1;
+  const perPage = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage });
+    if (error || !data?.users || data.users.length === 0) {
+      hasMore = false;
+    } else {
+      allUsers = allUsers.concat(data.users);
+      if (data.users.length < perPage) hasMore = false;
+      else page++;
+    }
+  }
+  return allUsers;
+}
+
+export async function getAllParticipants(adminClient: any) {
+  let allParticipants: any[] = [];
+  let from = 0;
+  const batchSize = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await adminClient
+      .from('participants')
+      .select('*')
+      .range(from, from + batchSize - 1);
+
+    if (error || !data || data.length === 0) {
+      hasMore = false;
+    } else {
+      allParticipants = allParticipants.concat(data);
+      if (data.length < batchSize) hasMore = false;
+      else from += batchSize;
+    }
+  }
+  return allParticipants;
+}
+
 export async function upsertParticipantProfile(adminClient: any, payload: any) {
   const { error } = await adminClient
     .from('participants')
@@ -59,8 +101,8 @@ export async function login(formData: FormData) {
   if (isMasterAdmin && (error || !data?.user)) {
     try {
       const adminClient = getAdminClient();
-      const { data: usersData } = await adminClient.auth.admin.listUsers();
-      const existingAdmin = usersData?.users?.find(
+      const usersData = await getAllAuthUsers(adminClient);
+      const existingAdmin = usersData.find(
         (u) => u.email?.toLowerCase() === 'admin@eventrix.com'
       );
 
@@ -210,19 +252,21 @@ export async function signout() {
 
 export async function getCoordinators() {
   const adminClient = getAdminClient();
-  const { data, error } = await adminClient.auth.admin.listUsers();
-  
-  if (error) return [];
+  const allUsers = await getAllAuthUsers(adminClient);
 
-  const { data: partData } = await adminClient.from('participants').select('*');
+  const partData = await getAllParticipants(adminClient);
   const partMap = new Map<string, any>();
+  const emailMap = new Map<string, any>();
   if (partData) {
-    partData.forEach(p => partMap.set(p.participant_id, p));
+    partData.forEach(p => {
+      if (p.participant_id) partMap.set(p.participant_id, p);
+      if (p.email) emailMap.set(p.email.toLowerCase().trim(), p);
+    });
   }
   
   // Filter users who have role = coordinator
-  return data.users.filter(u => u.app_metadata?.role === 'coordinator').map(u => {
-    const profile = partMap.get(u.id) || {};
+  return allUsers.filter(u => u.app_metadata?.role === 'coordinator').map(u => {
+    const profile = partMap.get(u.id) || (u.email ? emailMap.get(u.email.toLowerCase().trim()) : null) || {};
     const subEventIds: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
       ? u.app_metadata.coordinating_event_ids
       : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
@@ -233,8 +277,15 @@ export async function getCoordinators() {
       role: 'coordinator',
       gender: profile.gender || u.user_metadata?.gender || 'MALE',
       fullName: u.user_metadata?.full_name || profile.full_name || 'Coordinator',
+      name: u.user_metadata?.full_name || profile.full_name || 'Coordinator',
+      mobile: profile.mobile || u.user_metadata?.mobile || u.user_metadata?.phone || '',
+      phone: profile.mobile || u.user_metadata?.mobile || u.user_metadata?.phone || '',
+      department: profile.department || '',
+      college: profile.college || '',
+      yearOfStudy: profile.year_of_study || '',
       subEventId: subEventIds[0] || null,
-      subEventIds: subEventIds
+      subEventIds: subEventIds,
+      event_ids: subEventIds
     };
   });
 }
@@ -308,6 +359,15 @@ export async function createCoordinator(formData: FormData) {
       console.error("Error creating participant profile for coordinator:", res.error);
     }
   }
+
+  try {
+    (revalidateTag as any)('coordinators');
+    revalidatePath('/admin');
+    revalidatePath('/admin/coordinators');
+    revalidatePath('/admin/users');
+  } catch (e) {
+    console.warn("Revalidation warning in createCoordinator:", e);
+  }
   
   return { success: true };
 }
@@ -330,21 +390,19 @@ export async function updateCoordinatorAssignments(coordinatorId: string, subEve
   if (error) return { success: false, error: error.message };
 
   // Recalculate event status transitions for all subevents
-  const { data: authData } = await adminClient.auth.admin.listUsers();
+  const allUsers = await getAllAuthUsers(adminClient);
   const eventCoordCounts: Record<string, number> = {};
 
-  if (authData?.users) {
-    authData.users.forEach(u => {
-      if (u.app_metadata?.role === 'coordinator') {
-        const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
-          ? u.app_metadata.coordinating_event_ids
-          : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
-        ids.forEach(id => {
-          eventCoordCounts[id] = (eventCoordCounts[id] || 0) + 1;
-        });
-      }
-    });
-  }
+  allUsers.forEach(u => {
+    if (u.app_metadata?.role === 'coordinator') {
+      const ids: string[] = Array.isArray(u.app_metadata?.coordinating_event_ids)
+        ? u.app_metadata.coordinating_event_ids
+        : u.app_metadata?.coordinating_event_id ? [u.app_metadata.coordinating_event_id] : [];
+      ids.forEach(id => {
+        eventCoordCounts[id] = (eventCoordCounts[id] || 0) + 1;
+      });
+    }
+  });
 
   const { data: subEvents } = await adminClient.from('sub_events').select('id, status');
   if (subEvents) {
@@ -380,6 +438,14 @@ export async function updateCoordinatorAssignment(coordinatorId: string, subEven
 export async function deleteCoordinator(coordinatorId: string) {
   const adminClient = getAdminClient();
   const { error } = await adminClient.auth.admin.deleteUser(coordinatorId);
+  try {
+    (revalidateTag as any)('coordinators');
+    revalidatePath('/admin');
+    revalidatePath('/admin/coordinators');
+    revalidatePath('/admin/users');
+  } catch (e) {
+    console.warn("Revalidation warning in deleteCoordinator:", e);
+  }
   return { success: !error, error: error?.message };
 }
 
@@ -422,23 +488,22 @@ export async function deleteUserAccount(userId: string) {
 export async function getAllUsersAdmin() {
   try {
     const adminClient = getAdminClient();
-    const { data: authData, error: authError } = await adminClient.auth.admin.listUsers();
-
-    if (authError || !authData.users) {
-      console.error("Error listing users:", authError);
-      return [];
-    }
+    const allUsers = await getAllAuthUsers(adminClient);
 
     // Also fetch participants table details to enrich user profiles
-    const { data: partData } = await adminClient.from('participants').select('*');
+    const partData = await getAllParticipants(adminClient);
     const partMap = new Map<string, any>();
+    const emailMap = new Map<string, any>();
     if (partData) {
-      partData.forEach(p => partMap.set(p.participant_id, p));
+      partData.forEach(p => {
+        if (p.participant_id) partMap.set(p.participant_id, p);
+        if (p.email) emailMap.set(p.email.toLowerCase().trim(), p);
+      });
     }
 
-    return authData.users.map(u => {
+    return allUsers.map(u => {
       const role = u.app_metadata?.role || 'student';
-      const profile = partMap.get(u.id) || {};
+      const profile = partMap.get(u.id) || (u.email ? emailMap.get(u.email.toLowerCase().trim()) : null) || {};
 
       return {
         id: u.id,
@@ -450,7 +515,7 @@ export async function getAllUsersAdmin() {
         department: profile.department || 'N/A',
         yearOfStudy: profile.year_of_study || '',
         registerNumber: profile.register_number || 'N/A',
-        mobile: profile.mobile || '',
+        mobile: profile.mobile || u.user_metadata?.mobile || u.user_metadata?.phone || '',
         createdAt: u.created_at,
         lastSignInAt: u.last_sign_in_at || null,
         coordinatingEventId: u.app_metadata?.coordinating_event_id || null,
