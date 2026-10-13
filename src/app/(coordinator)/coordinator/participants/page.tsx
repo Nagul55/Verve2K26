@@ -13,8 +13,11 @@ import {
   Calendar, 
   MapPin, 
   AlertCircle,
-  X 
+  X,
+  Download
 } from "lucide-react";
+import Papa from "papaparse";
+import { toast } from "sonner";
 import { 
   getCoordinatorEventsWithParticipants, 
   toggleParticipantAttendance, 
@@ -125,6 +128,170 @@ export default function CoordinatorParticipantsPage() {
         ?.participants.filter(p => p.teamId === selectedTeam.teamId) || []
     : [];
 
+  // Helper to trigger browser download of CSV string with UTF-8 BOM
+  const triggerCsvDownload = (filename: string, csvContent: string) => {
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const sanitizeFilename = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 50);
+  };
+
+  const formatParticipantForCsv = (
+    p: EventParticipant,
+    index: number,
+    eventTitle: string,
+    eventCategory: string,
+    eventFormat: string
+  ) => {
+    return {
+      "S.No": index + 1,
+      "Event Title": eventTitle,
+      "Category": eventCategory,
+      "Format": eventFormat,
+      "Team Name": p.teamName || (eventFormat?.toLowerCase() === "team" ? "Individual/Unassigned" : "Individual"),
+      "Participant Name": p.fullName || "N/A",
+      "Register Number": p.registerNumber || "N/A",
+      "Email": p.email || "N/A",
+      "Contact / Mobile": p.mobile || "N/A",
+      "College": p.college || "N/A",
+      "Department": p.department || "N/A",
+      "Year of Study": p.yearOfStudy || "N/A",
+      "Attendance Status": p.attendanceStatus === "PRESENT" ? "Present" : "Pending",
+    };
+  };
+
+  // Export participants for a single event (either all or filtered)
+  const exportEventCsv = (group: CoordinatorEventGroup, participantsToExport?: EventParticipant[], isFiltered = false) => {
+    const list = participantsToExport || group.participants;
+    if (list.length === 0) {
+      toast.info("No participants to export for this event.");
+      return;
+    }
+
+    // Sort to group team members together
+    const sorted = [...list].sort((a, b) => {
+      if (a.teamName && b.teamName) {
+        if (a.teamName === b.teamName) {
+          return (a.fullName || "").localeCompare(b.fullName || "");
+        }
+        return a.teamName.localeCompare(b.teamName);
+      }
+      if (a.teamName) return -1;
+      if (b.teamName) return 1;
+      return (a.fullName || "").localeCompare(b.fullName || "");
+    });
+
+    const rows = sorted.map((p, idx) =>
+      formatParticipantForCsv(
+        p,
+        idx,
+        group.event.title,
+        group.event.category,
+        group.event.format
+      )
+    );
+
+    const csv = Papa.unparse(rows);
+    const dateStamp = new Date().toISOString().split("T")[0];
+    const eventSlug = sanitizeFilename(group.event.title) || "event";
+    const suffix = isFiltered ? "_filtered" : "";
+    const filename = `${eventSlug}${suffix}_roster_${dateStamp}.csv`;
+
+    triggerCsvDownload(filename, csv);
+    toast.success(`Exported ${rows.length} participant${rows.length !== 1 ? "s" : ""} to CSV`);
+  };
+
+  // Export all participants across all assigned coordinator events
+  const exportAllEventsCsv = () => {
+    if (eventGroups.length === 0) {
+      toast.info("No events or participants available to export.");
+      return;
+    }
+
+    const allRows: any[] = [];
+    let counter = 0;
+
+    eventGroups.forEach(group => {
+      const sorted = [...group.participants].sort((a, b) => {
+        if (a.teamName && b.teamName) {
+          if (a.teamName === b.teamName) return (a.fullName || "").localeCompare(b.fullName || "");
+          return a.teamName.localeCompare(b.teamName);
+        }
+        if (a.teamName) return -1;
+        if (b.teamName) return 1;
+        return (a.fullName || "").localeCompare(b.fullName || "");
+      });
+
+      sorted.forEach(p => {
+        counter++;
+        allRows.push(
+          formatParticipantForCsv(
+            p,
+            counter - 1,
+            group.event.title,
+            group.event.category,
+            group.event.format
+          )
+        );
+      });
+    });
+
+    if (allRows.length === 0) {
+      toast.info("No registered participants found across your assigned events.");
+      return;
+    }
+
+    const csv = Papa.unparse(allRows);
+    const dateStamp = new Date().toISOString().split("T")[0];
+    const filename = `eventrix_all_events_roster_${dateStamp}.csv`;
+
+    triggerCsvDownload(filename, csv);
+    toast.success(`Exported ${allRows.length} participants across ${eventGroups.length} event${eventGroups.length !== 1 ? "s" : ""}`);
+  };
+
+  // Export team members from team popup modal
+  const exportTeamCsv = (teamName: string, eventTitle: string, members: EventParticipant[]) => {
+    if (members.length === 0) {
+      toast.info("No team members to export.");
+      return;
+    }
+
+    const rows = members.map((p, idx) => ({
+      "S.No": idx + 1,
+      "Event Title": eventTitle,
+      "Team Name": teamName,
+      "Member Name": p.fullName || "N/A",
+      "Register Number": p.registerNumber || "N/A",
+      "Email": p.email || "N/A",
+      "Contact / Mobile": p.mobile || "N/A",
+      "College": p.college || "N/A",
+      "Department": p.department || "N/A",
+      "Year of Study": p.yearOfStudy || "N/A",
+      "Attendance Status": p.attendanceStatus === "PRESENT" ? "Present" : "Pending",
+    }));
+
+    const csv = Papa.unparse(rows);
+    const dateStamp = new Date().toISOString().split("T")[0];
+    const teamSlug = sanitizeFilename(teamName) || "team";
+    const filename = `team_${teamSlug}_roster_${dateStamp}.csv`;
+
+    triggerCsvDownload(filename, csv);
+    toast.success(`Exported ${rows.length} member${rows.length !== 1 ? "s" : ""} of team ${teamName}`);
+  };
+
   return (
     <div className="space-y-8 pb-12">
       {/* Header Bar */}
@@ -138,13 +305,24 @@ export default function CoordinatorParticipantsPage() {
           </p>
         </div>
 
-        <button 
-          onClick={() => loadData(true)}
-          disabled={loading || refreshing}
-          className="p-3 bg-white border border-[#D9D9DF] rounded-md text-eventrix-black hover:bg-[#F8F8FC] transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider self-start md:self-auto disabled:opacity-50 cursor-pointer"
-        >
-          <RefreshCw className={`w-4 h-4 ${refreshing || loading ? 'animate-spin' : ''}`} /> Refresh Roster
-        </button>
+        <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
+          <button 
+            onClick={() => loadData(true)}
+            disabled={loading || refreshing}
+            className="p-3 bg-white border border-[#D9D9DF] rounded-md text-eventrix-black hover:bg-[#F8F8FC] transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider disabled:opacity-50 cursor-pointer shadow-2xs"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing || loading ? 'animate-spin' : ''}`} /> Refresh Roster
+          </button>
+
+          <button
+            onClick={exportAllEventsCsv}
+            disabled={loading || eventGroups.length === 0}
+            className="p-3 bg-eventrix-black text-white hover:bg-eventrix-lavender hover:text-eventrix-black border border-eventrix-black rounded-md transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-wider disabled:opacity-50 cursor-pointer shadow-2xs"
+            title="Export participants across all assigned events as a consolidated CSV"
+          >
+            <Download className="w-4 h-4" /> Export All CSV
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -258,7 +436,7 @@ export default function CoordinatorParticipantsPage() {
                   </div>
 
                   {/* Summary Pills on Header */}
-                  <div className="flex items-center gap-3 text-xs font-bold shrink-0 self-end md:self-auto">
+                  <div className="flex items-center gap-2 sm:gap-3 text-xs font-bold shrink-0 self-end md:self-auto flex-wrap">
                     <span className="px-3 py-1 bg-white border border-[#D9D9DF] rounded-full text-eventrix-black">
                       Total: {group.statistics.total}
                     </span>
@@ -268,6 +446,18 @@ export default function CoordinatorParticipantsPage() {
                     <span className="px-3 py-1 bg-amber-50 border border-amber-200 rounded-full text-amber-700">
                       Pending: {group.statistics.pending}
                     </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        exportEventCsv(group);
+                      }}
+                      title={`Export ${group.event.title} participants to CSV`}
+                      className="px-3 py-1 bg-white border border-[#D9D9DF] hover:bg-eventrix-lavender hover:text-eventrix-black hover:border-eventrix-black text-eventrix-black rounded-full transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider shadow-2xs"
+                    >
+                      <Download className="w-3.5 h-3.5 text-eventrix-purple" />
+                      <span>Export CSV</span>
+                    </button>
                   </div>
                 </div>
 
@@ -291,31 +481,74 @@ export default function CoordinatorParticipantsPage() {
                     </div>
 
                     {/* Filter and Search Bar for this event */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                      <div className="relative w-full sm:w-80">
-                        <Search className="w-4 h-4 text-eventrix-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-                        <input
-                          type="text"
-                          placeholder="Search participants in this event..."
-                          value={searchQueries[eventId] || ""}
-                          onChange={(e) => setSearchQueries(prev => ({ ...prev, [eventId]: e.target.value }))}
-                          className="w-full pl-10 pr-4 py-2 bg-[#F8F8FC] border border-[#D9D9DF] rounded-md text-xs font-medium focus:outline-none focus:border-eventrix-lavender focus:bg-white transition-colors"
-                        />
-                      </div>
+                    {(() => {
+                      const isFilterActive = !!searchQuery || statusFilter !== "ALL";
+                      return (
+                        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                          <div className="relative w-full md:w-80">
+                            <Search className="w-4 h-4 text-eventrix-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
+                            <input
+                              type="text"
+                              placeholder="Search participants in this event..."
+                              value={searchQueries[eventId] || ""}
+                              onChange={(e) => setSearchQueries(prev => ({ ...prev, [eventId]: e.target.value }))}
+                              className="w-full pl-10 pr-4 py-2 bg-[#F8F8FC] border border-[#D9D9DF] rounded-md text-xs font-medium focus:outline-none focus:border-eventrix-lavender focus:bg-white transition-colors"
+                            />
+                          </div>
 
-                      <div className="w-full sm:w-56">
-                        <EventrixSelect
-                          value={statusFilter}
-                          onChange={(val) => setStatusFilters(prev => ({ ...prev, [eventId]: val }))}
-                          options={[
-                            { value: "ALL", label: "All Statuses" },
-                            { value: "PRESENT", label: `Checked-In (${group.statistics.present})` },
-                            { value: "PENDING", label: `Pending (${group.statistics.pending})` },
-                          ]}
-                          size="sm"
-                        />
-                      </div>
-                    </div>
+                          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                            <div className="w-full sm:w-52">
+                              <EventrixSelect
+                                value={statusFilter}
+                                onChange={(val) => setStatusFilters(prev => ({ ...prev, [eventId]: val }))}
+                                options={[
+                                  { value: "ALL", label: "All Statuses" },
+                                  { value: "PRESENT", label: `Checked-In (${group.statistics.present})` },
+                                  { value: "PENDING", label: `Pending (${group.statistics.pending})` },
+                                ]}
+                                size="sm"
+                              />
+                            </div>
+
+                            {/* Export CSV Action Buttons */}
+                            {isFilterActive ? (
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => exportEventCsv(group, filteredParticipants, true)}
+                                  disabled={filteredParticipants.length === 0}
+                                  className="px-3 py-2 bg-white border border-[#D9D9DF] hover:bg-[#F8F8FC] hover:border-eventrix-black text-eventrix-black rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer shadow-2xs whitespace-nowrap"
+                                  title={`Export matching filtered participants (${filteredParticipants.length}) to CSV`}
+                                >
+                                  <Download className="w-3.5 h-3.5 text-eventrix-purple" />
+                                  <span>Export Filtered ({filteredParticipants.length})</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => exportEventCsv(group)}
+                                  disabled={group.participants.length === 0}
+                                  className="px-2.5 py-2 bg-[#F8F8FC] border border-[#D9D9DF] hover:bg-white hover:border-eventrix-black text-eventrix-muted hover:text-eventrix-black rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1 transition-colors disabled:opacity-50 cursor-pointer shadow-2xs whitespace-nowrap"
+                                  title={`Export all participants in ${group.event.title} (${group.participants.length})`}
+                                >
+                                  <span>All ({group.participants.length})</span>
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => exportEventCsv(group)}
+                                disabled={group.participants.length === 0}
+                                className="px-4 py-2 bg-white border border-[#D9D9DF] hover:bg-eventrix-black hover:text-white hover:border-eventrix-black text-eventrix-black rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-2 shrink-0 transition-all disabled:opacity-50 cursor-pointer shadow-2xs whitespace-nowrap"
+                                title={`Export all ${group.participants.length} participants to CSV`}
+                              >
+                                <Download className="w-3.5 h-3.5 text-eventrix-purple" />
+                                <span>Export CSV</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* Participants Table for this event */}
                     {group.participants.length === 0 ? (
@@ -539,13 +772,27 @@ export default function CoordinatorParticipantsPage() {
                   {activeModalMembers.length} member{activeModalMembers.length !== 1 ? 's' : ''} in this event
                 </p>
               </div>
-              <button 
-                type="button"
-                onClick={() => setSelectedTeam(null)}
-                className="p-1.5 hover:bg-black/5 rounded transition-colors text-eventrix-muted cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentGroup = eventGroups.find(g => g.event.id === selectedTeam.eventId);
+                    exportTeamCsv(selectedTeam.teamName, currentGroup?.event.title || "Event", activeModalMembers);
+                  }}
+                  className="px-2.5 py-1.5 bg-white border border-[#D9D9DF] hover:bg-eventrix-lavender hover:text-eventrix-black hover:border-eventrix-black text-eventrix-black rounded transition-colors text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Export team members to CSV"
+                >
+                  <Download className="w-3.5 h-3.5 text-eventrix-purple" />
+                  <span>Export CSV</span>
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setSelectedTeam(null)}
+                  className="p-1.5 hover:bg-black/5 rounded transition-colors text-eventrix-muted cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             
             <div className="p-0 max-h-[60vh] overflow-y-auto">

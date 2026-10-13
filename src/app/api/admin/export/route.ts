@@ -90,6 +90,35 @@ export async function GET(req: Request) {
       });
     }
 
+    // Fetch teams mapping to populate Team Name in CSV
+    const teamNameMap = new Map<string, string>();
+    let teamsQuery = supabaseAdmin
+      .from('teams')
+      .select('team_name, event_id, team_members(participant_id)');
+    if (subEventId) {
+      teamsQuery = teamsQuery.eq('event_id', subEventId);
+    }
+    const { data: teamsData } = await teamsQuery;
+    (teamsData || []).forEach((t: any) => {
+      (t.team_members || []).forEach((tm: any) => {
+        if (tm.participant_id) {
+          teamNameMap.set(tm.participant_id, t.team_name);
+        }
+      });
+    });
+
+    let eventTitle = '';
+    if (subEventId) {
+      const { data: subEvent } = await supabaseAdmin
+        .from('sub_events')
+        .select('title')
+        .eq('id', subEventId)
+        .single();
+      if (subEvent?.title) {
+        eventTitle = subEvent.title;
+      }
+    }
+
     const flattenedData = processedData.map((p) => {
       // Extract all sub-events they are registered for
       const registeredEvents: string[] = [];
@@ -103,6 +132,7 @@ export async function GET(req: Request) {
 
       return {
         'Full Name': p.full_name,
+        'Team Name': teamNameMap.get(p.participant_id) || 'Individual',
         'Register Number': p.register_number,
         'Email': p.email,
         'Mobile': p.mobile,
@@ -120,6 +150,7 @@ export async function GET(req: Request) {
     if (flattenedData.length === 0) {
       flattenedData.push({
         'Full Name': 'DUMMY DATA (NO PARTICIPANTS YET)',
+        'Team Name': 'N/A',
         'Register Number': 'N/A',
         'Email': 'dummy@example.com',
         'Mobile': '0000000000',
@@ -136,12 +167,15 @@ export async function GET(req: Request) {
     // 3. Convert JSON to CSV using PapaParse
     const csv = Papa.unparse(flattenedData);
 
-    // 4. Return the HTTP response forcing a file download
-    return new NextResponse(csv, {
+    const sanitize = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').slice(0, 50);
+    const filename = eventTitle ? `${sanitize(eventTitle)}_participants_export.csv` : 'verve26_participants_export.csv';
+
+    // 4. Return the HTTP response forcing a file download with UTF-8 BOM
+    return new NextResponse('\uFEFF' + csv, {
       status: 200,
       headers: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': 'attachment; filename="verve26_participants_export.csv"'
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`
       }
     });
   } catch (error: unknown) {
