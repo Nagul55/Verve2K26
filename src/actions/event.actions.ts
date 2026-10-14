@@ -194,6 +194,9 @@ export async function updateFest(
   revalidatePath('/admin');
   revalidatePath('/admin/events');
   revalidatePath('/events');
+  revalidatePath(`/events/${festId}`);
+  revalidatePath(`/events/${festId}/register`);
+  revalidatePath(`/hackathons/${festId}`);
   return { success: true };
 }
 
@@ -204,6 +207,9 @@ export async function deleteFest(festId: string) {
   revalidatePath('/admin');
   revalidatePath('/admin/events');
   revalidatePath('/events');
+  revalidatePath(`/events/${festId}`);
+  revalidatePath(`/events/${festId}/register`);
+  revalidatePath(`/hackathons/${festId}`);
   return { success: !error, error: error?.message };
 }
 

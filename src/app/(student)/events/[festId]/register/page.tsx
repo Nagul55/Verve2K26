@@ -1,14 +1,17 @@
 import React from "react";
-import { getFests, getSubEvents } from "@/actions/event.actions";
+import { getFests, getSubEvents, getFestById } from "@/actions/event.actions";
 import { RegistrationsForm } from "./RegistrationsForm";
 import { Database } from "lucide-react";
+
+export const dynamic = 'force-dynamic';
 
 export default async function RegistrationsPage({ params }: { params: Promise<{ festId: string }> }) {
   const { festId } = await params;
   
-  // Fetch data on the server
-  const fests = await getFests();
-  if (!fests || fests.length === 0) {
+  // Fetch data on the server with direct DB query
+  const directFest = await getFestById(festId);
+  const activeFest = directFest || (await getFests()).find(f => f.id === festId);
+  if (!activeFest) {
     return (
       <div className="max-w-2xl mx-auto mt-20 p-8 border border-red-200 bg-red-50 rounded-lg text-center">
         <Database className="w-12 h-12 text-red-500 mx-auto mb-4" />
@@ -19,8 +22,6 @@ export default async function RegistrationsPage({ params }: { params: Promise<{ 
       </div>
     );
   }
-
-  const activeFest = fests.find(f => f.id === festId) || fests[0];
 
   const { getCurrentUser } = await import("@/lib/auth/get-user");
   const { isUserEligibleForEvent } = await import("@/lib/utils/eligibility");

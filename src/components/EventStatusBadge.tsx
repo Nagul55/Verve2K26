@@ -25,18 +25,16 @@ export function EventStatusBadge({
     const updateTimer = () => {
       const now = new Date().getTime();
 
-      // Check Fest-level deadline first if configured
-      if (festRegistrationClosesAt) {
-        const festClosure = new Date(festRegistrationClosesAt).getTime();
-        if (now >= festClosure) {
-          setIsClosed(true);
-          setTimeLeft(null);
-          return;
-        }
+      // 1. Check Fest-level deadline first if configured
+      const festClosure = festRegistrationClosesAt ? new Date(festRegistrationClosesAt).getTime() : null;
+      if (festClosure && !isNaN(festClosure) && now >= festClosure) {
+        setIsClosed(true);
+        setTimeLeft(null);
+        return;
       }
 
-      // Check event date & time if available
-      let closureTime: Date | null = null;
+      // 2. Parse event start date & time if available
+      let eventStartTime: number | null = null;
       if (date) {
         try {
           if (time && (time.includes("AM") || time.includes("PM"))) {
@@ -45,25 +43,38 @@ export function EventStatusBadge({
             let hrs = parseInt(hours, 10);
             if (modifier === "PM" && hrs < 12) hrs += 12;
             if (modifier === "AM" && hrs === 12) hrs = 0;
-            const eventDateObj = new Date(`${date}T${hrs.toString().padStart(2, '0')}:${minutes}:00`);
-            closureTime = new Date(eventDateObj.getTime() - 24 * 60 * 60 * 1000);
+            const eventDateObj = new Date(`${date}T${hrs.toString().padStart(2, '0')}:${minutes || '00'}:00`);
+            if (!isNaN(eventDateObj.getTime())) {
+              eventStartTime = eventDateObj.getTime();
+            }
           } else if (time) {
             const eventDateObj = new Date(`${date}T${time}:00`);
-            closureTime = new Date(eventDateObj.getTime() - 24 * 60 * 60 * 1000);
+            if (!isNaN(eventDateObj.getTime())) {
+              eventStartTime = eventDateObj.getTime();
+            }
           } else {
             const eventDateObj = new Date(date);
-            closureTime = new Date(eventDateObj.getTime() - 24 * 60 * 60 * 1000);
+            if (!isNaN(eventDateObj.getTime())) {
+              eventStartTime = eventDateObj.getTime();
+            }
           }
         } catch (e) {
           // ignore date parse errors
         }
       }
 
-      // Effective closure is either fest deadline or event deadline, whichever is earlier
-      let targetTime: number | null = festRegistrationClosesAt ? new Date(festRegistrationClosesAt).getTime() : null;
-      if (closureTime) {
-        if (!targetTime || closureTime.getTime() < targetTime) {
-          targetTime = closureTime.getTime();
+      // 3. If the sub-event itself has already started, close registration for this event
+      if (eventStartTime && now >= eventStartTime) {
+        setIsClosed(true);
+        setTimeLeft(null);
+        return;
+      }
+
+      // 4. Effective closure deadline: fest deadline if configured, otherwise event start time
+      let targetTime: number | null = festClosure;
+      if (eventStartTime) {
+        if (!targetTime || eventStartTime < targetTime) {
+          targetTime = eventStartTime;
         }
       }
 

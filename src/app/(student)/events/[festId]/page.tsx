@@ -1,17 +1,18 @@
 import React from "react";
-import { getFests, getSubEvents, getStudentRegisteredEventIds, getSubEventRegistrationCounts } from "@/actions/event.actions";
+import { getFests, getSubEvents, getStudentRegisteredEventIds, getSubEventRegistrationCounts, getFestById } from "@/actions/event.actions";
 import { getHackathon } from "@/actions/hackathon.actions";
 import { notFound, redirect } from "next/navigation";
 import { FestEventsClient } from "./FestEventsClient";
 import { Metadata, ResolvingMetadata } from "next";
+
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(
   { params }: { params: Promise<{ festId: string }> },
   parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { festId } = await params;
-  const fests = await getFests();
-  const fest = fests.find(f => f.id === festId);
+  const fest = (await getFestById(festId)) || (await getFests()).find(f => f.id === festId);
 
   if (!fest) {
     return { title: 'Event Not Found | Eventrix' };
@@ -43,8 +44,7 @@ export async function generateMetadata(
 
 export default async function FestEventsPage({ params }: { params: Promise<{ festId: string }> }) {
   const { festId } = await params;
-  const fests = await getFests();
-  const fest = fests.find(f => f.id === festId);
+  const fest = (await getFestById(festId)) || (await getFests()).find(f => f.id === festId);
 
   if (!fest) {
     notFound();
