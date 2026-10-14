@@ -96,7 +96,7 @@ export default async function AdminSubEventsPage({ searchParams }: { searchParam
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <ApproveButton id={event.id} isApproved={isApproved} coordinatorCount={coordinatorCount} />
+                    <ApproveButton id={event.id} status={event.status} isApproved={isApproved} coordinatorCount={coordinatorCount} />
                   </td>
                   <td className="px-6 py-4 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-3">

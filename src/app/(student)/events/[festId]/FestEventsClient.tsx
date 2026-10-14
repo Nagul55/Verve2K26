@@ -545,6 +545,7 @@ export function FestEventsClient({
 
                     <div className="mb-4">
                       <EventStatusBadge 
+                        status={event.status}
                         date={event.date} 
                         time={event.time} 
                         capacity={event.capacity} 
@@ -624,6 +625,7 @@ export function FestEventsClient({
 
                     <div className="mb-4">
                       <EventStatusBadge 
+                        status={event.status}
                         date={event.date} 
                         time={event.time} 
                         capacity={event.capacity} 

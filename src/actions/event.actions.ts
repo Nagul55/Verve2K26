@@ -236,10 +236,10 @@ export async function getSubEvents(festId?: string, includePending: boolean = fa
     });
   });
 
-  // Student Query (includePending === false): ONLY return LIVE events with >= 1 coordinator assigned!
+  // Student Query (includePending === false): ONLY return LIVE or CLOSED events with >= 1 coordinator assigned!
   if (!includePending) {
     return data
-      .filter(e => e.status === 'LIVE' && (eventCoordMap[e.id]?.length || 0) > 0)
+      .filter(e => (e.status === 'LIVE' || e.status === 'CLOSED') && (eventCoordMap[e.id]?.length || 0) > 0)
       .map(e => {
         let waLink = e.whatsapp_group_link || '';
         if (!waLink && e.description) {
@@ -422,6 +422,55 @@ export async function approveSubEvent(subEventId: string, coordinatorIds?: strin
   }
 
   return { success: !error, error: error?.message };
+}
+
+export async function toggleSubEventLiveStatus(subEventId: string, targetStatus: 'LIVE' | 'CLOSED') {
+  const adminClient = getAdminClient();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Unauthorized. Please log in." };
+  }
+
+  if (targetStatus === 'LIVE') {
+    const coords = await getCachedCoordinators();
+    const assignedCoords = coords.filter(c => c.event_ids.includes(subEventId));
+    if (assignedCoords.length === 0) {
+      return {
+        success: false,
+        error: "Coordinator required — Assign at least one coordinator before setting this event live."
+      };
+    }
+  }
+
+  const updateData: any = { status: targetStatus };
+  if (targetStatus === 'LIVE') {
+    updateData.approved_by = user.id;
+    updateData.approved_at = new Date().toISOString();
+  }
+
+  const { error } = await adminClient
+    .from('sub_events')
+    .update(updateData)
+    .eq('id', subEventId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  try {
+    (revalidateTag as any)('coordinators');
+    (revalidateTag as any)('fests');
+    (revalidateTag as any)('fests-list');
+    revalidatePath('/admin');
+    revalidatePath('/admin/events');
+    revalidatePath('/admin/sub-events');
+    revalidatePath('/coordinator/events');
+    revalidatePath('/events');
+  } catch (e) {}
+
+  return { success: true };
 }
 
 export async function approveAndPermitSubEvent(subEventId: string, coordinatorId?: string) {
@@ -835,8 +884,17 @@ export async function registerForEvents(
   if (subEventIds.length > 0) {
     const { data: subEventsInfo } = await adminClient
       .from('sub_events')
-      .select('id, title, capacity, participation_type, min_candidates, max_candidates')
+      .select('id, title, capacity, participation_type, min_candidates, max_candidates, status')
       .in('id', subEventIds);
+
+    for (const sub of (subEventsInfo || [])) {
+      if (sub.status === 'CLOSED') {
+        return {
+          success: false,
+          error: `Registration is closed for "${sub.title}".`
+        };
+      }
+    }
 
     // Attempt RPC atomic check (with FOR UPDATE DB row locking) if available
     const requestedSeatsList = subEventIds.map(id => {

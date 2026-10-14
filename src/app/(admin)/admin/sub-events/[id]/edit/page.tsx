@@ -174,6 +174,7 @@ export default function AdminEditSubEventPage({ params }: { params: Promise<{ id
           </div>
           <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-md ${
             formData.status === 'LIVE' ? 'bg-green-100 text-green-700 border border-green-300' :
+            formData.status === 'CLOSED' ? 'bg-red-100 text-red-700 border border-red-300' :
             formData.status === 'PENDING_APPROVAL' ? 'bg-amber-100 text-amber-700 border border-amber-300' :
             'bg-gray-100 text-gray-700 border border-gray-300'
           }`}>
@@ -240,6 +241,19 @@ export default function AdminEditSubEventPage({ params }: { params: Promise<{ id
                   { value: "Individual", label: "Individual Entry", description: "One participant per registration" },
                   { value: "Team", label: "Team Participation", description: "Multiple participants per team" },
                 ]}
+              />
+
+              <EventrixSelect
+                label="Event Registration Status"
+                name="status"
+                value={formData.status}
+                onChange={(val) => setFormData((prev) => ({ ...prev, status: val }))}
+                options={[
+                  { value: "LIVE", label: "LIVE - Accepting Registrations", description: "Published and open for registrations" },
+                  { value: "CLOSED", label: "CLOSED - Registrations Stopped", description: "Event remains visible, but registrations are blocked" },
+                  { value: "DRAFT", label: "DRAFT - Hidden", description: "Hidden from student view" },
+                ]}
+                className="md:col-span-2"
               />
             </div>
           </div>

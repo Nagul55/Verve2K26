@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Users, Timer, XCircle } from "lucide-react";
 
 interface EventStatusBadgeProps {
+  status?: string;
   date?: string;
   time?: string;
   capacity?: number;
@@ -12,6 +13,7 @@ interface EventStatusBadgeProps {
 }
 
 export function EventStatusBadge({
+  status,
   date,
   time,
   capacity,
@@ -19,11 +21,18 @@ export function EventStatusBadge({
   festRegistrationClosesAt
 }: EventStatusBadgeProps) {
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
-  const [isClosed, setIsClosed] = useState(false);
+  const [isClosed, setIsClosed] = useState(status === 'CLOSED');
 
   useEffect(() => {
     const updateTimer = () => {
       const now = new Date().getTime();
+
+      // 0. Check Sub-event manual status closure
+      if (status === 'CLOSED') {
+        setIsClosed(true);
+        setTimeLeft(null);
+        return;
+      }
 
       // 1. Check Fest-level deadline first if configured
       const festClosure = festRegistrationClosesAt ? new Date(festRegistrationClosesAt).getTime() : null;
@@ -101,7 +110,7 @@ export function EventStatusBadge({
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [date, time, festRegistrationClosesAt]);
+  }, [status, date, time, festRegistrationClosesAt]);
 
   const hasCapacityLimit = typeof capacity === 'number' && capacity > 0;
   const regCount = typeof registeredCount === 'number' ? registeredCount : 0;

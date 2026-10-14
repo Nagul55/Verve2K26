@@ -136,10 +136,31 @@ export default function AdminParticipantsPage() {
     });
   }, [registeredParticipants, searchQuery, selectedDept, selectedCollege, selectedFilterEvent]);
 
-  // Compute metric stats
-  const totalRegistrations = useMemo(() => {
-    return registeredParticipants.reduce((acc, p) => acc + getParticipantEvents(p).length, 0);
-  }, [registeredParticipants]);
+  // Compute dynamic metric stats for the currently selected filter / event
+  const filteredTotalBookings = useMemo(() => {
+    if (selectedFilterEvent !== "ALL") {
+      return filteredParticipants.filter(p => 
+        getParticipantEvents(p).some(ev => ev.id === selectedFilterEvent)
+      ).length;
+    }
+    return filteredParticipants.reduce((acc, p) => acc + getParticipantEvents(p).length, 0);
+  }, [filteredParticipants, selectedFilterEvent]);
+
+  const filteredColleges = useMemo(() => {
+    const set = new Set<string>();
+    filteredParticipants.forEach(p => {
+      if (p.college) set.add(p.college);
+    });
+    return Array.from(set).sort();
+  }, [filteredParticipants]);
+
+  const filteredDepartments = useMemo(() => {
+    const set = new Set<string>();
+    filteredParticipants.forEach(p => {
+      if (p.department) set.add(p.department);
+    });
+    return Array.from(set).sort();
+  }, [filteredParticipants]);
 
   // Extract all unique sub-events that have participants
   const allSubEvents = useMemo(() => {
@@ -154,7 +175,9 @@ export default function AdminParticipantsPage() {
     return Array.from(eventMap.entries()).map(([id, title]) => ({ id, title })).sort((a, b) => a.title.localeCompare(b.title));
   }, [participants]);
 
-  const [exportEventId, setExportEventId] = useState<string>("ALL");
+  const handleEventChange = (eventId: string) => {
+    setSelectedFilterEvent(eventId);
+  };
 
   return (
     <div className="space-y-8 pb-12">
@@ -182,8 +205,8 @@ export default function AdminParticipantsPage() {
             
             <div className="flex items-center gap-2">
               <EventrixSelect
-                value={exportEventId}
-                onChange={(val) => setExportEventId(val)}
+                value={selectedFilterEvent}
+                onChange={handleEventChange}
                 options={[
                   { value: "ALL", label: "Master Report (All)" },
                   ...allSubEvents.map((ev) => ({ value: ev.id, label: ev.title })),
@@ -193,7 +216,7 @@ export default function AdminParticipantsPage() {
                 className="w-48"
               />
               <a
-                href={exportEventId === "ALL" ? "/api/admin/export" : `/api/admin/export?sub_event_id=${exportEventId}`}
+                href={selectedFilterEvent === "ALL" ? "/api/admin/export" : `/api/admin/export?sub_event_id=${selectedFilterEvent}`}
                 download
                 className="bg-eventrix-black text-white px-4 py-2.5 rounded-xl font-bold text-xs tracking-wide uppercase hover:bg-eventrix-lavender hover:text-black transition-colors flex items-center gap-2 shrink-0 shadow-sm"
               >
@@ -213,8 +236,10 @@ export default function AdminParticipantsPage() {
               <Users className="w-5 h-5" />
             </div>
           </div>
-          <p className="text-3xl font-anton text-eventrix-black">{registeredParticipants.length}</p>
-          <p className="text-xs text-eventrix-muted mt-1 font-medium">Event-enrolled students</p>
+          <p className="text-3xl font-anton text-eventrix-black">{filteredParticipants.length}</p>
+          <p className="text-xs text-eventrix-muted mt-1 font-medium">
+            {selectedFilterEvent === "ALL" ? "Event-enrolled students" : "Enrolled in this event"}
+          </p>
         </div>
 
         <div className="bg-white border border-[#D9D9DF] p-6 rounded-md shadow-sm">
@@ -224,8 +249,10 @@ export default function AdminParticipantsPage() {
               <Ticket className="w-5 h-5" />
             </div>
           </div>
-          <p className="text-3xl font-anton text-eventrix-black">{totalRegistrations}</p>
-          <p className="text-xs text-eventrix-muted mt-1 font-medium">Sub-event slots allocated</p>
+          <p className="text-3xl font-anton text-eventrix-black">{filteredTotalBookings}</p>
+          <p className="text-xs text-eventrix-muted mt-1 font-medium">
+            {selectedFilterEvent === "ALL" ? "Sub-event slots allocated" : "Confirmed event seats"}
+          </p>
         </div>
 
         <div className="bg-white border border-[#D9D9DF] p-6 rounded-md shadow-sm">
@@ -235,7 +262,7 @@ export default function AdminParticipantsPage() {
               <Building2 className="w-5 h-5" />
             </div>
           </div>
-          <p className="text-3xl font-anton text-eventrix-black">{colleges.length}</p>
+          <p className="text-3xl font-anton text-eventrix-black">{filteredColleges.length}</p>
           <p className="text-xs text-eventrix-muted mt-1 font-medium">Institutions represented</p>
         </div>
 
@@ -246,7 +273,7 @@ export default function AdminParticipantsPage() {
               <GraduationCap className="w-5 h-5" />
             </div>
           </div>
-          <p className="text-3xl font-anton text-eventrix-black">{departments.length}</p>
+          <p className="text-3xl font-anton text-eventrix-black">{filteredDepartments.length}</p>
           <p className="text-xs text-eventrix-muted mt-1 font-medium">Branches & Specializations</p>
         </div>
       </div>

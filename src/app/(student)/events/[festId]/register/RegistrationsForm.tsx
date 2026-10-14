@@ -57,6 +57,7 @@ export function RegistrationsForm({
 
   const isEventUnavailable = (event: any) => {
     if (isFestClosed) return true;
+    if (event.status === 'CLOSED') return true;
     if (typeof event.capacity === 'number' && event.capacity > 0) {
       const regCount = registrationCounts[event.id] || 0;
       if (regCount >= event.capacity) return true;
@@ -400,6 +401,7 @@ export function RegistrationsForm({
 
                       <div className="mb-4">
                         <EventStatusBadge 
+                          status={event.status}
                           date={event.date} 
                           time={event.time} 
                           capacity={event.capacity} 
@@ -475,6 +477,7 @@ export function RegistrationsForm({
 
                       <div className="mb-4">
                         <EventStatusBadge 
+                          status={event.status}
                           date={event.date} 
                           time={event.time} 
                           capacity={event.capacity} 

@@ -1,32 +1,48 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
-import { CheckCircle2, ShieldCheck } from "lucide-react";
-import { approveSubEvent } from "@/actions/event.actions";
+import React, { useTransition } from "react";
+import { CheckCircle2, ShieldCheck, PauseCircle, PlayCircle, XCircle } from "lucide-react";
+import { approveSubEvent, toggleSubEventLiveStatus } from "@/actions/event.actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export function ApproveButton({ 
   id, 
+  status,
   isApproved, 
   coordinatorCount = 0 
 }: { 
   id: string; 
-  isApproved: boolean; 
+  status?: string;
+  isApproved?: boolean; 
   coordinatorCount?: number; 
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  if (isApproved) {
-    return (
-      <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1">
-        <CheckCircle2 className="w-3 h-3" /> Live
-      </span>
-    );
-  }
-
+  const currentStatus = status || (isApproved ? 'LIVE' : 'DRAFT');
   const hasCoordinator = coordinatorCount > 0;
+
+  const handleToggle = (targetStatus: 'LIVE' | 'CLOSED') => {
+    if (targetStatus === 'LIVE' && !hasCoordinator) {
+      toast.error("Coordinator required — Assign at least one coordinator before setting this event live.");
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await toggleSubEventLiveStatus(id, targetStatus);
+      if (res.success) {
+        if (targetStatus === 'CLOSED') {
+          toast.success("Event stopped and closed for registrations.");
+        } else {
+          toast.success("Event reopened and published live!");
+        }
+        router.refresh();
+      } else if (res.error) {
+        toast.error(res.error);
+      }
+    });
+  };
 
   const handleApprove = () => {
     if (!hasCoordinator) {
@@ -45,6 +61,49 @@ export function ApproveButton({
     });
   };
 
+  // 1. LIVE STATUS: Show LIVE badge + One-Click "Stop Live" button
+  if (currentStatus === 'LIVE') {
+    return (
+      <div className="inline-flex items-center gap-2">
+        <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1 shrink-0">
+          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Live
+        </span>
+        <button
+          onClick={() => handleToggle('CLOSED')}
+          disabled={isPending}
+          type="button"
+          title="Stop Live — Close registrations for this event"
+          className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all duration-150 flex items-center gap-1 shadow-xs cursor-pointer disabled:opacity-50"
+        >
+          <PauseCircle className="w-3 h-3" />
+          {isPending ? "..." : "Stop Live"}
+        </button>
+      </div>
+    );
+  }
+
+  // 2. CLOSED STATUS: Show CLOSED badge + One-Click "Reopen" button
+  if (currentStatus === 'CLOSED') {
+    return (
+      <div className="inline-flex items-center gap-2">
+        <span className="bg-red-100 text-red-800 border border-red-300 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1 shrink-0">
+          <XCircle className="w-3 h-3 text-red-600" /> Closed
+        </span>
+        <button
+          onClick={() => handleToggle('LIVE')}
+          disabled={isPending}
+          type="button"
+          title="Reopen — Open registrations and set live"
+          className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white transition-all duration-150 flex items-center gap-1 shadow-xs cursor-pointer disabled:opacity-50"
+        >
+          <PlayCircle className="w-3 h-3" />
+          {isPending ? "..." : "Reopen"}
+        </button>
+      </div>
+    );
+  }
+
+  // 3. PENDING / DRAFT without coordinator
   if (!hasCoordinator) {
     return (
       <div className="relative group inline-block">
@@ -64,10 +123,12 @@ export function ApproveButton({
     );
   }
 
+  // 4. PENDING / DRAFT with coordinator ready
   return (
     <button
       onClick={handleApprove}
       disabled={isPending}
+      type="button"
       className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1.5 shadow-sm cursor-pointer"
     >
       <ShieldCheck className="w-3.5 h-3.5" />
