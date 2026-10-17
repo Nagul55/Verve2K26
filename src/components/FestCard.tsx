@@ -15,6 +15,7 @@ interface FestCardProps {
   teamSize?: string;
   mode?: string;
   customHref?: string;
+  registrationFee?: number;
 }
 
 export function FestCard({ 
@@ -28,7 +29,8 @@ export function FestCard({
   eventType,
   teamSize,
   mode,
-  customHref 
+  customHref,
+  registrationFee
 }: FestCardProps) {
   const isClosed = registrationClosesAt ? new Date() >= new Date(registrationClosesAt) : false;
   const isHackathon = eventType === 'hackathon';
@@ -78,6 +80,13 @@ export function FestCard({
                 </>
               )}
             </div>
+            {registrationFee != null && (
+              <div className={`border-2 border-eventrix-black text-[10px] font-black px-2.5 py-1 uppercase tracking-widest shadow-[3px_3px_0px_0px_rgba(8,10,18,1)] ${
+                registrationFee > 0 ? 'bg-emerald-500 text-white' : 'bg-white text-eventrix-black'
+              }`}>
+                {registrationFee > 0 ? `₹${registrationFee}` : 'FREE ENTRY'}
+              </div>
+            )}
             {isClosed && (
               <div className="bg-red-500 text-white border-2 border-eventrix-black text-[10px] font-black px-2.5 py-1 uppercase tracking-widest shadow-[3px_3px_0px_0px_rgba(8,10,18,1)]">
                 CLOSED

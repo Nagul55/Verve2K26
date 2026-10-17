@@ -22,7 +22,8 @@ export default function CreateFestPage() {
       min_technical: "1",
       min_non_technical: "1",
       registration_closes_at: "",
-      allowed_departments: ""
+      allowed_departments: "",
+      registration_fee: "0"
     }
   });
 
@@ -40,7 +41,8 @@ export default function CreateFestPage() {
         parseInt(formData.min_technical) || 0,
         parseInt(formData.min_non_technical) || 0,
         formData.registration_closes_at || null,
-        formData.allowed_departments || null
+        formData.allowed_departments || null,
+        parseFloat(formData.registration_fee) || 0
       );
 
       if (error) {
@@ -112,6 +114,24 @@ export default function CreateFestPage() {
                   onChange={(val) => setFormData(prev => ({ ...prev, allowed_departments: val }))}
                   placeholder="Select allowed departments or click 'Select All'"
                 />
+              </div>
+              <div className="md:col-span-2 space-y-2">
+                <label className="text-xs font-bold text-eventrix-muted uppercase tracking-widest flex items-center justify-between">
+                  <span>Registration Fee (₹)</span>
+                  <span className="text-eventrix-lavender font-mono font-normal lowercase">0 for free entry</span>
+                </label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  name="registration_fee" 
+                  value={formData.registration_fee} 
+                  onChange={handleChange} 
+                  placeholder="0 for free, or enter amount in INR (e.g. 150)" 
+                  className="w-full border border-[#D9D9DF] rounded-md px-4 py-3 bg-[#F8F8FC] focus:outline-none focus:border-eventrix-lavender focus:bg-white text-sm font-medium" 
+                />
+                <p className="text-[11px] text-eventrix-muted">
+                  Paid fests are routed through the sovereign YouPI-PG UPI gateway directly into the organizing bank account.
+                </p>
               </div>
             </div>
           </div>

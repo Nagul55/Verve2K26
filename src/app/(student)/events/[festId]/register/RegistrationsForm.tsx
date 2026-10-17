@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useTransition } from "react";
-import { Check, Calendar, MapPin, Clock, AlertTriangle, Users, Timer, XCircle } from "lucide-react";
+import { Check, Calendar, MapPin, Clock, AlertTriangle, Users, Timer, XCircle, CreditCard, ShieldCheck } from "lucide-react";
 import { registerForEvents } from "@/actions/event.actions";
+import { createFestPaymentSession, verifyAndCompletePaidRegistration } from "@/actions/payment.actions";
+import { PaymentModal } from "@/components/PaymentModal";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { parseEventData } from "@/components/EventDetailsModal";
@@ -28,6 +30,28 @@ export function RegistrationsForm({
   const [teamMembers, setTeamMembers] = useState<Record<string, string[]>>({});
   const [isFestClosed, setIsFestClosed] = useState(false);
   const [festTimerStr, setFestTimerStr] = useState<string | null>(null);
+
+  // YouPI-PG Payment Modal State
+  const [paymentModalState, setPaymentModalState] = useState<{
+    isOpen: boolean;
+    paymentId: string;
+    checkoutUrl: string;
+    amount: number;
+  }>({
+    isOpen: false,
+    paymentId: "",
+    checkoutUrl: "",
+    amount: 0,
+  });
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+
+  // Parse fee
+  const registrationFee = typeof fest?.registration_fee === 'number'
+    ? fest.registration_fee
+    : (() => {
+        const match = fest?.description?.match(/\[REGISTRATION_FEE:\s*([0-9.]+)\]/i);
+        return match ? parseFloat(match[1]) : 0;
+      })();
 
   useEffect(() => {
     if (!fest?.registration_closes_at) return;
@@ -154,6 +178,39 @@ export function RegistrationsForm({
       }
     }
 
+    // If fest requires payment, create YouPI-PG session first
+    if (registrationFee > 0) {
+      startTransition(async () => {
+        try {
+          const sessionRes = await createFestPaymentSession(fest.id, selectedEventIds);
+          if (!sessionRes.success) {
+            toast.error(sessionRes.error || "Failed to initialize payment gateway.");
+            return;
+          }
+
+          if (sessionRes.isFree) {
+            await executeDirectRegistration();
+            return;
+          }
+
+          setPaymentModalState({
+            isOpen: true,
+            paymentId: sessionRes.paymentId!,
+            checkoutUrl: sessionRes.checkoutUrl!,
+            amount: sessionRes.amount!,
+          });
+        } catch (err: any) {
+          toast.error(`Payment initialization failed: ${err.message || 'Please retry.'}`);
+        }
+      });
+      return;
+    }
+
+    // Direct registration for free events
+    executeDirectRegistration();
+  };
+
+  const executeDirectRegistration = () => {
     startTransition(async () => {
       try {
         const membersStrMap: Record<string, string> = {};
@@ -179,6 +236,36 @@ export function RegistrationsForm({
     });
   };
 
+  const handlePaymentSuccess = async () => {
+    try {
+      setIsPaymentProcessing(true);
+      const membersStrMap: Record<string, string> = {};
+      Object.entries(teamMembers).forEach(([eventId, emails]) => {
+        membersStrMap[eventId] = emails.filter(e => e.trim() !== '').join(',');
+      });
+
+      const res = await verifyAndCompletePaidRegistration(
+        paymentModalState.paymentId,
+        fest.id,
+        selectedEventIds,
+        showTeamStep ? teamNames : undefined,
+        showTeamStep ? membersStrMap : undefined
+      );
+
+      if (res.success) {
+        setPaymentModalState(prev => ({ ...prev, isOpen: false }));
+        toast.success("Payment verified! Event registration completed.");
+        router.push("/registrations");
+      } else {
+        toast.error(res.error || "Failed to finalize registration after payment verification.");
+      }
+    } catch (err: any) {
+      toast.error(`Verification error: ${err.message || 'Please check with admin.'}`);
+    } finally {
+      setIsPaymentProcessing(false);
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-8 md:space-y-10 px-4 md:px-0">
       {/* Header */}
@@ -202,7 +289,7 @@ export function RegistrationsForm({
           )}
         </div>
         <p className="text-eventrix-muted font-medium max-w-2xl text-sm md:text-base">
-          {fest?.description || 'Please select the events you wish to participate in below.'}
+          {fest?.description ? fest.description.replace(/\[REGISTRATION_FEE:\s*[0-9.]+\]/gi, '').trim() : 'Please select the events you wish to participate in below.'}
         </p>
 
         {isFestClosed && (
@@ -515,6 +602,12 @@ export function RegistrationsForm({
                 <span className="text-eventrix-muted font-medium">Non-Technical Events</span>
                 <span className="font-bold text-eventrix-black">{nonTechCount}</span>
               </div>
+              <div className="flex justify-between items-center text-xs md:text-sm">
+                <span className="text-eventrix-muted font-medium">Registration Fee</span>
+                <span className={`font-bold ${registrationFee > 0 ? 'text-emerald-700 font-mono text-sm' : 'text-eventrix-black'}`}>
+                  {registrationFee > 0 ? `₹${registrationFee}` : 'FREE ENTRY'}
+                </span>
+              </div>
               <div className="flex justify-between items-center text-sm md:text-base font-bold pt-4 border-t border-[#D9D9DF] text-eventrix-lavender">
                 <span>Total Selected</span>
                 <span>{selectedEventIds.length}</span>
@@ -537,22 +630,42 @@ export function RegistrationsForm({
 
             <button
               type="submit"
-              disabled={!canRegister}
-              className={`w-full py-3.5 rounded-md font-bold text-xs md:text-sm tracking-wide uppercase transition-all duration-200 ${canRegister
+              disabled={!canRegister || isPaymentProcessing}
+              className={`w-full py-3.5 rounded-md font-bold text-xs md:text-sm tracking-wide uppercase transition-all duration-200 ${canRegister && !isPaymentProcessing
                   ? 'bg-eventrix-black text-eventrix-white shadow-[4px_4px_0px_0px_#A78BFA] hover:bg-eventrix-lavender hover:text-eventrix-black hover:shadow-[4px_4px_0px_0px_#080B18] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none cursor-pointer'
                   : 'bg-[#D9D9DF] text-[#85858F] cursor-not-allowed'
                 }`}
             >
-              {isPending 
+              {isPending || isPaymentProcessing
                 ? "Processing..." 
                 : isFestClosed
                   ? "REGISTRATION CLOSED"
-                  : (showTeamStep ? "Finalize Registration" : (teamEvents.length > 0 ? "Next: Team Details" : "Complete Registration"))}
+                  : (showTeamStep 
+                      ? (registrationFee > 0 ? `Pay ₹${registrationFee} & Finalize` : "Finalize Registration")
+                      : (teamEvents.length > 0 
+                          ? "Next: Team Details" 
+                          : (registrationFee > 0 ? `Pay ₹${registrationFee} & Register` : "Complete Registration")))}
             </button>
+            {registrationFee > 0 && (
+              <p className="text-[11px] text-center text-eventrix-muted mt-3 flex items-center justify-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Direct UPI payment via YouPI-PG • Zero fees
+              </p>
+            )}
           </div>
         </div>
 
       </form>
+
+      {/* YouPI UPI Payment Modal */}
+      <PaymentModal
+        isOpen={paymentModalState.isOpen}
+        onClose={() => setPaymentModalState(prev => ({ ...prev, isOpen: false }))}
+        paymentId={paymentModalState.paymentId}
+        checkoutUrl={paymentModalState.checkoutUrl}
+        amount={paymentModalState.amount}
+        festName={fest?.name || "Fest"}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 }

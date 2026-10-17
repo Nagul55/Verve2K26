@@ -199,9 +199,21 @@ export function FestEventsClient({
                     )
                   )
                 )}
+                {(() => {
+                  const fee = typeof fest?.registration_fee === 'number' ? fest.registration_fee : 0;
+                  return fee > 0 ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest bg-emerald-100 text-emerald-800 px-3 py-1 rounded border border-emerald-300 font-mono">
+                      Entry: ₹{fee}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest bg-emerald-50 text-emerald-700 px-3 py-1 rounded border border-emerald-200">
+                      Free Entry
+                    </span>
+                  );
+                })()}
               </div>
               <p className="text-eventrix-muted font-medium max-w-2xl">
-                {fest.description}
+                {fest.description ? fest.description.replace(/\[REGISTRATION_FEE:\s*[0-9.]+\]/gi, '').trim() : fest.description}
               </p>
               {allowedDeptsList.length > 0 && (
                 <div className="mt-3 flex items-center gap-2 flex-wrap">
@@ -233,7 +245,7 @@ export function FestEventsClient({
                 href={`/events/${fest.id}/register`}
                 className="bg-eventrix-black text-white px-8 py-4 rounded-md text-sm font-bold tracking-wide uppercase hover:bg-eventrix-lavender hover:text-black transition-all shadow-[4px_4px_0px_0px_rgba(167,139,250,1)] flex items-center gap-2"
               >
-                Register Now <ArrowRight className="w-4 h-4" />
+                {typeof fest?.registration_fee === 'number' && fest.registration_fee > 0 ? `Register (₹${fest.registration_fee})` : "Register Now"} <ArrowRight className="w-4 h-4" />
               </Link>
             )}
           </div>

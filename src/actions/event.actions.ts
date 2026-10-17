@@ -98,12 +98,26 @@ export const getCachedFests = unstable_cache(
       .from('fests')
       .select('*, hackathons(*)')
       .order('created_at', { ascending: false });
+    let rawList = data;
     if (error) {
       console.error("Error in getCachedFests query:", error);
       const { data: fallback } = await adminClient.from('fests').select('*').order('created_at', { ascending: false });
-      return fallback || [];
+      rawList = fallback || [];
     }
-    return data || [];
+    rawList = rawList || [];
+    return rawList.map((f: any) => {
+      let fee = 0;
+      if (typeof f.registration_fee === 'number') fee = f.registration_fee;
+      else if (f.description) {
+        const match = f.description.match(/\[REGISTRATION_FEE:\s*([0-9.]+)\]/i);
+        if (match) fee = parseFloat(match[1]);
+      }
+      return {
+        ...f,
+        description: f.description ? f.description.replace(/\[REGISTRATION_FEE:\s*[0-9.]+\]/gi, '').trim() : f.description,
+        registration_fee: fee
+      };
+    });
   },
   ['fests-list'],
   { revalidate: 300, tags: ['fests'] }
@@ -127,8 +141,18 @@ export async function getFests(includeDrafts: boolean = false) {
 export async function getFestById(festId: string) {
   const adminClient = getAdminClient();
   const { data, error } = await adminClient.from('fests').select('*').eq('id', festId).single();
-  if (error) return null;
-  return data;
+  if (error || !data) return null;
+  let fee = 0;
+  if (typeof data.registration_fee === 'number') fee = data.registration_fee;
+  else if (data.description) {
+    const match = data.description.match(/\[REGISTRATION_FEE:\s*([0-9.]+)\]/i);
+    if (match) fee = parseFloat(match[1]);
+  }
+  return {
+    ...data,
+    description: data.description ? data.description.replace(/\[REGISTRATION_FEE:\s*[0-9.]+\]/gi, '').trim() : data.description,
+    registration_fee: fee
+  };
 }
 
 export async function createFest(
@@ -137,22 +161,29 @@ export async function createFest(
   minTech: number = 0,
   minNonTech: number = 0,
   registrationClosesAt?: string | null,
-  allowedDepartments?: string | null
+  allowedDepartments?: string | null,
+  registrationFee: number = 0
 ) {
   const adminClient = getAdminClient();
+  let formattedDesc = description || '';
+  if (registrationFee > 0 && !formattedDesc.includes('[REGISTRATION_FEE:')) {
+    formattedDesc += `\n\n[REGISTRATION_FEE: ${registrationFee}]`;
+  }
+
   const payload: any = {
     name,
-    description,
+    description: formattedDesc,
     min_technical: minTech,
     min_non_technical: minNonTech,
     registration_closes_at: registrationClosesAt ? new Date(registrationClosesAt).toISOString() : null,
-    allowed_departments: allowedDepartments || null
+    allowed_departments: allowedDepartments || null,
+    registration_fee: registrationFee
   };
 
   let { data, error } = await adminClient.from('fests').insert(payload);
-  if (error && (error.code === 'PGRST204' || error.code === '42703' || error.message?.includes('allowed_departments'))) {
-    console.warn("allowed_departments column missing from fests, retrying without it...");
-    delete payload.allowed_departments;
+  if (error && (error.code === 'PGRST204' || error.code === '42703' || error.message?.includes('registration_fee') || error.message?.includes('allowed_departments'))) {
+    delete payload.registration_fee;
+    if (error.message?.includes('allowed_departments')) delete payload.allowed_departments;
     const retry = await adminClient.from('fests').insert(payload);
     error = retry.error;
   }
@@ -175,22 +206,31 @@ export async function updateFest(
   minTech: number = 0,
   minNonTech: number = 0,
   registrationClosesAt?: string | null,
-  allowedDepartments?: string | null
+  allowedDepartments?: string | null,
+  registrationFee: number = 0
 ) {
   const adminClient = getAdminClient();
+  let formattedDesc = description || '';
+  if (registrationFee > 0 && !formattedDesc.includes('[REGISTRATION_FEE:')) {
+    formattedDesc += `\n\n[REGISTRATION_FEE: ${registrationFee}]`;
+  } else if (registrationFee <= 0 && formattedDesc.includes('[REGISTRATION_FEE:')) {
+    formattedDesc = formattedDesc.replace(/\[REGISTRATION_FEE:\s*[0-9.]+\]/gi, '').trim();
+  }
+
   const payload: any = {
     name,
-    description,
+    description: formattedDesc,
     min_technical: minTech,
     min_non_technical: minNonTech,
     registration_closes_at: registrationClosesAt ? new Date(registrationClosesAt).toISOString() : null,
-    allowed_departments: allowedDepartments || null
+    allowed_departments: allowedDepartments || null,
+    registration_fee: registrationFee
   };
 
   let { error } = await adminClient.from('fests').update(payload).eq('id', festId);
-  if (error && (error.code === 'PGRST204' || error.code === '42703' || error.message?.includes('allowed_departments'))) {
-    console.warn("allowed_departments column missing from fests, retrying without it...");
-    delete payload.allowed_departments;
+  if (error && (error.code === 'PGRST204' || error.code === '42703' || error.message?.includes('registration_fee') || error.message?.includes('allowed_departments'))) {
+    delete payload.registration_fee;
+    if (error.message?.includes('allowed_departments')) delete payload.allowed_departments;
     const retry = await adminClient.from('fests').update(payload).eq('id', festId);
     error = retry.error;
   }

@@ -38,6 +38,7 @@ export default async function EventsPage() {
               minTech={fest.min_technical}
               minNonTech={fest.min_non_technical}
               registrationClosesAt={fest.registration_closes_at}
+              registrationFee={fest.registration_fee}
             />
           ))}
 
