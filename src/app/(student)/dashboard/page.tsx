@@ -7,12 +7,14 @@ import { ArrowRight } from "lucide-react";
 import { FestCard } from "@/components/FestCard";
 import { EventOverview } from "@/components/EventOverview";
 import { UpcomingEvents } from "@/components/UpcomingEvents";
-import { RegistrationTicket } from "@/components/RegistrationTicket";
+import { CompletedEventsSidebar } from "@/components/CompletedEventsSidebar";
+import { DashboardRegistrations } from "@/components/DashboardRegistrations";
 import { PromoBanner } from "@/components/PromoBanner";
 import { getSubEvents, getFests, getParticipantRegistrations } from "@/actions/event.actions";
 import { getUnsplashImage } from "@/actions/image.actions";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { isUserEligibleForEvent } from "@/lib/utils/eligibility";
+import { isEventOver } from "@/lib/utils/event-status";
 
 // Render dynamic visual for the featured cards based on Unsplash
 const renderDynamicVisual = (imageUrl: string | null) => {
@@ -85,35 +87,8 @@ export default async function Dashboard() {
             </div>
           </section>
 
-          {/* My Registrations */}
-          <section>
-            <div className="flex justify-between items-end mb-6 mt-12">
-              <h2 className="text-[22px] font-bold text-eventrix-black tracking-tight">My Registrations <span className="font-normal text-eventrix-black">→</span></h2>
-              <Link href="/registrations" className="text-[10px] text-eventrix-lavender font-bold uppercase hover:text-eventrix-black transition-colors editorial-label whitespace-nowrap">View All →</Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {registeredEvents.length > 0 ? (
-                registeredEvents.map((reg, index) => (
-                  <RegistrationTicket
-                    key={reg.id}
-                    number={String(index + 1).padStart(2, '0')}
-                    category={reg.category}
-                    title={reg.title}
-                    date={reg.date}
-                    location={reg.location}
-                  />
-                ))
-              ) : (
-                <div className="col-span-2 p-10 text-center border border-dashed border-[#D9D9DF] rounded-md">
-                  <p className="text-eventrix-muted font-bold mb-4">You haven't registered for any events yet!</p>
-                  <Link href="/events" className="bg-eventrix-black text-white px-6 py-3 rounded-md text-xs uppercase font-bold tracking-widest hover:bg-eventrix-lavender hover:text-black transition-colors inline-block">
-                    Register Now
-                  </Link>
-                </div>
-              )}
-            </div>
-          </section>
+          {/* My Registrations with Live / Completed Tabs */}
+          <DashboardRegistrations registeredEvents={registeredEvents} />
 
           <PromoBanner />
 
@@ -121,8 +96,16 @@ export default async function Dashboard() {
 
         {/* Right Sidebar Column */}
         <div className="w-full xl:w-[380px] shrink-0 space-y-10 min-w-0">
-          <EventOverview registeredCount={registeredEvents.length} totalEventsCount={events.length} />
-          <UpcomingEvents events={events} />
+          <EventOverview 
+            registeredCount={registeredEvents.length} 
+            completedCount={registeredEvents.filter(e => e.isCompletedEvent || e.isOver).length}
+            upcomingCount={registeredEvents.filter(e => !e.isOver).length}
+            totalEventsCount={events.filter(e => !isEventOver(e)).length} 
+          />
+          <UpcomingEvents events={events.filter(e => !isEventOver(e))} />
+          <CompletedEventsSidebar 
+            completedEvents={registeredEvents.filter(e => e.isCompletedEvent || e.isOver)} 
+          />
         </div>
 
       </div>

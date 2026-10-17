@@ -5,6 +5,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { sendTicketEmail } from "./email.actions";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/get-user";
+import { isEventOver, isEventLive, getEffectiveEventStatus } from "@/lib/utils/event-status";
 
 const getAdminClient = () => {
   return createSupabaseClient(
@@ -111,8 +112,16 @@ export const getCachedFests = unstable_cache(
 export async function getFests(includeDrafts: boolean = false) {
   const fests = await getCachedFests();
   if (includeDrafts) return fests;
-  // If no status column exists yet, it will be undefined. We assume undefined/null is LIVE for legacy.
-  return fests.filter(f => !f.status || f.status === 'LIVE');
+  const now = new Date();
+  return fests.filter(f => {
+    // If fest status is explicitly CLOSED or COMPLETED, do not show to students
+    if (f.status === 'CLOSED' || f.status === 'COMPLETED') return false;
+    // If registration closes date has passed, fest is finished/closed and should not show
+    if (f.registration_closes_at && now >= new Date(f.registration_closes_at)) {
+      return false;
+    }
+    return !f.status || f.status === 'LIVE';
+  });
 }
 
 export async function getFestById(festId: string) {
@@ -236,11 +245,21 @@ export async function getSubEvents(festId?: string, includePending: boolean = fa
     });
   });
 
-  // Student Query (includePending === false): ONLY return LIVE or CLOSED events with >= 1 coordinator assigned!
+  // Student Query (includePending === false): ONLY return active LIVE events with >= 1 coordinator assigned!
+  // Concluded/finished events should NOT show to students
   if (!includePending) {
     return data
-      .filter(e => (e.status === 'LIVE' || e.status === 'CLOSED') && (eventCoordMap[e.id]?.length || 0) > 0)
+      .filter(e => {
+        const over = isEventOver(e);
+        const st = (e.status || '').toUpperCase();
+        if (over || st === 'CLOSED' || st === 'COMPLETED') return false;
+        return (st === 'LIVE' || !st) && (eventCoordMap[e.id]?.length || 0) > 0;
+      })
       .map(e => {
+        const over = isEventOver(e);
+        const live = isEventLive(e);
+        const effStatus = getEffectiveEventStatus(e);
+
         let waLink = e.whatsapp_group_link || '';
         if (!waLink && e.description) {
           const match = e.description.match(/\[WHATSAPP_GROUP:\s*([^\]]+)\]/i);
@@ -248,6 +267,10 @@ export async function getSubEvents(festId?: string, includePending: boolean = fa
         }
         return {
           ...e,
+          isOver: over,
+          isLive: live,
+          effectiveStatus: effStatus,
+          status: effStatus, // Crucial: if event is over, it is COMPLETED and NOT LIVE
           whatsapp_group_link: waLink,
           coordinatorNames: eventCoordMap[e.id] || [],
           coordinatorDetails: eventCoordDetails[e.id] || []
@@ -255,8 +278,12 @@ export async function getSubEvents(festId?: string, includePending: boolean = fa
       });
   }
 
-  // Admin Query (includePending === true): Attach coordinator info & count
+  // Admin Query (includePending === true): Attach coordinator info, completion status & count
   return data.map(e => {
+    const over = isEventOver(e);
+    const live = isEventLive(e);
+    const effStatus = getEffectiveEventStatus(e);
+
     let waLink = e.whatsapp_group_link || '';
     if (!waLink && e.description) {
       const match = e.description.match(/\[WHATSAPP_GROUP:\s*([^\]]+)\]/i);
@@ -264,6 +291,11 @@ export async function getSubEvents(festId?: string, includePending: boolean = fa
     }
     return {
       ...e,
+      isOver: over,
+      isLive: live,
+      effectiveStatus: effStatus,
+      status: over ? 'COMPLETED' : (e.status || 'DRAFT'),
+      rawStatus: e.status,
       whatsapp_group_link: waLink,
       coordinatorNames: eventCoordMap[e.id] || [],
       coordinatorDetails: eventCoordDetails[e.id] || [],
@@ -424,7 +456,7 @@ export async function approveSubEvent(subEventId: string, coordinatorIds?: strin
   return { success: !error, error: error?.message };
 }
 
-export async function toggleSubEventLiveStatus(subEventId: string, targetStatus: 'LIVE' | 'CLOSED') {
+export async function toggleSubEventLiveStatus(subEventId: string, targetStatus: 'LIVE' | 'CLOSED' | 'COMPLETED') {
   const adminClient = getAdminClient();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -1090,10 +1122,11 @@ export async function getParticipantRegistrations() {
 
   const adminClient = getAdminClient();
 
-  // Query registrations and teams concurrently with Promise.all
+  // Query registrations, teams, and attendance concurrently with Promise.all
   const [
     { data, error },
-    { data: teamsData, error: teamsError }
+    { data: teamsData, error: teamsError },
+    { data: attendanceData, error: attendanceError }
   ] = await Promise.all([
     adminClient
       .from('registrations')
@@ -1115,7 +1148,8 @@ export async function getParticipantRegistrations() {
             min_candidates,
             max_candidates,
             capacity,
-            description
+            description,
+            status
           )
         )
       `)
@@ -1128,7 +1162,6 @@ export async function getParticipantRegistrations() {
           team_id,
           team_name,
           event_id,
-
           leader_participant_id,
           is_locked,
           team_members (
@@ -1142,6 +1175,10 @@ export async function getParticipantRegistrations() {
           )
         )
       `)
+      .eq('participant_id', user.id),
+    adminClient
+      .from('attendance')
+      .select('event_id, status, scanned_at')
       .eq('participant_id', user.id)
   ]);
 
@@ -1149,6 +1186,20 @@ export async function getParticipantRegistrations() {
 
   if (teamsError) {
     console.error("Error fetching teamsData in getParticipantRegistrations:", teamsError);
+  }
+
+  if (attendanceError) {
+    console.error("Error fetching attendanceData in getParticipantRegistrations:", attendanceError);
+  }
+
+  // Create fast attendance lookup map: event_id -> attendance row
+  const attendanceMap = new Map<string, any>();
+  if (attendanceData) {
+    attendanceData.forEach((att: any) => {
+      if (att.event_id) {
+        attendanceMap.set(att.event_id, att);
+      }
+    });
   }
 
   const userTeams: Record<string, any> = {};
@@ -1202,13 +1253,25 @@ export async function getParticipantRegistrations() {
         if (match) waLink = match[1].trim();
       }
 
+      const isOver = isEventOver(rse.sub_events);
+      const att = attendanceMap.get(rse.sub_events.id);
+      const isPresent = !!att && (!att.status || att.status.toLowerCase() === 'present' || att.status.toLowerCase() === 'attended');
+      const hasParticipated = isPresent;
+      const isCompletedEvent = isOver;
+
       registeredEvents.push({
         ...rse.sub_events,
         festName: reg.fests?.name || 'Fest',
         teamDetails: teamInfo,
         whatsapp_group_link: waLink,
         isTicketValid: isTeamComplete,
-        ticketNumber: `TKT-${reg.id.split('-')[0].toUpperCase()}-${rse.sub_events.id.split('-')[0].toUpperCase()}`
+        ticketNumber: `TKT-${reg.id.split('-')[0].toUpperCase()}-${rse.sub_events.id.split('-')[0].toUpperCase()}`,
+        isOver,
+        hasParticipated,
+        isCompletedEvent,
+        attendanceStatus: hasParticipated ? 'Present' : (isOver ? 'Absent' : 'Pending'),
+        attendanceTime: att?.scanned_at || att?.created_at || null,
+        effectiveStatus: isOver ? 'COMPLETED' : (rse.sub_events.status || 'LIVE')
       });
     });
   });
@@ -1230,6 +1293,7 @@ export async function getParticipantRegistrations() {
         max_candidates,
         capacity,
         description,
+        status,
         whatsapp_group_link,
         fests (
           id,
@@ -1257,13 +1321,25 @@ export async function getParticipantRegistrations() {
         if (match) waLink = match[1].trim();
       }
 
+      const isOver = isEventOver(sub);
+      const att = attendanceMap.get(sub.id);
+      const isPresent = !!att && (!att.status || att.status.toLowerCase() === 'present' || att.status.toLowerCase() === 'attended');
+      const hasParticipated = isPresent;
+      const isCompletedEvent = isOver;
+
       registeredEvents.push({
         ...sub,
         festName: sub.fests?.name || 'Fest',
         teamDetails: teamInfo,
         whatsapp_group_link: waLink,
         isTicketValid: isTeamComplete,
-        ticketNumber: `TKT-TEAM-${sub.id.split('-')[0].toUpperCase()}`
+        ticketNumber: `TKT-TEAM-${sub.id.split('-')[0].toUpperCase()}`,
+        isOver,
+        hasParticipated,
+        isCompletedEvent,
+        attendanceStatus: hasParticipated ? 'Present' : (isOver ? 'Absent' : 'Pending'),
+        attendanceTime: att?.scanned_at || att?.created_at || null,
+        effectiveStatus: isOver ? 'COMPLETED' : (sub.status || 'LIVE')
       });
     });
   }

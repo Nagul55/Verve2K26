@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>/ — graphify tree viewer</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h1 {
+      margin: 20px 0 0 24px;
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: #1e3a56;
+    }
+    .controls {
+      margin: 20px 0 15px 24px;
+    }
+    button {
+      margin-right: 10px;
+      padding: 8px 18px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s ease-in-out;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:active {
+      background: #004085;
+    }
+    #tree-container {
+      width: calc(100vw - 48px); /* Adjust for body margin/padding */
+      height: 85vh;
+      overflow: auto;
+      border-radius: 8px;
+      background: #fff;
+      margin-left: 24px;
+      margin-right: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border: 1px solid #ddd;
+    }
+    svg {
+      background: #fff;
+      border-radius: 8px;
+      display: block; /* Important for D3 */
+    }
+    .node circle {
+      stroke-width: 2.5px;
+    }
+    .node text { /* Base style for the <text> container */
+      font: 13px 'Segoe UI', sans-serif;
+      paint-order: stroke fill; /* Ensures text is readable over lines */
+      stroke: #fff; /* White halo */
+      stroke-width: 3px; /* Halo thickness */
+      stroke-linejoin: round;
+      stroke-opacity: 0.85; /* Halo opacity */
+    }
+    .link {
+      fill: none;
+      stroke-opacity: 0.7;
+      stroke-width: 2px;
+    }
+  </style>
+</head>
+<body>
+  <h1>/ — Knowledge Graph</h1>
+  <div class="controls">
+    <button onclick="expandAll()">Expand All</button>
+    <button onclick="collapseAll()">Collapse All</button>
+    <button onclick="resetView()">Reset View</button>
+  </div>
+  <div id="tree-container">
+    <svg id="tree-svg" width="6000" height="8000"></svg>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script>
+    const initialJsonData = {"name":"/","total_count":507,"children":[{"name":"@supabase","total_count":1,"children":[{"name":"supabase-js","total_count":1,"children":[]}]},{"name":"components.json","total_count":21,"children":[{"name":"$schema","total_count":1,"children":[]},{"name":"aliases","total_count":1,"children":[]},{"name":"baseColor","total_count":1,"children":[]},{"name":"components","total_count":1,"children":[]},{"name":"config","total_count":1,"children":[]},{"name":"css","total_count":1,"children":[]},{"name":"cssVariables","total_count":1,"children":[]},{"name":"hooks","total_count":1,"children":[]},{"name":"iconLibrary","total_count":1,"children":[]},{"name":"lib","total_count":1,"children":[]},{"name":"menuAccent","total_count":1,"children":[]},{"name":"menuColor","total_count":1,"children":[]},{"name":"prefix","total_count":1,"children":[]},{"name":"registries","total_count":1,"children":[]},{"name":"rsc","total_count":1,"children":[]},{"name":"rtl","total_count":1,"children":[]},{"name":"style","total_count":1,"children":[]},{"name":"tailwind","total_count":1,"children":[]},{"name":"tsx","total_count":1,"children":[]},{"name":"ui","total_count":1,"children":[]},{"name":"utils","total_count":1,"children":[]}]},{"name":"database","total_count":3,"children":[{"name":"seed.ts","total_count":3,"children":[{"name":"dummyEvents","total_count":1,"children":[]},{"name":"seed()","total_count":1,"children":[]},{"name":"supabase","total_count":1,"children":[]}]}]},{"name":"eslint.config.mjs","total_count":1,"children":[{"name":"eslintConfig","total_count":1,"children":[]}]},{"name":"next","total_count":1,"children":[{"name":"cache","total_count":1,"children":[]}]},{"name":"next.config.ts","total_count":1,"children":[{"name":"nextConfig","total_count":1,"children":[]}]},{"name":"package.json","total_count":92,"children":[{"name":"@azure/msal-browser","total_count":1,"children":[]},{"name":"@azure/msal-browser","total_count":1,"children":[]},{"name":"@base-ui/react","total_count":1,"children":[]},{"name":"@base-ui/react","total_count":1,"children":[]},{"name":"@hookform/resolvers","total_count":1,"children":[]},{"name":"@hookform/resolvers","total_count":1,"children":[]},{"name":"@prisma/client","total_count":1,"children":[]},{"name":"@prisma/client","total_count":1,"children":[]},{"name":"@supabase/ssr","total_count":1,"children":[]},{"name":"@supabase/ssr","total_count":1,"children":[]},{"name":"@supabase/supabase-js","total_count":1,"children":[]},{"name":"@supabase/supabase-js","total_count":1,"children":[]},{"name":"@tailwindcss/postcss","total_count":1,"children":[]},{"name":"@tailwindcss/postcss","total_count":1,"children":[]},{"name":"@types/node","total_count":1,"children":[]},{"name":"@types/node","total_count":1,"children":[]},{"name":"@types/papaparse","total_count":1,"children":[]},{"name":"@types/papaparse","total_count":1,"children":[]},{"name":"@types/qrcode","total_count":1,"children":[]},{"name":"@types/qrcode","total_count":1,"children":[]},{"name":"@types/react","total_count":1,"children":[]},{"name":"@types/react","total_count":1,"children":[]},{"name":"@types/react-dom","total_count":1,"children":[]},{"name":"@types/react-dom","total_count":1,"children":[]},{"name":"build","total_count":1,"children":[]},{"name":"class-variance-authority","total_count":1,"children":[]},{"name":"class-variance-authority","total_count":1,"children":[]},{"name":"cn","total_count":1,"children":[]},{"name":"cn","total_count":1,"children":[]},{"name":"dependencies","total_count":1,"children":[]},{"name":"dev","total_count":1,"children":[]},{"name":"devDependencies","total_count":1,"children":[]},{"name":"dotenv","total_count":1,"children":[]},{"name":"dotenv","total_count":1,"children":[]},{"name":"eslint","total_count":1,"children":[]},{"name":"eslint","total_count":1,"children":[]},{"name":"eslint-config-next","total_count":1,"children":[]},{"name":"eslint-config-next","total_count":1,"children":[]},{"name":"framer-motion","total_count":1,"children":[]},{"name":"framer-motion","total_count":1,"children":[]},{"name":"html-to-image","total_count":1,"children":[]},{"name":"html-to-image","total_count":1,"children":[]},{"name":"html2canvas","total_count":1,"children":[]},{"name":"html2canvas","total_count":1,"children":[]},{"name":"html5-qrcode","total_count":1,"children":[]},{"name":"html5-qrcode","total_count":1,"children":[]},{"name":"lint","total_count":1,"children":[]},{"name":"lucide-react","total_count":1,"children":[]},{"name":"lucide-react","total_count":1,"children":[]},{"name":"name","total_count":1,"children":[]},{"name":"next","total_count":1,"children":[]},{"name":"next","total_count":1,"children":[]},{"name":"next-themes","total_count":1,"children":[]},{"name":"next-themes","total_count":1,"children":[]},{"name":"papaparse","total_count":1,"children":[]},{"name":"papaparse","total_count":1,"children":[]},{"name":"pg","total_count":1,"children":[]},{"name":"pg","total_count":1,"children":[]},{"name":"private","total_count":1,"children":[]},{"name":"qrcode","total_count":1,"children":[]},{"name":"qrcode","total_count":1,"children":[]},{"name":"qrcode.react","total_count":1,"children":[]},{"name":"qrcode.react","total_count":1,"children":[]},{"name":"react","total_count":1,"children":[]},{"name":"react","total_count":1,"children":[]},{"name":"react-dom","total_count":1,"children":[]},{"name":"react-dom","total_count":1,"children":[]},{"name":"react-hook-form","total_count":1,"children":[]},{"name":"react-hook-form","total_count":1,"children":[]},{"name":"recharts","total_count":1,"children":[]},{"name":"recharts","total_count":1,"children":[]},{"name":"resend","total_count":1,"children":[]},{"name":"resend","total_count":1,"children":[]},{"name":"scripts","total_count":1,"children":[]},{"name":"shadcn","total_count":1,"children":[]},{"name":"shadcn","total_count":1,"children":[]},{"name":"sharp","total_count":1,"children":[]},{"name":"sharp","total_count":1,"children":[]},{"name":"sonner","total_count":1,"children":[]},{"name":"sonner","total_count":1,"children":[]},{"name":"start","total_count":1,"children":[]},{"name":"tailwindcss","total_count":1,"children":[]},{"name":"tailwindcss","total_count":1,"children":[]},{"name":"tsx","total_count":1,"children":[]},{"name":"tsx","total_count":1,"children":[]},{"name":"tw-animate-css","total_count":1,"children":[]},{"name":"tw-animate-css","total_count":1,"children":[]},{"name":"typescript","total_count":1,"children":[]},{"name":"typescript","total_count":1,"children":[]},{"name":"version","total_count":1,"children":[]},{"name":"zod","total_count":1,"children":[]},{"name":"zod","total_count":1,"children":[]}]},{"name":"postcss.config.mjs","total_count":1,"children":[{"name":"config","total_count":1,"children":[]}]},{"name":"scratch","total_count":44,"children":[{"name":"add_column.ts","total_count":1,"children":[{"name":"addColumn()","total_count":1,"children":[]}]},{"name":"add_hackathon_columns.ts","total_count":2,"children":[{"name":"main()","total_count":1,"children":[]},{"name":"match","total_count":1,"children":[]}]},{"name":"audit_database.ts","total_count":2,"children":[{"name":"adminClient","total_count":1,"children":[]},{"name":"audit()","total_count":1,"children":[]}]},{"name":"audit_participants_roles.ts","total_count":2,"children":[{"name":"adminClient","total_count":1,"children":[]},{"name":"mapParticipants()","total_count":1,"children":[]}]},{"name":"check_fests.ts","total_count":2,"children":[{"name":"adminClient","total_count":1,"children":[]},{"name":"checkFests()","total_count":1,"children":[]}]},{"name":"check_hackathon_table.ts","total_count":2,"children":[{"name":"adminClient","total_count":1,"children":[]},{"name":"main()","total_count":1,"children":[]}]},{"name":"execute_production_reset.ts","total_count":2,"children":[{"name":"adminClient","total_count":1,"children":[]},{"name":"executeReset()","total_count":1,"children":[]}]},{"name":"inspect_all_columns.ts","total_count":2,"children":[{"name":"adminClient","total_count":1,"children":[]},{"name":"inspectColumns()","total_count":1,"children":[]}]},{"name":"inspect_all_tables.ts","total_count":2,"children":[{"name":"adminClient","total_count":1,"children":[]},{"name":"checkAllTables()","total_count":1,"children":[]}]},{"name":"inspect_participants.ts","total_count":2,"children":[{"name":"adminClient","total_count":1,"children":[]},{"name":"inspectParticipants()","total_count":1,"children":[]}]},{"name":"test_add_column.ts","total_count":2,"children":[{"name":"adminClient","total_count":1,"children":[]},{"name":"testAddColumn()","total_count":1,"children":[]}]},{"name":"test_date_utils.ts","total_count":4,"children":[{"name":"iso1","total_count":1,"children":[]},{"name":"iso2","total_count":1,"children":[]},{"name":"iso3","total_count":1,"children":[]},{"name":"iso4","total_count":1,"children":[]}]},{"name":"test_db_closes_at.ts","total_count":2,"children":[{"name":"main()","total_count":1,"children":[]},{"name":"supabase","total_count":1,"children":[]}]},{"name":"test_fests_all.ts","total_count":2,"children":[{"name":"adminClient","total_count":1,"children":[]},{"name":"testFests()","total_count":1,"children":[]}]},{"name":"test_query.ts","total_count":2,"children":[{"name":"adminClient","total_count":1,"children":[]},{"name":"testQuery()","total_count":1,"children":[]}]},{"name":"test_rpc.ts","total_count":2,"children":[{"name":"adminClient","total_count":1,"children":[]},{"name":"main()","total_count":1,"children":[]}]},{"name":"test_update_fallback.ts","total_count":2,"children":[{"name":"adminClient","total_count":1,"children":[]},{"name":"testUpdate()","total_count":1,"children":[]}]},{"name":"verify_deadline_persistence.ts","total_count":2,"children":[{"name":"supabase","total_count":1,"children":[]},{"name":"testPersistence()","total_count":1,"children":[]}]},{"name":"verify_get_fests.ts","total_count":1,"children":[{"name":"verifyGetFests()","total_count":1,"children":[]}]},{"name":"check_env.ts","total_count":1,"children":[]},{"name":"check_sql_rpc.ts","total_count":1,"children":[]},{"name":"inspect_coord_and_schema.ts","total_count":1,"children":[]},{"name":"inspect_reg_schema.ts","total_count":1,"children":[]},{"name":"test_concurrency.ts","total_count":1,"children":[]},{"name":"test_coords.ts","total_count":1,"children":[]}]},{"name":"setup_db.js","total_count":1,"children":[{"name":"{ Client }","total_count":1,"children":[]}]},{"name":"src","total_count":321,"children":[{"name":"actions","total_count":73,"children":[{"name":"auth.actions.ts","total_count":12,"children":[{"name":"createCoordinator()","total_count":1,"children":[]},{"name":"deleteCoordinator()","total_count":1,"children":[]},{"name":"deleteUserAccount()","total_count":1,"children":[]},{"name":"getAdminClient()","total_count":1,"children":[]},{"name":"getAllUsersAdmin()","total_count":1,"children":[]},{"name":"getCoordinators()","total_count":1,"children":[]},{"name":"login()","total_count":1,"children":[]},{"name":"signout()","total_count":1,"children":[]},{"name":"signup()","total_count":1,"children":[]},{"name":"updateCoordinatorAssignment()","total_count":1,"children":[]},{"name":"updateCoordinatorAssignments()","total_count":1,"children":[]},{"name":"upsertParticipantProfile()","total_count":1,"children":[]}]},{"name":"email.actions.ts","total_count":1,"children":[{"name":"sendTicketEmail()","total_count":1,"children":[]}]},{"name":"event.actions.ts","total_count":31,"children":[{"name":"approveAndPermitSubEvent()","total_count":1,"children":[]},{"name":"approveSubEvent()","total_count":1,"children":[]},{"name":"CoordinatorEventGroup","total_count":1,"children":[]},{"name":"createFest()","total_count":1,"children":[]},{"name":"createSubEvent()","total_count":1,"children":[]},{"name":"deleteFest()","total_count":1,"children":[]},{"name":"deleteSubEvent()","total_count":1,"children":[]},{"name":"EventParticipant","total_count":1,"children":[]},{"name":"getAdminClient()","total_count":1,"children":[]},{"name":"getAdminParticipants()","total_count":1,"children":[]},{"name":"getAllAuthUsers()","total_count":1,"children":[]},{"name":"getCachedCoordinators","total_count":1,"children":[]},{"name":"getCachedFests","total_count":1,"children":[]},{"name":"getConflictingParticipantsForEvent()","total_count":1,"children":[]},{"name":"getCoordinatorAssignedEventIds()","total_count":1,"children":[]},{"name":"getCoordinatorEventsWithParticipants()","total_count":1,"children":[]},{"name":"getCoordinatorParticipants()","total_count":1,"children":[]},{"name":"getCoordinators()","total_count":1,"children":[]},{"name":"getFestById()","total_count":1,"children":[]},{"name":"getFests()","total_count":1,"children":[]},{"name":"getParticipantRegistrations()","total_count":1,"children":[]},{"name":"getStudentRegisteredEventIds()","total_count":1,"children":[]},{"name":"getSubEventById()","total_count":1,"children":[]},{"name":"getSubEventRegistrationCounts()","total_count":1,"children":[]},{"name":"getSubEvents()","total_count":1,"children":[]},{"name":"getSubEventsWithCoordinators()","total_count":1,"children":[]},{"name":"registerForEvents()","total_count":1,"children":[]},{"name":"rejectSubEvent()","total_count":1,"children":[]},{"name":"toggleParticipantAttendance()","total_count":1,"children":[]},{"name":"updateFest()","total_count":1,"children":[]},{"name":"updateSubEvent()","total_count":1,"children":[]}]},{"name":"hackathon.actions.ts","total_count":9,"children":[{"name":"addHackathonPDF()","total_count":1,"children":[]},{"name":"addTextProblemStatement()","total_count":1,"children":[]},{"name":"createHackathon()","total_count":1,"children":[]},{"name":"getAdminClient()","total_count":1,"children":[]},{"name":"getHackathon()","total_count":1,"children":[]},{"name":"removeHackathonPDF()","total_count":1,"children":[]},{"name":"replaceHackathonPDF()","total_count":1,"children":[]},{"name":"updateHackathon()","total_count":1,"children":[]},{"name":"updateProblemStatementDetails()","total_count":1,"children":[]}]},{"name":"hackathon.team.actions.ts","total_count":4,"children":[{"name":"createHackathonTeam()","total_count":1,"children":[]},{"name":"getAdminClient()","total_count":1,"children":[]},{"name":"getUserHackathonTeam()","total_count":1,"children":[]},{"name":"joinHackathonTeam()","total_count":1,"children":[]}]},{"name":"image.actions.ts","total_count":1,"children":[{"name":"getUnsplashImage","total_count":1,"children":[]}]},{"name":"profile.actions.ts","total_count":4,"children":[{"name":"getAdminClient()","total_count":1,"children":[]},{"name":"getProfileForUser()","total_count":1,"children":[]},{"name":"updateAdminProfile()","total_count":1,"children":[]},{"name":"updateProfile()","total_count":1,"children":[]}]},{"name":"resource.actions.ts","total_count":4,"children":[{"name":"deleteEventResourceAction()","total_count":1,"children":[]},{"name":"EventResourceItem","total_count":1,"children":[]},{"name":"getAdminClient()","total_count":1,"children":[]},{"name":"uploadEventResourceAction()","total_count":1,"children":[]}]},{"name":"team.actions.ts","total_count":7,"children":[{"name":"acceptTeamInvitation()","total_count":1,"children":[]},{"name":"createTeam()","total_count":1,"children":[]},{"name":"evaluateTeamTicketStatus()","total_count":1,"children":[]},{"name":"getPendingInvitations()","total_count":1,"children":[]},{"name":"rejectTeamInvitation()","total_count":1,"children":[]},{"name":"removeTeamMember()","total_count":1,"children":[]},{"name":"updateRegisteredTeam()","total_count":1,"children":[]}]}]},{"name":"app","total_count":91,"children":[{"name":"(admin)","total_count":26,"children":[{"name":"admin","total_count":24,"children":[{"name":"coordinators","total_count":1,"children":[{"name":"page.tsx","total_count":1,"children":[{"name":"CoordinatorsPage()","total_count":1,"children":[]}]}]},{"name":"events","total_count":9,"children":[{"name":"[id]","total_count":2,"children":[{"name":"edit","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"AdminEditFestPage()","total_count":1,"children":[]},{"name":"loadFest()","total_count":1,"children":[]}]}]}]},{"name":"CreateEventButton.tsx","total_count":1,"children":[{"name":"CreateEventButton()","total_count":1,"children":[]}]},{"name":"edit-hackathon","total_count":3,"children":[{"name":"EditHackathonForm.tsx","total_count":2,"children":[{"name":"EditHackathonForm()","total_count":1,"children":[]},{"name":"parseDateString()","total_count":1,"children":[]}]},{"name":"page.tsx","total_count":1,"children":[{"name":"EditHackathonPage()","total_count":1,"children":[]}]}]},{"name":"new","total_count":1,"children":[{"name":"page.tsx","total_count":1,"children":[{"name":"CreateFestPage()","total_count":1,"children":[]}]}]},{"name":"new-hackathon","total_count":1,"children":[{"name":"page.tsx","total_count":1,"children":[{"name":"CreateHackathonPage()","total_count":1,"children":[]}]}]},{"name":"page.tsx","total_count":1,"children":[{"name":"AdminEventsPage()","total_count":1,"children":[]}]}]},{"name":"page.tsx","total_count":1,"children":[{"name":"AdminDashboard()","total_count":1,"children":[]}]},{"name":"participants","total_count":4,"children":[{"name":"page.tsx","total_count":4,"children":[{"name":"AdminParticipantsPage()","total_count":1,"children":[]},{"name":"Participant","total_count":1,"children":[]},{"name":"Registration","total_count":1,"children":[]},{"name":"SubEventInfo","total_count":1,"children":[]}]}]},{"name":"scanner","total_count":1,"children":[{"name":"page.tsx","total_count":1,"children":[{"name":"QRScannerPage()","total_count":1,"children":[]}]}]},{"name":"settings","total_count":1,"children":[{"name":"page.tsx","total_count":1,"children":[{"name":"AdminSettingsPage()","total_count":1,"children":[]}]}]},{"name":"sub-events","total_count":5,"children":[{"name":"[id]","total_count":2,"children":[{"name":"edit","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"AdminEditSubEventPage()","total_count":1,"children":[]},{"name":"loadEvent()","total_count":1,"children":[]}]}]}]},{"name":"new","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"AdminCreateSubEventPage()","total_count":1,"children":[]},{"name":"AdminSubEventForm()","total_count":1,"children":[]}]}]},{"name":"page.tsx","total_count":1,"children":[{"name":"AdminSubEventsPage()","total_count":1,"children":[]}]}]},{"name":"users","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"AdminUsersPage()","total_count":1,"children":[]},{"name":"SystemUser","total_count":1,"children":[]}]}]}]},{"name":"layout.tsx","total_count":1,"children":[{"name":"AdminLayout()","total_count":1,"children":[]}]},{"name":"loading.tsx","total_count":1,"children":[{"name":"AdminLoading()","total_count":1,"children":[]}]}]},{"name":"(auth)","total_count":4,"children":[{"name":"layout.tsx","total_count":1,"children":[{"name":"AuthLayout()","total_count":1,"children":[]}]},{"name":"page.tsx","total_count":2,"children":[{"name":"LoginForm()","total_count":1,"children":[]},{"name":"LoginPage()","total_count":1,"children":[]}]},{"name":"signup","total_count":1,"children":[{"name":"page.tsx","total_count":1,"children":[{"name":"SignupPage()","total_count":1,"children":[]}]}]}]},{"name":"(coordinator)","total_count":14,"children":[{"name":"coordinator","total_count":12,"children":[{"name":"attendance","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"CoordinatorAttendancePage()","total_count":1,"children":[]},{"name":"getAdminClient()","total_count":1,"children":[]}]}]},{"name":"events","total_count":5,"children":[{"name":"[id]","total_count":2,"children":[{"name":"edit","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"CoordinatorEditSubEventPage()","total_count":1,"children":[]},{"name":"loadEvent()","total_count":1,"children":[]}]}]}]},{"name":"new","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"CoordinatorCreateSubEventPage()","total_count":1,"children":[]},{"name":"CoordinatorSubEventForm()","total_count":1,"children":[]}]}]},{"name":"page.tsx","total_count":1,"children":[{"name":"CoordinatorEventsPage()","total_count":1,"children":[]}]}]},{"name":"page.tsx","total_count":2,"children":[{"name":"CoordinatorDashboard()","total_count":1,"children":[]},{"name":"getAdminClient()","total_count":1,"children":[]}]},{"name":"participants","total_count":1,"children":[{"name":"page.tsx","total_count":1,"children":[{"name":"CoordinatorParticipantsPage()","total_count":1,"children":[]}]}]},{"name":"scanner","total_count":1,"children":[{"name":"page.tsx","total_count":1,"children":[{"name":"CoordinatorScannerPage()","total_count":1,"children":[]}]}]},{"name":"settings","total_count":1,"children":[{"name":"page.tsx","total_count":1,"children":[{"name":"CoordinatorSettingsPage()","total_count":1,"children":[]}]}]}]},{"name":"layout.tsx","total_count":1,"children":[{"name":"CoordinatorLayout()","total_count":1,"children":[]}]},{"name":"loading.tsx","total_count":1,"children":[{"name":"CoordinatorLoading()","total_count":1,"children":[]}]}]},{"name":"(routes)","total_count":2,"children":[{"name":"register","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"metadata","total_count":1,"children":[]},{"name":"RegisterPage()","total_count":1,"children":[]}]}]}]},{"name":"(student)","total_count":31,"children":[{"name":"certificates","total_count":1,"children":[{"name":"page.tsx","total_count":1,"children":[{"name":"CertificatesPage()","total_count":1,"children":[]}]}]},{"name":"dashboard","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"Dashboard()","total_count":1,"children":[]},{"name":"renderDynamicVisual()","total_count":1,"children":[]}]}]},{"name":"events","total_count":6,"children":[{"name":"[festId]","total_count":5,"children":[{"name":"FestEventsClient.tsx","total_count":2,"children":[{"name":"FestEventsClient()","total_count":1,"children":[]},{"name":"FestEventsClientProps","total_count":1,"children":[]}]},{"name":"page.tsx","total_count":1,"children":[{"name":"FestEventsPage()","total_count":1,"children":[]}]},{"name":"register","total_count":2,"children":[{"name":"page.tsx","total_count":1,"children":[{"name":"RegistrationsPage()","total_count":1,"children":[]}]},{"name":"RegistrationsForm.tsx","total_count":1,"children":[{"name":"RegistrationsForm()","total_count":1,"children":[]}]}]}]},{"name":"page.tsx","total_count":1,"children":[{"name":"EventsPage()","total_count":1,"children":[]}]}]},{"name":"hackathons","total_count":4,"children":[{"name":"[id]","total_count":4,"children":[{"name":"HackathonClient.tsx","total_count":1,"children":[{"name":"HackathonClient()","total_count":1,"children":[]}]},{"name":"page.tsx","total_count":1,"children":[{"name":"HackathonDetailsPage()","total_count":1,"children":[]}]},{"name":"register","total_count":2,"children":[{"name":"HackathonRegistrationClient.tsx","total_count":1,"children":[{"name":"HackathonRegistrationClient()","total_count":1,"children":[]}]},{"name":"page.tsx","total_count":1,"children":[{"name":"HackathonRegistrationPage()","total_count":1,"children":[]}]}]}]}]},{"name":"invitations","total_count":4,"children":[{"name":"InvitationsList.tsx","total_count":1,"children":[{"name":"InvitationsList()","total_count":1,"children":[]}]},{"name":"page.tsx","total_count":3,"children":[{"name":"dynamic","total_count":1,"children":[]},{"name":"InvitationsPage()","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]}]}]},{"name":"layout.tsx","total_count":1,"children":[{"name":"StudentLayout()","total_count":1,"children":[]}]},{"name":"loading.tsx","total_count":1,"children":[{"name":"StudentLoading()","total_count":1,"children":[]}]},{"name":"registrations","total_count":6,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"dynamic","total_count":1,"children":[]},{"name":"MyRegistrationsPage()","total_count":1,"children":[]}]},{"name":"RegistrationEventCard.tsx","total_count":2,"children":[{"name":"RegistrationEventCard()","total_count":1,"children":[]},{"name":"RegistrationEventCardProps","total_count":1,"children":[]}]},{"name":"RegistrationsClient.tsx","total_count":1,"children":[{"name":"RegistrationsClient()","total_count":1,"children":[]}]},{"name":"TeamManager.tsx","total_count":1,"children":[{"name":"TeamManager()","total_count":1,"children":[]}]}]},{"name":"settings","total_count":1,"children":[{"name":"page.tsx","total_count":1,"children":[{"name":"SettingsPage()","total_count":1,"children":[]}]}]},{"name":"teams","total_count":2,"children":[{"name":"page.tsx","total_count":2,"children":[{"name":"loadEvents()","total_count":1,"children":[]},{"name":"TeamsPage()","total_count":1,"children":[]}]}]},{"name":"tickets","total_count":3,"children":[{"name":"page.tsx","total_count":1,"children":[{"name":"TicketsPage()","total_count":1,"children":[]}]},{"name":"TicketsClient.tsx","total_count":2,"children":[{"name":"TicketCard()","total_count":1,"children":[]},{"name":"TicketsClient()","total_count":1,"children":[]}]}]}]},{"name":"api","total_count":8,"children":[{"name":"admin","total_count":5,"children":[{"name":"export","total_count":3,"children":[{"name":"route.ts","total_count":3,"children":[{"name":"dynamic","total_count":1,"children":[]},{"name":"GET()","total_count":1,"children":[]},{"name":"supabaseAdmin","total_count":1,"children":[]}]}]},{"name":"scan","total_count":2,"children":[{"name":"route.ts","total_count":2,"children":[{"name":"POST()","total_count":1,"children":[]},{"name":"supabaseAdmin","total_count":1,"children":[]}]}]}]},{"name":"health","total_count":1,"children":[{"name":"route.ts","total_count":1,"children":[{"name":"GET()","total_count":1,"children":[]}]}]},{"name":"register","total_count":2,"children":[{"name":"route.ts","total_count":2,"children":[{"name":"POST()","total_count":1,"children":[]},{"name":"supabase","total_count":1,"children":[]}]}]}]},{"name":"auth","total_count":2,"children":[{"name":"callback","total_count":2,"children":[{"name":"route.ts","total_count":2,"children":[{"name":"GET()","total_count":1,"children":[]},{"name":"getAdminClient()","total_count":1,"children":[]}]}]}]},{"name":"layout.tsx","total_count":4,"children":[{"name":"anton","total_count":1,"children":[]},{"name":"inter","total_count":1,"children":[]},{"name":"metadata","total_count":1,"children":[]},{"name":"RootLayout()","total_count":1,"children":[]}]}]},{"name":"components","total_count":109,"children":[{"name":"admin","total_count":3,"children":[{"name":"DashboardCharts.tsx","total_count":3,"children":[{"name":"DashboardCharts()","total_count":1,"children":[]},{"name":"DashboardChartsProps","total_count":1,"children":[]},{"name":"DemographicItem","total_count":1,"children":[]}]}]},{"name":"AdminProfileForm.tsx","total_count":2,"children":[{"name":"AdminProfileForm()","total_count":1,"children":[]},{"name":"AdminProfileFormProps","total_count":1,"children":[]}]},{"name":"AdminSidebar.tsx","total_count":1,"children":[{"name":"AdminSidebar()","total_count":1,"children":[]}]},{"name":"ApproveButton.tsx","total_count":1,"children":[{"name":"ApproveButton()","total_count":1,"children":[]}]},{"name":"coordinator","total_count":2,"children":[{"name":"ScannerClient.tsx","total_count":2,"children":[{"name":"ScannerClient()","total_count":1,"children":[]},{"name":"ScannerClientProps","total_count":1,"children":[]}]}]},{"name":"CoordinatorEventSelector.tsx","total_count":4,"children":[{"name":"CoordinatorEventSelector()","total_count":1,"children":[]},{"name":"CoordinatorEventSelectorProps","total_count":1,"children":[]},{"name":"handleClickOutside()","total_count":1,"children":[]},{"name":"SubEventItem","total_count":1,"children":[]}]},{"name":"CoordinatorSidebar.tsx","total_count":1,"children":[{"name":"CoordinatorSidebar()","total_count":1,"children":[]}]},{"name":"DateTimePicker.tsx","total_count":2,"children":[{"name":"DateTimePicker()","total_count":1,"children":[]},{"name":"DateTimePickerProps","total_count":1,"children":[]}]},{"name":"DeadlinePicker.tsx","total_count":2,"children":[{"name":"DeadlinePicker()","total_count":1,"children":[]},{"name":"DeadlinePickerProps","total_count":1,"children":[]}]},{"name":"DeleteButton.tsx","total_count":2,"children":[{"name":"DeleteButton()","total_count":1,"children":[]},{"name":"DeleteButtonProps","total_count":1,"children":[]}]},{"name":"EventDetailsModal.tsx","total_count":5,"children":[{"name":"EventDetailsModal()","total_count":1,"children":[]},{"name":"EventDetailsModalProps","total_count":1,"children":[]},{"name":"parseContactStr()","total_count":1,"children":[]},{"name":"parseEventData()","total_count":1,"children":[]},{"name":"SubEvent","total_count":1,"children":[]}]},{"name":"EventOverview.tsx","total_count":1,"children":[{"name":"EventOverview()","total_count":1,"children":[]}]},{"name":"EventrixLogo.tsx","total_count":2,"children":[{"name":"EventrixLogo()","total_count":1,"children":[]},{"name":"EventrixLogoProps","total_count":1,"children":[]}]},{"name":"EventrixSidebar.tsx","total_count":1,"children":[{"name":"EventrixSidebar()","total_count":1,"children":[]}]},{"name":"EventStatusBadge.tsx","total_count":2,"children":[{"name":"EventStatusBadge()","total_count":1,"children":[]},{"name":"EventStatusBadgeProps","total_count":1,"children":[]}]},{"name":"FeaturedEventCard.tsx","total_count":2,"children":[{"name":"FeaturedEventCard()","total_count":1,"children":[]},{"name":"FeaturedEventCardProps","total_count":1,"children":[]}]},{"name":"FestCard.tsx","total_count":2,"children":[{"name":"FestCard()","total_count":1,"children":[]},{"name":"FestCardProps","total_count":1,"children":[]}]},{"name":"GoogleLoginButton.tsx","total_count":1,"children":[{"name":"GoogleLoginButton()","total_count":1,"children":[]}]},{"name":"HeroBanner.tsx","total_count":1,"children":[{"name":"HeroBanner()","total_count":1,"children":[]}]},{"name":"LogoutButton.tsx","total_count":2,"children":[{"name":"LogoutButton()","total_count":1,"children":[]},{"name":"LogoutButtonProps","total_count":1,"children":[]}]},{"name":"MobileNav.tsx","total_count":1,"children":[{"name":"MobileNav()","total_count":1,"children":[]}]},{"name":"PagePlaceholder.tsx","total_count":1,"children":[{"name":"PagePlaceholder()","total_count":1,"children":[]}]},{"name":"PromoBanner.tsx","total_count":1,"children":[{"name":"PromoBanner()","total_count":1,"children":[]}]},{"name":"RegistrationTicket.tsx","total_count":2,"children":[{"name":"RegistrationTicket()","total_count":1,"children":[]},{"name":"RegistrationTicketProps","total_count":1,"children":[]}]},{"name":"SettingsProfileForm.tsx","total_count":1,"children":[{"name":"SettingsProfileForm()","total_count":1,"children":[]}]},{"name":"SubeventCoordinatorSelector.tsx","total_count":4,"children":[{"name":"CoordinatorItem","total_count":1,"children":[]},{"name":"handleClickOutside()","total_count":1,"children":[]},{"name":"SubeventCoordinatorSelector()","total_count":1,"children":[]},{"name":"SubeventCoordinatorSelectorProps","total_count":1,"children":[]}]},{"name":"TopNavbar.tsx","total_count":1,"children":[{"name":"TopNavbar()","total_count":1,"children":[]}]},{"name":"ui","total_count":54,"children":[{"name":"button.tsx","total_count":2,"children":[{"name":"Button()","total_count":1,"children":[]},{"name":"buttonVariants","total_count":1,"children":[]}]},{"name":"card.tsx","total_count":7,"children":[{"name":"Card()","total_count":1,"children":[]},{"name":"CardAction()","total_count":1,"children":[]},{"name":"CardContent()","total_count":1,"children":[]},{"name":"CardDescription()","total_count":1,"children":[]},{"name":"CardFooter()","total_count":1,"children":[]},{"name":"CardHeader()","total_count":1,"children":[]},{"name":"CardTitle()","total_count":1,"children":[]}]},{"name":"EventrixDatePicker.tsx","total_count":4,"children":[{"name":"DAYS_OF_WEEK","total_count":1,"children":[]},{"name":"EventrixDatePicker()","total_count":1,"children":[]},{"name":"EventrixDatePickerProps","total_count":1,"children":[]},{"name":"MONTHS","total_count":1,"children":[]}]},{"name":"EventrixResourceUploader.tsx","total_count":4,"children":[{"name":"EventrixResourceUploader()","total_count":1,"children":[]},{"name":"EventrixResourceUploaderProps","total_count":1,"children":[]},{"name":"formatFileSize()","total_count":1,"children":[]},{"name":"getFileIcon()","total_count":1,"children":[]}]},{"name":"EventrixSelect.tsx","total_count":7,"children":[{"name":"EventrixMultiSelect()","total_count":1,"children":[]},{"name":"EventrixMultiSelectProps","total_count":1,"children":[]},{"name":"EventrixSelect()","total_count":1,"children":[]},{"name":"EventrixSelectProps","total_count":1,"children":[]},{"name":"handleClickOutside()","total_count":1,"children":[]},{"name":"handleClickOutside()","total_count":1,"children":[]},{"name":"SelectOption","total_count":1,"children":[]}]},{"name":"EventrixTextarea.tsx","total_count":2,"children":[{"name":"EventrixTextarea()","total_count":1,"children":[]},{"name":"EventrixTextareaProps","total_count":1,"children":[]}]},{"name":"EventrixTimePicker.tsx","total_count":4,"children":[{"name":"EventrixTimePicker()","total_count":1,"children":[]},{"name":"EventrixTimePickerProps","total_count":1,"children":[]},{"name":"HOURS","total_count":1,"children":[]},{"name":"MINUTES","total_count":1,"children":[]}]},{"name":"input.tsx","total_count":1,"children":[{"name":"Input()","total_count":1,"children":[]}]},{"name":"label.tsx","total_count":1,"children":[{"name":"Label()","total_count":1,"children":[]}]},{"name":"select.tsx","total_count":9,"children":[{"name":"SelectContent()","total_count":1,"children":[]},{"name":"SelectGroup()","total_count":1,"children":[]},{"name":"SelectItem()","total_count":1,"children":[]},{"name":"SelectLabel()","total_count":1,"children":[]},{"name":"SelectScrollDownButton()","total_count":1,"children":[]},{"name":"SelectScrollUpButton()","total_count":1,"children":[]},{"name":"SelectSeparator()","total_count":1,"children":[]},{"name":"SelectTrigger()","total_count":1,"children":[]},{"name":"SelectValue()","total_count":1,"children":[]}]},{"name":"sonner.tsx","total_count":1,"children":[{"name":"Toaster()","total_count":1,"children":[]}]},{"name":"toast.tsx","total_count":12,"children":[{"name":"toast","total_count":1,"children":[]},{"name":"ToastAction()","total_count":1,"children":[]},{"name":"ToastClose()","total_count":1,"children":[]},{"name":"ToastContent()","total_count":1,"children":[]},{"name":"ToastDescription()","total_count":1,"children":[]},{"name":"Toaster()","total_count":1,"children":[]},{"name":"ToastIcon()","total_count":1,"children":[]},{"name":"ToastList()","total_count":1,"children":[]},{"name":"ToastPortal()","total_count":1,"children":[]},{"name":"ToastProvider()","total_count":1,"children":[]},{"name":"ToastTitle()","total_count":1,"children":[]},{"name":"ToastViewport()","total_count":1,"children":[]}]}]},{"name":"UpcomingEvents.tsx","total_count":1,"children":[{"name":"UpcomingEvents()","total_count":1,"children":[]}]},{"name":"UserAvatar.tsx","total_count":2,"children":[{"name":"UserAvatar()","total_count":1,"children":[]},{"name":"UserAvatarProps","total_count":1,"children":[]}]},{"name":"VerveLogo.tsx","total_count":1,"children":[{"name":"VerveLogo()","total_count":1,"children":[]}]},{"name":"logo.tsx","total_count":1,"children":[]}]},{"name":"features","total_count":15,"children":[{"name":"registration","total_count":15,"children":[{"name":"components","total_count":3,"children":[{"name":"registration-form.tsx","total_count":3,"children":[{"name":"fetchEvents()","total_count":1,"children":[]},{"name":"onSubmit()","total_count":1,"children":[]},{"name":"RegistrationForm()","total_count":1,"children":[]}]}]},{"name":"services","total_count":5,"children":[{"name":"email.service.ts","total_count":2,"children":[{"name":"resend","total_count":1,"children":[]},{"name":"sendTicketEmail()","total_count":1,"children":[]}]},{"name":"qr.service.ts","total_count":1,"children":[{"name":"generateTicketQR()","total_count":1,"children":[]}]},{"name":"registration.service.ts","total_count":2,"children":[{"name":"getOpenEvents()","total_count":1,"children":[]},{"name":"submitRegistration()","total_count":1,"children":[]}]}]},{"name":"types","total_count":5,"children":[{"name":"index.ts","total_count":5,"children":[{"name":"Event","total_count":1,"children":[]},{"name":"EventCategory","total_count":1,"children":[]},{"name":"EventStatus","total_count":1,"children":[]},{"name":"ParticipationType","total_count":1,"children":[]},{"name":"RegistrationPayload","total_count":1,"children":[]}]}]},{"name":"utils","total_count":2,"children":[{"name":"validation.ts","total_count":2,"children":[{"name":"RegistrationFormValues","total_count":1,"children":[]},{"name":"registrationSchema","total_count":1,"children":[]}]}]}]}]},{"name":"hooks","total_count":2,"children":[{"name":"useFormDraft.ts","total_count":2,"children":[{"name":"useFormDraft()","total_count":1,"children":[]},{"name":"UseFormDraftOptions","total_count":1,"children":[]}]}]},{"name":"lib","total_count":24,"children":[{"name":"auth","total_count":3,"children":[{"name":"get-user.ts","total_count":3,"children":[{"name":"AuthUserResult","total_count":1,"children":[]},{"name":"getCurrentUser","total_count":1,"children":[]},{"name":"UserProfile","total_count":1,"children":[]}]}]},{"name":"auth.ts","total_count":3,"children":[{"name":"AdminAuthResult","total_count":1,"children":[]},{"name":"supabase","total_count":1,"children":[]},{"name":"verifyAdminAccess()","total_count":1,"children":[]}]},{"name":"avatar.ts","total_count":1,"children":[{"name":"getUserAvatarUrl()","total_count":1,"children":[]}]},{"name":"logger.ts","total_count":1,"children":[{"name":"measurePerf()","total_count":1,"children":[]}]},{"name":"mockData.ts","total_count":13,"children":[{"name":"EventCategory","total_count":1,"children":[]},{"name":"FeaturedEvent","total_count":1,"children":[]},{"name":"Fest","total_count":1,"children":[]},{"name":"mockFeaturedEvents","total_count":1,"children":[]},{"name":"mockFest","total_count":1,"children":[]},{"name":"mockFestEvents","total_count":1,"children":[]},{"name":"mockOverviewStats","total_count":1,"children":[]},{"name":"mockRegistrations","total_count":1,"children":[]},{"name":"mockUpcomingEvents","total_count":1,"children":[]},{"name":"OverviewStats","total_count":1,"children":[]},{"name":"Registration","total_count":1,"children":[]},{"name":"SubEvent","total_count":1,"children":[]},{"name":"UpcomingEvent","total_count":1,"children":[]}]},{"name":"supabase","total_count":2,"children":[{"name":"client.ts","total_count":1,"children":[{"name":"createClient()","total_count":1,"children":[]}]},{"name":"server.ts","total_count":1,"children":[{"name":"createClient()","total_count":1,"children":[]}]}]},{"name":"utils.ts","total_count":1,"children":[]}]},{"name":"middleware.ts","total_count":2,"children":[{"name":"config","total_count":1,"children":[]},{"name":"middleware()","total_count":1,"children":[]}]},{"name":"utils","total_count":5,"children":[{"name":"date-utils.ts","total_count":5,"children":[{"name":"buildISTDeadlineISO()","total_count":1,"children":[]},{"name":"calculateDeadlineCountdown()","total_count":1,"children":[]},{"name":"DeadlineParts","total_count":1,"children":[]},{"name":"formatDeadlineDisplay()","total_count":1,"children":[]},{"name":"parseISTDeadlineParts()","total_count":1,"children":[]}]}]}]},{"name":"tsconfig.json","total_count":18,"children":[{"name":"allowJs","total_count":1,"children":[]},{"name":"compilerOptions","total_count":1,"children":[]},{"name":"esModuleInterop","total_count":1,"children":[]},{"name":"exclude","total_count":1,"children":[]},{"name":"include","total_count":1,"children":[]},{"name":"incremental","total_count":1,"children":[]},{"name":"isolatedModules","total_count":1,"children":[]},{"name":"jsx","total_count":1,"children":[]},{"name":"lib","total_count":1,"children":[]},{"name":"module","total_count":1,"children":[]},{"name":"moduleResolution","total_count":1,"children":[]},{"name":"noEmit","total_count":1,"children":[]},{"name":"paths","total_count":1,"children":[]},{"name":"plugins","total_count":1,"children":[]},{"name":"resolveJsonModule","total_count":1,"children":[]},{"name":"skipLibCheck","total_count":1,"children":[]},{"name":"strict","total_count":1,"children":[]},{"name":"target","total_count":1,"children":[]}]},{"name":"vercel.json","total_count":1,"children":[{"name":"regions","total_count":1,"children":[]}]},{"name":"html5-qrcode","total_count":1,"children":[]}]};
+
+    function transformData(jsonData) {
+        // Helper function to recursively build the children structure
+        function processNode(node, parentL1StageName) {
+            let displayName = node.name;
+            // Append total_count if it exists and is not already in the name
+            if (node.total_count !== undefined) {
+                if (!/\(Total Count: \d+\)$/.test(displayName)) {
+                    displayName += ` (Total Count: ${node.total_count})`;
+                }
+            }
+
+            const newNode = { name: displayName };
+
+            if (parentL1StageName === "Root") {
+                 newNode.originalStageName = node.name;
+            } else {
+                newNode.originalStageName = parentL1StageName;
+            }
+
+            if (node.children && node.children.length > 0) {
+                const stageNameToPass = (parentL1StageName === "Root") ? node.name : parentL1StageName;
+                newNode.children = node.children.map(child => processNode(child, stageNameToPass));
+            }
+
+            return newNode;
+        }
+
+        let rootDisplayName = jsonData.name;
+        if (jsonData.total_count !== undefined && !/\(Total Count: \d+\)$/.test(rootDisplayName)) {
+            rootDisplayName += ` (Total Count: ${jsonData.total_count})`;
+        }
+
+        return {
+            name: rootDisplayName,
+            originalStageName: "Root",
+            children: (jsonData.children || []).map(child => processNode(child, "Root"))
+        };
+    }
+
+    const treeData = transformData(initialJsonData);
+
+    // Auto-populated phaseColors: every depth-1 child of the root gets
+    // a stable colour from a bigger palette so all top-level dirs are
+    // distinguishable.
+    const PALETTE = [
+      ["#3498DB","#2980B9","#AED6F1"], ["#2ECC71","#27AE60","#A9DFBF"],
+      ["#E74C3C","#C0392B","#F5B7B1"], ["#9B59B6","#8E44AD","#D7BDE2"],
+      ["#F39C12","#D68910","#FAD7A0"], ["#1ABC9C","#117864","#A2D9CE"],
+      ["#34495E","#1B2631","#ABB2B9"], ["#E67E22","#BA4A00","#F5CBA7"],
+      ["#16A085","#0E6655","#A2D9CE"], ["#D35400","#A04000","#EDBB99"],
+      ["#7F8C8D","#566573","#D5DBDB"], ["#C0392B","#7B241C","#F5B7B1"],
+      ["#2E86C1","#1B4F72","#A9CCE3"], ["#28B463","#196F3D","#A9DFBF"],
+      ["#AF7AC5","#6C3483","#D2B4DE"],
+    ];
+    const phaseColors = { "Root": { fill: "#4A4A4A", stroke: "#333333", collapsedFill: "#6C757D" },
+                          "Default": { fill: "#BDC3C7", stroke: "#95A5A6", collapsedFill: "#ECF0F1" } };
+    (initialJsonData.children || []).forEach((c, i) => {
+      const pal = PALETTE[i % PALETTE.length];
+      phaseColors[c.name] = { fill: pal[0], stroke: pal[1], collapsedFill: pal[2] };
+    });
+
+    const levelSpecificPalettes = {
+      0: { fill: "#4A4A4A", stroke: "#333333", collapsedFill: "#6C757D" },
+      2: { fill: "#6ab04c", stroke: "#508a38", collapsedFill: "#a3d391" },
+      3: { fill: "#f0932b", stroke: "#d0730f", collapsedFill: "#f6c07e" },
+      4: { fill: "#be2edd", stroke: "#a01cb3", collapsedFill: "#e08bf2" },
+      5: { fill: "#00a8ff", stroke: "#007ac1", collapsedFill: "#74d2ff" },
+      6: { fill: "#e55039", stroke: "#c23620", collapsedFill: "#f09a8d" },
+      default: { fill: "#747d8c", stroke: "#57606f", collapsedFill: "#a4b0be" }
+    };
+
+    const svgElement = d3.select("#tree-svg");
+    const initialSvgWidth = +svgElement.attr("width");
+    const initialSvgHeight = +svgElement.attr("height");
+    const margin = { top: 40, right: 120, bottom: 80, left: 450 };
+    let width = initialSvgWidth - margin.left - margin.right;
+    let height = initialSvgHeight - margin.top - margin.bottom;
+    const duration = 500;
+    let nodeCounter = 0;
+    const g = svgElement.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+    const treemap = d3.tree().nodeSize([40, 0]);
+    let rootNode = d3.hierarchy(treeData, d => d.children);
+    rootNode.x0 = 0;
+    rootNode.y0 = 0;
+
+    if (rootNode.children) {
+      rootNode.children.forEach(d_child => {
+        if (d_child.children) { collapseBranch(d_child); }
+      });
+    }
+    updateTree(rootNode);
+
+    function collapseBranch(d) { if (d.children) { d._children = d.children; d._children.forEach(collapseBranch); d.children = null; } }
+    function expandBranch(d) { if (d._children) { d.children = d._children; d._children = null; } if (d.children) { d.children.forEach(expandBranch); } }
+    window.expandAll = () => { expandBranch(rootNode); updateTree(rootNode); };
+    window.collapseAll = () => { if (rootNode.children) { rootNode.children.forEach(collapseBranch); } updateTree(rootNode); };
+    window.resetView = () => { if (rootNode.children) { rootNode.children.forEach(d_child => { if (d_child.children || d_child._children) { collapseBranch(d_child); } }); } if (rootNode._children && !rootNode.children) { rootNode.children = rootNode._children; rootNode._children = null; } updateTree(rootNode); };
+
+    function updateTree(source) {
+      const treeLayoutData = treemap(rootNode);
+      let nodes = treeLayoutData.descendants();
+      let links = treeLayoutData.descendants().slice(1);
+
+      let minX = 0;
+      let maxX = 0;
+      if (nodes.length > 0) {
+        minX = d3.min(nodes, d => d.x);
+        maxX = d3.max(nodes, d => d.x);
+      }
+
+      let neededHeight = Math.max(initialSvgHeight, maxX - minX + margin.top + margin.bottom + 100);
+      svgElement.transition().duration(duration / 2).attr("height", neededHeight);
+      g.transition().duration(duration / 2).attr("transform", `translate(${margin.left},${margin.top - minX + 40})`);
+
+      nodes.forEach(d => { d.y = d.depth * 400; }); // Adjust horizontal separation if needed
+
+      const node = g.selectAll('g.node').data(nodes, d => d.id || (d.id = ++nodeCounter));
+      const nodeEnter = node.enter().append('g')
+        .attr('class', d => "node" + (d.children || d._children ? " node--internal" : " node--leaf") + (d._children ? " _children" : ""))
+        .attr('transform', d => `translate(${source.y0},${source.x0})`)
+        .on('click', (event, d) => { if (d.children) { d._children = d.children; d.children = null; } else if (d._children) { d.children = d._children; d._children = null; } updateTree(d); })
+        .style('cursor', d => (d.children || d._children) ? 'pointer' : 'default');
+
+      nodeEnter.append('circle').attr('r', 1e-6);
+
+      nodeEnter.append('text')
+        .attr('dy', '.35em')
+        .attr('x', d => d.children || d._children ? -14 : 14)
+        .attr('text-anchor', d => d.children || d._children ? 'end' : 'start')
+        .style("fill-opacity", 1e-6)
+        .call(wrapText, 380);
+
+      const nodeUpdate = nodeEnter.merge(node);
+      nodeUpdate.transition().duration(duration)
+        .attr('transform', d => `translate(${d.y},${d.x})`)
+        .attr('class', d => "node" + (d.children ? " node--internal" : " node--leaf") + (d._children ? " node--internal _children" : ""));
+
+      nodeUpdate.select('circle').attr('r', 8.5)
+        .style('fill', d => {
+            let palette;
+            if (d.depth === 0) {
+                palette = levelSpecificPalettes[0];
+            } else if (d.depth === 1) {
+                palette = phaseColors[d.data.originalStageName] || phaseColors.Default;
+            } else {
+                palette = levelSpecificPalettes[d.depth] || levelSpecificPalettes.default;
+            }
+            if (d._children) return palette.collapsedFill;
+            if (d.children) return palette.fill;
+            return "#fff";
+        })
+        .style('stroke', d => {
+            let palette;
+            if (d.depth === 0) {
+                palette = levelSpecificPalettes[0];
+            } else if (d.depth === 1) {
+                palette = phaseColors[d.data.originalStageName] || phaseColors.Default;
+            } else {
+                palette = levelSpecificPalettes[d.depth] || levelSpecificPalettes.default;
+            }
+            return palette.stroke;
+        });
+      nodeUpdate.select('text').style("fill-opacity", 1).call(wrapText, 380);
+
+      const nodeExit = node.exit().transition().duration(duration).attr('transform', d => `translate(${source.y},${source.x})`).remove();
+      nodeExit.select('circle').attr('r', 1e-6);
+      nodeExit.select('text').style('fill-opacity', 1e-6);
+
+      const link = g.selectAll('path.link').data(links, d => d.id);
+      const linkEnter = link.enter().insert('path', "g").attr('class', 'link').attr('d', d => { const o = { x: source.x0, y: source.y0 }; return diagonal(o, o); });
+
+      linkEnter.merge(link).transition().duration(duration).attr('d', d => diagonal(d, d.parent))
+        .style('stroke', d => {
+            const sourceNode = d.parent;
+            if (!sourceNode) return phaseColors.Default.stroke;
+            const l1AncestorName = sourceNode.data.originalStageName;
+            const colorPalette = phaseColors[l1AncestorName] || phaseColors.Default;
+            return colorPalette.stroke;
+        });
+      link.exit().transition().duration(duration).attr('d', d => { const o = { x: source.x, y: source.y }; return diagonal(o, o); }).remove();
+      nodes.forEach(d => { d.x0 = d.x; d.y0 = d.y; });
+    }
+
+    function diagonal(s, d) { return `M ${s.y} ${s.x} C ${(s.y + d.y) / 2} ${s.x}, ${(s.y + d.y) / 2} ${d.x}, ${d.y} ${d.x}`; }
+
+    function wrapText(textElements, maxWidth) {
+        const textPartColors = {
+            name: '#343a40',
+            count: '#0056b3'
+        };
+        const countRegex = /(\s\(Total Count: \d+\))$/;
+
+        textElements.each(function () {
+            const textD3 = d3.select(this);
+            const originalNodeText = textD3.datum().data.name;
+            const x = parseFloat(textD3.attr("x") || 0);
+            const initialDy = textD3.attr("dy");
+            const textAnchor = textD3.attr("text-anchor");
+            const lineHeight = 1.1;
+
+            textD3.text(null);
+
+            let namePart = originalNodeText;
+            let countPartText = "";
+
+            const countMatch = originalNodeText.match(countRegex);
+            if (countMatch && originalNodeText.endsWith(countMatch[0])) {
+                namePart = originalNodeText.substring(0, originalNodeText.length - countMatch[0].length).trim();
+                countPartText = countMatch[0].trim();
+            }
+
+            const tokens = [];
+            namePart.split(/\s+/).filter(Boolean).forEach(word => {
+                tokens.push({ text: word, type: 'name' });
+            });
+            if (countPartText) {
+                tokens.push({ text: countPartText, type: 'count' });
+            }
+
+            if (tokens.length === 0 && originalNodeText) {
+                tokens.push({ text: originalNodeText, type: 'name' });
+            }
+
+            let currentTspan = textD3.append("tspan").attr("x", x).attr("dy", initialDy);
+            if (textAnchor === "end") currentTspan.attr("text-anchor", "end");
+
+            let lineTokens = [];
+
+            for (let i = 0; i < tokens.length; i++) {
+                const tokenObj = tokens[i];
+
+                lineTokens.push(tokenObj);
+                currentTspan.text(lineTokens.map(t => t.text).join(" "));
+
+                if (currentTspan.node().getComputedTextLength() > maxWidth && lineTokens.length > 1) {
+                    lineTokens.pop();
+
+                    currentTspan.text(null);
+                    lineTokens.forEach((prevToken, idx) => {
+                        currentTspan.append("tspan")
+                            .text((idx > 0 ? " " : "") + prevToken.text)
+                            .style("fill", textPartColors[prevToken.type] || textPartColors.name)
+                            .style("font-weight", prevToken.type === 'count' ? "bold" : "normal");
+                    });
+
+                    lineTokens = [tokenObj];
+                    currentTspan = textD3.append("tspan").attr("x", x).attr("dy", lineHeight + "em");
+                    if (textAnchor === "end") currentTspan.attr("text-anchor", "end");
+                }
+            }
+
+            currentTspan.text(null);
+            lineTokens.forEach((token, idx) => {
+                currentTspan.append("tspan")
+                    .text((idx > 0 ? " " : "") + token.text)
+                    .style("fill", textPartColors[token.type] || textPartColors.name)
+                    .style("font-weight", token.type === 'count' ? "bold" : "normal");
+            });
+
+            if (textD3.selectAll("tspan > tspan").empty() && textD3.select("tspan").text().length === 0 && originalNodeText) {
+                let t = textD3.select("tspan");
+                let displayText = originalNodeText;
+                t.text(displayText).style("fill", textPartColors.name);
+                if (t.node() && t.node().getComputedTextLength() > maxWidth && displayText.length > 20) {
+                    let estimatedChars = Math.floor(maxWidth / (t.node().getComputedTextLength()/displayText.length) );
+                    displayText = displayText.substring(0, Math.max(0, estimatedChars - 3)) + "...";
+                    t.text(displayText);
+                }
+            }
+        });
+    }
+  </script>
+</body>
+</html>

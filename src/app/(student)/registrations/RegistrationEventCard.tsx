@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Calendar, MapPin, Users, ChevronDown, ChevronUp, MessageCircle, ExternalLink } from "lucide-react";
+import { Calendar, MapPin, Users, ChevronDown, ChevronUp, MessageCircle, ExternalLink, CheckCircle2, Clock, Award } from "lucide-react";
 import { TeamManager } from "./TeamManager";
 
 interface RegistrationEventCardProps {
@@ -15,6 +15,10 @@ interface RegistrationEventCardProps {
   whatsapp_group_link?: string;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  isCompletedEvent?: boolean;
+  isOver?: boolean;
+  hasParticipated?: boolean;
+  attendanceStatus?: string;
 }
 
 export function RegistrationEventCard({ 
@@ -27,9 +31,14 @@ export function RegistrationEventCard({
   teamDetails,
   whatsapp_group_link,
   isExpanded = false,
-  onToggleExpand
+  onToggleExpand,
+  isCompletedEvent,
+  isOver,
+  hasParticipated,
+  attendanceStatus
 }: RegistrationEventCardProps) {
   const isTeam = participationType === 'Team';
+  const isCompletedAndAttended = isCompletedEvent || (isOver && hasParticipated);
 
   const handleClick = () => {
     if (onToggleExpand) {
@@ -38,23 +47,40 @@ export function RegistrationEventCard({
   };
 
   return (
-    <div className="flex flex-col gap-0 border border-[#D9D9DE] rounded-[4px] bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow h-auto self-start">
+    <div className={`flex flex-col gap-0 border ${
+      isCompletedAndAttended ? 'border-emerald-300 bg-white' : 'border-[#D9D9DE] bg-white'
+    } rounded-[4px] overflow-hidden shadow-sm hover:shadow-md transition-shadow h-auto self-start`}>
       
       {/* Event Header Card (Clickable) */}
       <div 
         onClick={handleClick}
         className={`relative w-full p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 cursor-pointer hover:bg-[#f8f8fc] transition-colors`}
       >
-        <div className="absolute top-0 bottom-0 left-0 w-[4px] bg-[#080A12]"></div>
+        <div className={`absolute top-0 bottom-0 left-0 w-[4px] ${
+          isCompletedAndAttended ? 'bg-emerald-500' : (isOver ? 'bg-gray-400' : 'bg-[#080A12]')
+        }`}></div>
         
         <div className="flex-1 pl-2">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
             <span className="font-['Inter'] text-[10px] font-bold tracking-[0.15em] uppercase text-[#A98BFF] px-2 py-0.5 bg-[#A98BFF]/10 rounded-sm">
               {category}
             </span>
             {isTeam && (
               <span className="font-['Inter'] text-[10px] font-bold tracking-[0.1em] uppercase text-[#080A12] flex items-center gap-1">
                 <Users className="w-3 h-3" /> Team Event
+              </span>
+            )}
+            {isCompletedAndAttended ? (
+              <span className="font-['Inter'] text-[10px] font-bold tracking-[0.1em] uppercase text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-sm flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Completed & Participated
+              </span>
+            ) : isOver ? (
+              <span className="font-['Inter'] text-[10px] font-bold tracking-[0.1em] uppercase text-gray-600 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-sm flex items-center gap-1">
+                Event Concluded
+              </span>
+            ) : (
+              <span className="font-['Inter'] text-[10px] font-bold tracking-[0.1em] uppercase text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-sm flex items-center gap-1">
+                <Clock className="w-2.5 h-2.5" /> Upcoming
               </span>
             )}
           </div>
@@ -68,9 +94,14 @@ export function RegistrationEventCard({
             <div className="flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-[#080A12]" /> {location}
             </div>
+            {isCompletedAndAttended && (
+              <div className="flex items-center gap-1.5 text-emerald-700 font-semibold text-xs">
+                <Award className="w-3.5 h-3.5 text-emerald-600" /> Participation Verified
+              </div>
+            )}
           </div>
 
-          {whatsapp_group_link && (
+          {whatsapp_group_link && !isOver && (
             <div className="mt-3 pt-2">
               <a
                 href={whatsapp_group_link}

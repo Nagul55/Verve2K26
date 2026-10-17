@@ -35,9 +35,20 @@ function TicketCard({ reg, participant, ticketRef }: { reg: any, participant: an
         {/* Middle Content */}
         <div className="mt-4 relative z-10 flex justify-between items-center">
            <div>
-             <span className="inline-block bg-purple-100 text-[#3A1C71] px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3">
-               {reg.category} Event
-             </span>
+             <div className="flex items-center gap-2 mb-3 flex-wrap">
+               <span className="inline-block bg-purple-100 text-[#3A1C71] px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                 {reg.category} Event
+               </span>
+               {reg.isCompletedEvent ? (
+                 <span className="inline-block bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                   ✓ Attended & Completed
+                 </span>
+               ) : reg.isOver ? (
+                 <span className="inline-block bg-gray-100 text-gray-700 border border-gray-300 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                   Concluded
+                 </span>
+               ) : null}
+             </div>
              <h2 className="font-anton text-4xl lg:text-5xl uppercase text-transparent bg-clip-text bg-gradient-to-r from-[#1E1A3D] via-[#3A1C71] to-[#8C62FF] tracking-tight mb-1.5" style={{ fontFamily: 'Anton, sans-serif' }}>
                {reg.title}
              </h2>

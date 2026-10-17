@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { parseEventData } from "@/components/EventDetailsModal";
 import { EventStatusBadge } from "@/components/EventStatusBadge";
+import { isEventOver } from "@/lib/utils/event-status";
 
 export function RegistrationsForm({ 
   fest, 
@@ -57,7 +58,7 @@ export function RegistrationsForm({
 
   const isEventUnavailable = (event: any) => {
     if (isFestClosed) return true;
-    if (event.status === 'CLOSED') return true;
+    if (event.status === 'CLOSED' || event.status === 'COMPLETED' || event.isOver || isEventOver(event)) return true;
     if (typeof event.capacity === 'number' && event.capacity > 0) {
       const regCount = registrationCounts[event.id] || 0;
       if (regCount >= event.capacity) return true;

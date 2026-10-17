@@ -38,7 +38,8 @@ export async function TopNavbar() {
             width={140}
             height={36}
             priority
-            className="h-7 md:h-9 w-auto object-contain"
+            style={{ width: "auto" }}
+            className="h-7 md:h-9 object-contain"
           />
         </div>
         

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Users, Timer, XCircle } from "lucide-react";
+import { Users, Timer, XCircle, CheckCircle2 } from "lucide-react";
+import { isEventOver } from "@/lib/utils/event-status";
 
 interface EventStatusBadgeProps {
   status?: string;
@@ -23,12 +24,14 @@ export function EventStatusBadge({
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
   const [isClosed, setIsClosed] = useState(status === 'CLOSED');
 
+  const eventIsOver = isEventOver({ status, date, time });
+
   useEffect(() => {
     const updateTimer = () => {
       const now = new Date().getTime();
 
-      // 0. Check Sub-event manual status closure
-      if (status === 'CLOSED') {
+      // 0. Check event completion or manual status closure
+      if (status === 'COMPLETED' || status === 'CLOSED' || eventIsOver) {
         setIsClosed(true);
         setTimeLeft(null);
         return;
@@ -110,14 +113,22 @@ export function EventStatusBadge({
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [status, date, time, festRegistrationClosesAt]);
+  }, [status, date, time, festRegistrationClosesAt, eventIsOver]);
+
+  if (eventIsOver) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 mt-2">
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest bg-purple-100 text-purple-800 px-2.5 py-1 rounded border border-purple-300">
+          <CheckCircle2 className="w-3 h-3 text-purple-700" /> Event Completed
+        </span>
+      </div>
+    );
+  }
 
   const hasCapacityLimit = typeof capacity === 'number' && capacity > 0;
   const regCount = typeof registeredCount === 'number' ? registeredCount : 0;
   const availableSeats = hasCapacityLimit ? Math.max(0, capacity - regCount) : null;
   const isSoldOut = hasCapacityLimit && availableSeats === 0;
-
-  const pad = (n: number) => n.toString().padStart(2, '0');
 
   return (
     <div className="flex flex-wrap items-center gap-2 mt-2">

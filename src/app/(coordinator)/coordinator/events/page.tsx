@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 export default async function CoordinatorEventsPage({ searchParams }: { searchParams: Promise<{ fest_id?: string }> }) {
   const resolvedSearchParams = await searchParams;
   const festId = resolvedSearchParams?.fest_id;
-  const fests = await getFests();
+  const fests = await getFests(true);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -167,7 +167,11 @@ export default async function CoordinatorEventsPage({ searchParams }: { searchPa
                   </td>
 
                   <td className="px-6 py-4">
-                    {event.status === 'LIVE' ? (
+                    {event.status === 'COMPLETED' || event.isOver ? (
+                      <span className="bg-purple-100 text-purple-800 border border-purple-300 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-purple-600" /> Completed
+                      </span>
+                    ) : event.status === 'LIVE' ? (
                       <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" /> Live
                       </span>

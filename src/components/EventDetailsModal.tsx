@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { X, Calendar, Clock, MapPin, Users, User, ShieldAlert, Trophy, Phone, MessageCircle, ExternalLink } from "lucide-react";
+import { X, Calendar, Clock, MapPin, Users, User, ShieldAlert, Trophy, Phone, MessageCircle, ExternalLink, CheckCircle2 } from "lucide-react";
+import { isEventOver } from "@/lib/utils/event-status";
 
 export interface SubEvent {
   id: string;
@@ -241,10 +242,19 @@ export function EventDetailsModal({
         {/* Header */}
         <div className="flex items-start justify-between p-6 border-b border-[#D9D9DF] bg-[#F8F8FC]">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="text-[10px] font-bold text-eventrix-lavender uppercase tracking-widest bg-eventrix-lavender/10 px-2.5 py-1 rounded-sm border border-eventrix-lavender/20">
                 {event.category} • {event.participation_type}
               </span>
+              {isEventOver(event) ? (
+                <span className="text-[10px] font-bold uppercase tracking-widest bg-purple-100 text-purple-800 px-2.5 py-0.5 rounded-sm border border-purple-300 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-purple-600" /> Event Completed
+                </span>
+              ) : (event.status === 'LIVE' || event.status === 'APPROVED') ? (
+                <span className="text-[10px] font-bold uppercase tracking-widest bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-sm border border-emerald-300 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Live
+                </span>
+              ) : null}
             </div>
             <h2 id="event-modal-title" className="font-anton text-2xl sm:text-3xl text-eventrix-black uppercase tracking-wide">
               {event.title}

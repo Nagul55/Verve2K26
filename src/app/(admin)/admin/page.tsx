@@ -1,13 +1,21 @@
 import React from "react";
 import { Users, Calendar, Ticket, ShieldCheck, Clock, CheckCircle2, AlertCircle } from "lucide-react";
-import { getSubEvents, getAdminParticipants } from "@/actions/event.actions";
+import { getSubEvents, getAdminParticipants, getFests } from "@/actions/event.actions";
 import { DashboardCharts } from "@/components/admin/DashboardCharts";
+import { isEventLive, isEventOver } from "@/lib/utils/event-status";
 import Link from "next/link";
 
 export default async function AdminDashboard() {
   let events: any[] = [];
   let allParticipants: any[] = [];
+  let fests: any[] = [];
   let eventsError = false;
+
+  try {
+    fests = await getFests(true) || [];
+  } catch (err) {
+    console.error("Failed to fetch fests for Admin Dashboard:", err);
+  }
 
   try {
     events = await getSubEvents(undefined, true) || [];
@@ -49,12 +57,11 @@ export default async function AdminDashboard() {
   // REJECTED -> Rejected
   const isPendingEvent = (e: any) => {
     const s = (e.status || '').toUpperCase();
-    return s !== 'LIVE' && s !== 'APPROVED' && s !== 'REJECTED';
+    return s !== 'LIVE' && s !== 'APPROVED' && s !== 'REJECTED' && s !== 'COMPLETED';
   };
 
   const isLiveEvent = (e: any) => {
-    const s = (e.status || '').toUpperCase();
-    return s === 'LIVE' || s === 'APPROVED';
+    return isEventLive(e);
   };
 
   // Fetch pending events for the table
@@ -226,6 +233,9 @@ export default async function AdminDashboard() {
 
       {/* Charts & Demographics Section */}
       <DashboardCharts 
+        participants={allParticipants}
+        events={events}
+        fests={fests}
         trendsData={trendsData} 
         growthRate={growthRate} 
         yearData={yearData}

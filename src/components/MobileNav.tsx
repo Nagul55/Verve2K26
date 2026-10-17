@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, Users, Ticket, FileText, Settings, Menu, X, BellRing } from "lucide-react";
+import { Home, Calendar, Users, Ticket, FileText, Settings, Menu, X, BellRing, CheckCircle2 } from "lucide-react";
 import { EventrixLogo } from "./EventrixLogo";
 import { LogoutButton } from "./LogoutButton";
 
@@ -46,6 +46,7 @@ export function MobileNav({ role = 'student' }: { role?: string }) {
       { name: "Dashboard", href: "/dashboard", icon: Home },
       { name: "Events", href: "/events", icon: Calendar },
       { name: "Registrations", href: "/registrations", icon: Users },
+      { name: "Completed Events", href: "/completed-events", icon: CheckCircle2 },
       { name: "Invitations", href: "/invitations", icon: BellRing },
       { name: "Tickets", href: "/tickets", icon: Ticket },
       { name: "Certificates", href: "/certificates", icon: FileText },

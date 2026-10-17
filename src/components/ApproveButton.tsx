@@ -5,25 +5,32 @@ import { CheckCircle2, ShieldCheck, PauseCircle, PlayCircle, XCircle } from "luc
 import { approveSubEvent, toggleSubEventLiveStatus } from "@/actions/event.actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { isEventOver } from "@/lib/utils/event-status";
 
 export function ApproveButton({ 
   id, 
   status,
   isApproved, 
-  coordinatorCount = 0 
+  coordinatorCount = 0,
+  date,
+  time
 }: { 
   id: string; 
   status?: string;
   isApproved?: boolean; 
-  coordinatorCount?: number; 
+  coordinatorCount?: number;
+  date?: string;
+  time?: string;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const currentStatus = status || (isApproved ? 'LIVE' : 'DRAFT');
+  const rawStatus = status || (isApproved ? 'LIVE' : 'DRAFT');
+  const eventHasEnded = isEventOver({ status: rawStatus, date, time });
+  const currentStatus = eventHasEnded ? 'COMPLETED' : rawStatus;
   const hasCoordinator = coordinatorCount > 0;
 
-  const handleToggle = (targetStatus: 'LIVE' | 'CLOSED') => {
+  const handleToggle = (targetStatus: 'LIVE' | 'CLOSED' | 'COMPLETED') => {
     if (targetStatus === 'LIVE' && !hasCoordinator) {
       toast.error("Coordinator required — Assign at least one coordinator before setting this event live.");
       return;
@@ -34,6 +41,8 @@ export function ApproveButton({
       if (res.success) {
         if (targetStatus === 'CLOSED') {
           toast.success("Event stopped and closed for registrations.");
+        } else if (targetStatus === 'COMPLETED') {
+          toast.success("Event marked as completed.");
         } else {
           toast.success("Event reopened and published live!");
         }
@@ -60,6 +69,17 @@ export function ApproveButton({
       }
     });
   };
+
+  // 0. COMPLETED STATUS: If event is over or marked COMPLETED, it is NOT live!
+  if (currentStatus === 'COMPLETED') {
+    return (
+      <div className="inline-flex items-center gap-2">
+        <span className="bg-purple-100 text-purple-800 border border-purple-300 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-flex items-center gap-1 shrink-0">
+          <CheckCircle2 className="w-3 h-3 text-purple-600" /> Completed
+        </span>
+      </div>
+    );
+  }
 
   // 1. LIVE STATUS: Show LIVE badge + One-Click "Stop Live" button
   if (currentStatus === 'LIVE') {

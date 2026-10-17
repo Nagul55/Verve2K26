@@ -73,6 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`${inter.variable} ${anton.variable} h-full antialiased scroll-smooth`}
     >
       <body className="min-h-screen flex font-sans bg-eventrix-bg text-eventrix-black">
