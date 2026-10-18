@@ -104,6 +104,11 @@ export async function GET(request: Request) {
           }, { onConflict: 'participant_id' });
         }
 
+        // If this is a password recovery redirect, route directly to the reset-password page
+        if (next && next.startsWith('/reset-password')) {
+          return NextResponse.redirect(`${origin}${next}`);
+        }
+
         const role = user.app_metadata?.role || 'student';
         if (role === 'admin') {
           return NextResponse.redirect(`${origin}/admin`);

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
 
 // Admin client to bypass email confirmations and set roles
 const getAdminClient = () => {
@@ -532,5 +533,93 @@ export async function getAllUsersAdmin() {
   } catch (err) {
     console.error("Error in getAllUsersAdmin:", err);
     return [];
+  }
+}
+
+export async function requestPasswordRecoveryResend(emailStr: string) {
+  const cleanEmail = (emailStr || '').trim().toLowerCase();
+  if (!cleanEmail) {
+    return { error: 'Please enter a valid email address.' };
+  }
+
+  const adminClient = getAdminClient();
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error('RESEND_API_KEY is missing in environment variables.');
+    return { error: 'Email service configuration error. Please contact admin.' };
+  }
+
+  try {
+    // 1. Generate recovery link from Supabase Admin Auth
+    const { data, error } = await adminClient.auth.admin.generateLink({
+      type: 'recovery',
+      email: cleanEmail,
+    });
+
+    if (error || !data?.properties) {
+      // If user is not found, return generic success to avoid email enumeration
+      console.log('Recovery requested for unverified/missing email:', cleanEmail);
+      return { success: true, otpLength: 8 };
+    }
+
+    const otpCode = data.properties.email_otp;
+    const actionLink = data.properties.action_link;
+
+    if (!otpCode) {
+      console.warn('No email_otp in generateLink properties');
+      return { success: true, otpLength: 8 };
+    }
+
+    const codeLength = otpCode.length || 8;
+
+    // 2. Dispatch email directly via Resend
+    const resend = new Resend(apiKey);
+    const htmlContent = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h1 style="color: #080B18; font-size: 26px; margin: 0 0 6px 0; font-weight: 800; letter-spacing: -0.5px;">VERVE26</h1>
+          <p style="color: #6b7280; font-size: 13px; margin: 0;">Password Reset Verification Code</p>
+        </div>
+        
+        <p style="color: #374151; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+          You requested to reset your Eventrix account password. Use the ${codeLength}-digit verification code below:
+        </p>
+
+        <div style="text-align: center; margin: 24px 0;">
+          <div style="display: inline-block; background-color: #F5F3FF; border: 2px dashed #A78BFA; border-radius: 12px; padding: 14px 28px;">
+            <span style="font-family: monospace; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #7C3AED;">
+              ${otpCode}
+            </span>
+          </div>
+        </div>
+
+        <p style="color: #6b7280; font-size: 12px; text-align: center; margin-bottom: 24px;">
+          This verification code is valid for 10 minutes. If you did not request this, please ignore this email.
+        </p>
+
+        <div style="text-align: center; border-top: 1px solid #f3f4f6; padding-top: 20px;">
+          <p style="color: #9ca3af; font-size: 11px; margin: 0;">
+            Alternatively, you can <a href="${actionLink}" style="color: #7C3AED; font-weight: 600; text-decoration: underline;">click here to reset your password directly</a>.
+          </p>
+        </div>
+      </div>
+    `;
+
+    const { error: resendError } = await resend.emails.send({
+      from: 'Verve26 <onboarding@resend.dev>',
+      to: cleanEmail,
+      subject: 'Your Verve26 Password Reset Code',
+      html: htmlContent,
+    });
+
+    if (resendError) {
+      console.error('Resend dispatch error:', resendError);
+      return { error: 'Failed to send recovery email. Please try again.' };
+    }
+
+    return { success: true, otpLength: codeLength };
+  } catch (err: any) {
+    console.error('Error generating recovery email with Resend:', err);
+    return { error: err.message || 'An unexpected error occurred.' };
   }
 }
