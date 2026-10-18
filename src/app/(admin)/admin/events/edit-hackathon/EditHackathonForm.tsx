@@ -16,7 +16,7 @@ import { MultiCollegeSelect } from "@/components/ui/MultiCollegeSelect";
 import { MultiYearSelect } from "@/components/ui/MultiYearSelect";
 import { ALLOWED_FILE_ACCEPT } from "@/lib/mimeUtils";
 import { getFileIcon } from "@/components/ui/EventrixResourceUploader";
-import { parseISTDeadlineParts } from "@/utils/date-utils";
+import { parseISTDeadlineParts } from "@/lib/utils/date-utils";
 
 const parseDateString = (dateString?: string) => {
   if (!dateString) return { date: "", time: "" };

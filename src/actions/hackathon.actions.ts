@@ -4,7 +4,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath, revalidateTag } from "next/cache";
 import { randomUUID } from 'crypto';
 import { getMimeType } from '@/lib/mimeUtils';
-import { buildISTDateTimeISO } from '@/utils/date-utils';
+import { buildISTDateTimeISO } from '@/lib/utils/date-utils';
 
 const getAdminClient = () => {
   return createSupabaseClient(
